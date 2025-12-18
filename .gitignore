@@ -32,10 +32,3 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
-
-# Build
-build/
-dist/
-
-# Misc
-.turbo/
