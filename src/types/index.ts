@@ -1,4 +1,3 @@
-// Proceso de contratación SECOP II
 export interface SecopProcess {
   id_proceso: string;
   nombre_entidad: string;
@@ -10,7 +9,7 @@ export interface SecopProcess {
   fecha_cierre: string;
   tipo_proceso: string;
   nit_entidad: string;
-  [key: string]: any; // Para campos adicionales que pueda devolver la API
+  [key: string]: any;
 }
 
 // Estados posibles de un proceso
@@ -31,7 +30,7 @@ export type ProcessType =
   | "Concurso de Méritos"
   | "Procedimiento Especial";
 
-// Municipios de Colombia (principales)
+// Municipios principales de Colombia (sin duplicados)
 export const COLOMBIAN_MUNICIPALITIES = [
   "Bogotá",
   "Medellín",
@@ -59,6 +58,35 @@ export const COLOMBIAN_MUNICIPALITIES = [
   "Mitú",
   "Leticia",
   "Puerto Carreño",
+  "Soacha",
+  "Zipaquirá",
+  "Facatativá",
+  "Girardot",
+  "Pacho",
+  "Ubaté",
+  "Tocancipá",
+  "Floridablanca",
+  "Girón",
+  "Piedecuesta",
+  "Dosquebradas",
+  "Santa Rosa de Cabal",
+  "Palmira",
+  "Buenaventura",
+  "Tuluá",
+  "Buga",
+  "Cartago",
+  "Sogamoso",
+  "Duitama",
+  "Paipa",
+  "Ipiales",
+  "Túquerres",
+  "Espinal",
+  "Mocoa",
+  "Calarcá",
+  "Circasia",
+  "Los Patios",
+  "Pamplona",
+  "Ocaña",
 ] as const;
 
 // Parámetros de búsqueda

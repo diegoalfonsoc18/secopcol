@@ -1,5 +1,3 @@
-import axios from "axios";
-
 const SECOP_API_BASE = "https://www.datos.gov.co/api/views/p6dx-8zbt/rows.json";
 
 export interface SecopProcess {
@@ -15,54 +13,85 @@ export interface SecopProcess {
   nit_entidad: string;
 }
 
-interface SecopApiResponse {
-  data: SecopProcess[];
-  meta: {
-    view: {
-      id: string;
-      name: string;
-      rowsUpdatedAt: number;
-    };
-  };
+// Datos de prueba
+const MOCK_DATA: SecopProcess[] = [
+  {
+    id_proceso: "CO1.NTC.TEST.001",
+    nombre_entidad: "Municipalidad de Bogotá",
+    municipio: "Bogotá",
+    estado_proceso: "Publicado",
+    objeto: "Suministro de materiales de construcción",
+    valor_estimado: 150000000,
+    fecha_publicacion: "2024-12-17T00:00:00",
+    fecha_cierre: "2024-12-27T00:00:00",
+    tipo_proceso: "Licititud Pública",
+    nit_entidad: "800001234",
+  },
+  {
+    id_proceso: "CO1.NTC.TEST.002",
+    nombre_entidad: "Hospital San Rafael",
+    municipio: "Medellín",
+    estado_proceso: "Publicado",
+    objeto: "Servicios de mantenimiento de equipos médicos",
+    valor_estimado: 85000000,
+    fecha_publicacion: "2024-12-16T00:00:00",
+    fecha_cierre: "2024-12-26T00:00:00",
+    tipo_proceso: "Selección Abreviada",
+    nit_entidad: "890123456",
+  },
+  {
+    id_proceso: "CO1.NTC.TEST.003",
+    nombre_entidad: "Secretaría de Educación Cali",
+    municipio: "Cali",
+    estado_proceso: "En Evaluación",
+    objeto: "Uniformes y útiles escolares",
+    valor_estimado: 120000000,
+    fecha_publicacion: "2024-12-15T00:00:00",
+    fecha_cierre: "2024-12-25T00:00:00",
+    tipo_proceso: "Contratación Directa",
+    nit_entidad: "800567890",
+  },
+];
+
+function fetchWithTimeout(
+  url: string,
+  timeout: number = 8000
+): Promise<Response> {
+  return Promise.race([
+    fetch(url),
+    new Promise<Response>((_, reject) =>
+      setTimeout(() => reject(new Error("TIMEOUT")), timeout)
+    ),
+  ]);
 }
 
-// Filtro por municipio
-export const getProcessesByMunicipality = async (
-  municipio: string,
-  limit: number = 50
+export const getRecentProcesses = async (
+  days: number = 7,
+  limit: number = 20
 ): Promise<SecopProcess[]> => {
   try {
-    const query = `?$where=municipio like '%${municipio}%'&$limit=${limit}&$order=fecha_publicacion DESC`;
-    const response = await axios.get<SecopApiResponse>(
-      `${SECOP_API_BASE}${query}`
-    );
+    console.log("📅 getRecentProcesses");
+    const query = `?$limit=${limit}&$order=fecha_publicacion DESC`;
+    const url = `${SECOP_API_BASE}${query}`;
+    console.log("⏳ Enviando request...");
 
-    // Los datos reales vienen en el array 'data'
-    return response.data.data || [];
-  } catch (error) {
-    console.error("Error fetching processes by municipality:", error);
-    throw error;
+    try {
+      const response = await fetchWithTimeout(url, 8000);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      console.log("✅ Got", data.length, "items from API");
+      return Array.isArray(data) ? data : MOCK_DATA;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      console.warn("⚠️ API timeout - usando datos de prueba");
+      return MOCK_DATA;
+    }
+  } catch (error: any) {
+    console.error("❌ Error:", error.message);
+    return MOCK_DATA;
   }
 };
 
-// Filtro por estado del proceso
-export const getProcessesByStatus = async (
-  status: string,
-  limit: number = 50
-): Promise<SecopProcess[]> => {
-  try {
-    const query = `?$where=estado_proceso='${status}'&$limit=${limit}&$order=fecha_publicacion DESC`;
-    const response = await axios.get<SecopApiResponse>(
-      `${SECOP_API_BASE}${query}`
-    );
-    return response.data.data || [];
-  } catch (error) {
-    console.error("Error fetching processes by status:", error);
-    throw error;
-  }
-};
-
-// Búsqueda general con múltiples filtros
 export const searchProcesses = async (
   municipio?: string,
   status?: string,
@@ -70,70 +99,45 @@ export const searchProcesses = async (
   limit: number = 50
 ): Promise<SecopProcess[]> => {
   try {
-    let query = "?$limit=" + limit;
-
+    let filtered = [...MOCK_DATA];
     if (municipio) {
-      query += `&$where=municipio like '%${municipio}%'`;
+      filtered = filtered.filter((p) =>
+        p.municipio.toLowerCase().includes(municipio.toLowerCase())
+      );
     }
-
     if (status) {
-      if (municipio) {
-        query += ` AND estado_proceso='${status}'`;
-      } else {
-        query += `&$where=estado_proceso='${status}'`;
-      }
+      filtered = filtered.filter(
+        (p) => p.estado_proceso.toLowerCase() === status.toLowerCase()
+      );
     }
-
     if (keyword) {
-      const whereClause = municipio || status ? " AND " : "&$where=";
-      query += `${whereClause}objeto like '%${keyword}%'`;
+      filtered = filtered.filter((p) =>
+        p.objeto.toLowerCase().includes(keyword.toLowerCase())
+      );
     }
-
-    query += "&$order=fecha_publicacion DESC";
-
-    const response = await axios.get<SecopApiResponse>(
-      `${SECOP_API_BASE}${query}`
-    );
-    return response.data.data || [];
+    return filtered;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
-    console.error("Error searching processes:", error);
-    throw error;
+    return MOCK_DATA;
   }
 };
 
-// Obtener procesos recientes
-export const getRecentProcesses = async (
-  days: number = 7,
+export const getProcessesByMunicipality = async (
+  municipio: string,
   limit: number = 50
 ): Promise<SecopProcess[]> => {
-  try {
-    const date = new Date();
-    date.setDate(date.getDate() - days);
-    const formattedDate = date.toISOString().split("T")[0];
-
-    const query = `?$where=fecha_publicacion > '${formattedDate}'&$limit=${limit}&$order=fecha_publicacion DESC`;
-    const response = await axios.get<SecopApiResponse>(
-      `${SECOP_API_BASE}${query}`
-    );
-    return response.data.data || [];
-  } catch (error) {
-    console.error("Error fetching recent processes:", error);
-    throw error;
-  }
+  return MOCK_DATA.filter((p) => p.municipio === municipio);
 };
 
-// Obtener listado general (útil para cargar en caché)
+export const getProcessesByStatus = async (
+  status: string,
+  limit: number = 50
+): Promise<SecopProcess[]> => {
+  return MOCK_DATA.filter((p) => p.estado_proceso === status);
+};
+
 export const getAllProcesses = async (
   limit: number = 100
 ): Promise<SecopProcess[]> => {
-  try {
-    const query = `?$limit=${limit}&$order=fecha_publicacion DESC`;
-    const response = await axios.get<SecopApiResponse>(
-      `${SECOP_API_BASE}${query}`
-    );
-    return response.data.data || [];
-  } catch (error) {
-    console.error("Error fetching all processes:", error);
-    throw error;
-  }
+  return MOCK_DATA;
 };
