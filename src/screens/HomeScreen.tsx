@@ -1,52 +1,36 @@
 import React, { useEffect } from "react";
-import { FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
-import { EmptyState, LoadingSpinner, ProcessCard } from "../components/index";
+import { FlatList, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LoadingSpinner, ProcessCard, EmptyState } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
 
 export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const { processes, loading, error, fetchRecentProcesses } =
-    useProcessesStore();
+  const insets = useSafeAreaInsets();
+  const { processes, loading, fetchRecentProcesses } = useProcessesStore();
 
   useEffect(() => {
-    loadData();
+    fetchRecentProcesses();
   }, []);
-
-  const loadData = async () => {
-    await fetchRecentProcesses(7); // Últimos 7 días
-  };
-
-  const handleRefresh = async () => {
-    await loadData();
-  };
 
   const handleProcessPress = (process: SecopProcess) => {
     navigation.navigate("Detail", { process });
   };
 
-  if (loading && processes.length === 0) {
-    return (
-      <LoadingSpinner visible={true} message="Cargando procesos recientes..." />
-    );
-  }
-
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>secopcol</Text>
-        <Text style={styles.subtitle}>Procesos de Contratación Pública</Text>
+      <View style={[styles.header, { paddingTop: insets.top }]}>
+        <Text style={styles.title}>📋 Procesos SECOP II</Text>
+        <Text style={styles.subtitle}>Últimos procesos de contratación</Text>
       </View>
 
-      {/* Error Message */}
-      {error && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>⚠️ {error}</Text>
+      {/* Content */}
+      {loading ? (
+        <View style={styles.centerContainer}>
+          <LoadingSpinner visible={true} message="Cargando procesos..." />
         </View>
-      )}
-
-      {/* Processes List */}
-      {processes.length > 0 ? (
+      ) : processes.length > 0 ? (
         <FlatList
           data={processes}
           keyExtractor={(item) => item.id_del_proceso}
@@ -57,29 +41,16 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             />
           )}
           contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={loading}
-              onRefresh={handleRefresh}
-              colors={["#3B82F6"]}
-            />
-          }
-          ListHeaderComponent={
-            <View style={styles.listHeader}>
-              <Text style={styles.listHeaderText}>
-                📅 Últimos 7 días ({processes.length} procesos)
-              </Text>
-            </View>
-          }
+          scrollIndicatorInsets={{ right: 1 }}
         />
       ) : (
-        <EmptyState
-          title="Sin procesos"
-          message="No hay procesos disponibles en los últimos 7 días"
-          icon="📭"
-          actionText="Recargar"
-          onAction={loadData}
-        />
+        <View style={styles.centerContainer}>
+          <EmptyState
+            title="Sin procesos"
+            message="No hay procesos disponibles en este momento"
+            icon="📭"
+          />
+        </View>
       )}
     </View>
   );
@@ -93,11 +64,10 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "#3B82F6",
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 20,
+    paddingVertical: 16,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "700",
     color: "#FFFFFF",
     marginBottom: 4,
@@ -107,31 +77,13 @@ const styles = StyleSheet.create({
     color: "#DBEAFE",
     fontWeight: "500",
   },
-  errorContainer: {
-    backgroundColor: "#FEE2E2",
-    marginHorizontal: 16,
-    marginTop: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: "#EF4444",
-  },
-  errorText: {
-    color: "#991B1B",
-    fontSize: 13,
-    fontWeight: "500",
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   listContent: {
-    paddingVertical: 12,
-  },
-  listHeader: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  listHeaderText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#6B7280",
+    paddingVertical: 16,
   },
 });

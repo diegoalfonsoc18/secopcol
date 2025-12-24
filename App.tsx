@@ -61,18 +61,8 @@ function TabNavigator() {
           marginTop: -4,
           marginBottom: 4,
         },
-      }}>
-      <Tab.Screen
-        name="Home"
-        component={HomeStackNavigator}
-        options={{
-          tabBarLabel: "Inicio",
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 24 }}>{focused ? "🏠" : "🏡"}</Text>
-          ),
-        }}
-      />
-
+      }}
+      initialRouteName="Home">
       <Tab.Screen
         name="Search"
         component={SearchStackNavigator}
@@ -80,6 +70,17 @@ function TabNavigator() {
           tabBarLabel: "Buscar",
           tabBarIcon: ({ focused }) => (
             <Text style={{ fontSize: 24 }}>{focused ? "🔍" : "🔎"}</Text>
+          ),
+        }}
+      />
+
+      <Tab.Screen
+        name="Home"
+        component={HomeStackNavigator}
+        options={{
+          tabBarLabel: "Inicio",
+          tabBarIcon: ({ focused }) => (
+            <Text style={{ fontSize: 24 }}>{focused ? "🏠" : "🏡"}</Text>
           ),
         }}
       />

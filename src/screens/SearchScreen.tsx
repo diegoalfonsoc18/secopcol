@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import {
   FlatList,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   EmptyState,
   LoadingSpinner,
@@ -28,6 +28,7 @@ const PROCESS_STATUSES = [
 ];
 
 export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const {
     processes,
     loading,
@@ -60,142 +61,152 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top }]}>
         <Text style={styles.title}>Buscar Procesos</Text>
         <Text style={styles.subtitle}>
           Filtra por municipio, estado o palabra clave
         </Text>
       </View>
 
-      {/* Filters Section */}
-      <ScrollView
-        style={styles.filtersContainer}
-        showsVerticalScrollIndicator={false}>
-        {/* Keyword Search */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🔍 Palabra clave</Text>
-          <TextInput
-            style={styles.keywordInput}
-            placeholder="Ej: infraestructura, salud..."
-            placeholderTextColor="#9CA3AF"
-            value={keyword}
-            onChangeText={setKeyword}
-          />
+      {/* Content */}
+      {loading ? (
+        <View style={styles.centerContainer}>
+          <LoadingSpinner visible={true} message="Buscando procesos..." />
         </View>
-
-        {/* Municipality Filter */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📍 Municipio</Text>
-          <MunicipalityFilter
-            selected={selectedMunicipality}
-            onSelect={setSelectedMunicipality}
-          />
-          {selectedMunicipality && (
-            <View style={styles.selectedTag}>
-              <Text style={styles.selectedTagText}>
-                ✓ {selectedMunicipality}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Status Filter */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📊 Estado del proceso</Text>
-          <View style={styles.statusGrid}>
-            {PROCESS_STATUSES.map((status) => (
-              <TouchableOpacity
-                key={status}
-                style={[
-                  styles.statusButton,
-                  selectedStatus === status && styles.statusButtonActive,
-                ]}
-                onPress={() =>
-                  setSelectedStatus(selectedStatus === status ? "" : status)
-                }>
-                <Text
-                  style={[
-                    styles.statusButtonText,
-                    selectedStatus === status && styles.statusButtonTextActive,
-                  ]}>
-                  {status}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.buttonsContainer}>
-          <TouchableOpacity
-            style={styles.searchButton}
-            onPress={handleSearch}
-            disabled={loading}>
-            <Text style={styles.searchButtonText}>
-              {loading ? "⏳ Buscando..." : "🔍 Buscar"}
-            </Text>
-          </TouchableOpacity>
-
-          {hasActiveFilters && (
-            <TouchableOpacity
-              style={styles.clearButton}
-              onPress={handleClearFilters}
-              disabled={loading}>
-              <Text style={styles.clearButtonText}>Limpiar filtros</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </ScrollView>
-
-      {/* Error Message */}
-      {error && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>⚠️ {error}</Text>
-        </View>
-      )}
-
-      {/* Results */}
-      {loading && (
-        <LoadingSpinner visible={true} message="Buscando procesos..." />
-      )}
-
-      {!loading && processes.length > 0 && (
-        <View style={styles.resultsContainer}>
-          <View style={styles.resultsHeader}>
-            <Text style={styles.resultsTitle}>
-              Resultados ({processes.length})
-            </Text>
-          </View>
+      ) : (
+        <View style={styles.contentContainer}>
           <FlatList
-            data={processes}
-            keyExtractor={(item) => item.id_del_proceso}
-            renderItem={({ item }) => (
-              <ProcessCard
-                process={item}
-                onPress={() => handleProcessPress(item)}
-              />
+            data={[{ id: "filters" }]}
+            keyExtractor={(item) => item.id}
+            renderItem={() => (
+              <View style={styles.filtersContent}>
+                {/* Keyword Search */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>🔍 Palabra clave</Text>
+                  <TextInput
+                    style={styles.keywordInput}
+                    placeholder="Ej: infraestructura, salud..."
+                    placeholderTextColor="#9CA3AF"
+                    value={keyword}
+                    onChangeText={setKeyword}
+                  />
+                </View>
+
+                {/* Municipality Filter */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>📍 Municipio</Text>
+                  <MunicipalityFilter
+                    selected={selectedMunicipality}
+                    onSelect={setSelectedMunicipality}
+                  />
+                  {selectedMunicipality && (
+                    <View style={styles.selectedTag}>
+                      <Text style={styles.selectedTagText}>
+                        ✓ {selectedMunicipality}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Status Filter */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>📊 Estado del proceso</Text>
+                  <View style={styles.statusGrid}>
+                    {PROCESS_STATUSES.map((status) => (
+                      <TouchableOpacity
+                        key={status}
+                        style={[
+                          styles.statusButton,
+                          selectedStatus === status &&
+                            styles.statusButtonActive,
+                        ]}
+                        onPress={() =>
+                          setSelectedStatus(
+                            selectedStatus === status ? "" : status
+                          )
+                        }>
+                        <Text
+                          style={[
+                            styles.statusButtonText,
+                            selectedStatus === status &&
+                              styles.statusButtonTextActive,
+                          ]}>
+                          {status}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Action Buttons */}
+                <View style={styles.buttonsContainer}>
+                  <TouchableOpacity
+                    style={styles.searchButton}
+                    onPress={handleSearch}>
+                    <Text style={styles.searchButtonText}>🔍 Buscar</Text>
+                  </TouchableOpacity>
+
+                  {hasActiveFilters && (
+                    <TouchableOpacity
+                      style={styles.clearButton}
+                      onPress={handleClearFilters}>
+                      <Text style={styles.clearButtonText}>
+                        Limpiar filtros
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* Error Message */}
+                {error && (
+                  <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>⚠️ {error}</Text>
+                  </View>
+                )}
+
+                {/* Results Header */}
+                {processes.length > 0 && (
+                  <View style={styles.resultsHeader}>
+                    <Text style={styles.resultsTitle}>
+                      Resultados ({processes.length})
+                    </Text>
+                  </View>
+                )}
+              </View>
             )}
-            scrollEnabled={false}
+            ListFooterComponent={
+              processes.length > 0 ? (
+                <FlatList
+                  data={processes}
+                  keyExtractor={(item) => item.id_del_proceso}
+                  renderItem={({ item }) => (
+                    <ProcessCard
+                      process={item}
+                      onPress={() => handleProcessPress(item)}
+                    />
+                  )}
+                  scrollEnabled={false}
+                  contentContainerStyle={{ paddingHorizontal: 16 }}
+                />
+              ) : hasActiveFilters ? (
+                <EmptyState
+                  title="Sin resultados"
+                  message="No se encontraron procesos con los filtros aplicados"
+                  icon="🔍"
+                  actionText="Ajustar filtros"
+                  onAction={handleClearFilters}
+                />
+              ) : (
+                <EmptyState
+                  title="Comienza tu búsqueda"
+                  message="Selecciona filtros y presiona 'Buscar' para encontrar procesos"
+                  icon="📋"
+                />
+              )
+            }
+            scrollEnabled={true}
           />
         </View>
-      )}
-
-      {!loading && processes.length === 0 && hasActiveFilters && (
-        <EmptyState
-          title="Sin resultados"
-          message="No se encontraron procesos con los filtros aplicados"
-          icon="🔍"
-          actionText="Ajustar filtros"
-          onAction={handleClearFilters}
-        />
-      )}
-
-      {!loading && processes.length === 0 && !hasActiveFilters && (
-        <EmptyState
-          title="Comienza tu búsqueda"
-          message="Selecciona filtros y presiona 'Buscar' para encontrar procesos"
-          icon="📋"
-        />
       )}
     </View>
   );
@@ -209,8 +220,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "#3B82F6",
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
+    paddingVertical: 16,
   },
   title: {
     fontSize: 24,
@@ -223,7 +233,15 @@ const styles = StyleSheet.create({
     color: "#DBEAFE",
     fontWeight: "500",
   },
-  filtersContainer: {
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  contentContainer: {
+    flex: 1,
+  },
+  filtersContent: {
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
@@ -316,7 +334,7 @@ const styles = StyleSheet.create({
   },
   errorContainer: {
     backgroundColor: "#FEE2E2",
-    marginHorizontal: 16,
+    marginHorizontal: 0,
     marginVertical: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -329,14 +347,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
   },
-  resultsContainer: {
-    flex: 1,
-  },
   resultsHeader: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
     paddingVertical: 12,
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
+    marginTop: 20,
   },
   resultsTitle: {
     fontSize: 14,

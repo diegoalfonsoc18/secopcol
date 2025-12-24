@@ -1,18 +1,14 @@
 import React from "react";
-import {
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { EmptyState, ProcessCard } from "../components/index";
+import { FlatList, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ProcessCard, EmptyState } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
 
 export const FavoritesScreen: React.FC<{ navigation: any }> = ({
   navigation,
 }) => {
+  const insets = useSafeAreaInsets();
   const { favorites, removeFavorite } = useProcessesStore();
 
   const handleProcessPress = (process: SecopProcess) => {
@@ -26,46 +22,39 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Favoritos</Text>
-        <Text style={styles.subtitle}>
-          Procesos que guardaste para seguimiento
-        </Text>
+      <View style={[styles.header, { paddingTop: insets.top }]}>
+        <Text style={styles.title}>⭐ Favoritos</Text>
+        <Text style={styles.subtitle}>Procesos guardados</Text>
       </View>
 
-      {/* Favorites List */}
+      {/* Content */}
       {favorites.length > 0 ? (
-        <View style={styles.listContainer}>
-          <View style={styles.countBadge}>
-            <Text style={styles.countText}>⭐ {favorites.length}</Text>
-          </View>
-          <FlatList
-            data={favorites}
-            keyExtractor={(item) => item.id_proceso}
-            renderItem={({ item }) => (
-              <View style={styles.cardWrapper}>
-                <ProcessCard
-                  process={item}
-                  onPress={() => handleProcessPress(item)}
-                />
-                <TouchableOpacity
-                  style={styles.removeButton}
-                  onPress={() => handleRemoveFavorite(item.id_proceso)}>
-                  <Text style={styles.removeIcon}>✕</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-            contentContainerStyle={styles.listContent}
+        <FlatList
+          data={favorites}
+          keyExtractor={(item) => item.id_del_proceso}
+          renderItem={({ item }) => (
+            <View style={styles.favoriteItem}>
+              <ProcessCard
+                process={item}
+                onPress={() => handleProcessPress(item)}
+              />
+              <Text
+                style={styles.removeText}
+                onPress={() => handleRemoveFavorite(item.id_del_proceso)}>
+                Eliminar ✕
+              </Text>
+            </View>
+          )}
+          contentContainerStyle={styles.listContent}
+        />
+      ) : (
+        <View style={styles.centerContainer}>
+          <EmptyState
+            title="Sin favoritos"
+            message="Guarda procesos para acceder rápidamente"
+            icon="☆"
           />
         </View>
-      ) : (
-        <EmptyState
-          title="Sin favoritos"
-          message="Guarda procesos como favoritos presionando la estrella para seguir su progreso"
-          icon="⭐"
-          actionText="Ir a Buscar"
-          onAction={() => navigation.navigate("Search")}
-        />
       )}
     </View>
   );
@@ -79,8 +68,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "#3B82F6",
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
+    paddingVertical: 16,
   },
   title: {
     fontSize: 24,
@@ -93,44 +81,24 @@ const styles = StyleSheet.create({
     color: "#DBEAFE",
     fontWeight: "500",
   },
-  listContainer: {
+  centerContainer: {
     flex: 1,
-  },
-  countBadge: {
-    marginHorizontal: 16,
-    marginVertical: 12,
-    backgroundColor: "#FEF3C7",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: "#F59E0B",
-  },
-  countText: {
-    color: "#92400E",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  listContent: {
-    paddingVertical: 8,
-  },
-  cardWrapper: {
-    position: "relative",
-  },
-  removeButton: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    backgroundColor: "#FEE2E2",
-    width: 32,
-    height: 32,
-    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
   },
-  removeIcon: {
-    fontSize: 18,
+  listContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  favoriteItem: {
+    marginBottom: 12,
+  },
+  removeText: {
     color: "#EF4444",
-    fontWeight: "700",
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 8,
+    textAlign: "right",
+    paddingHorizontal: 16,
   },
 });
