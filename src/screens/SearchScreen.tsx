@@ -168,7 +168,7 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </View>
           <FlatList
             data={processes}
-            keyExtractor={(item) => item.id_proceso}
+            keyExtractor={(item) => item.id_del_proceso}
             renderItem={({ item }) => (
               <ProcessCard
                 process={item}

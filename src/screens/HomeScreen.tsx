@@ -49,7 +49,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       {processes.length > 0 ? (
         <FlatList
           data={processes}
-          keyExtractor={(item) => item.id_proceso}
+          keyExtractor={(item) => item.id_del_proceso}
           renderItem={({ item }) => (
             <ProcessCard
               process={item}

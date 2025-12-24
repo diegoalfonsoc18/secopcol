@@ -1,15 +1,14 @@
 export interface SecopProcess {
-  id_proceso: string;
-  nombre_entidad: string;
-  municipio: string;
-  estado_proceso: string;
-  objeto: string;
-  valor_estimado: number;
-  fecha_publicacion: string;
-  fecha_cierre: string;
-  tipo_proceso: string;
+  id_del_proceso: string;
+  entidad: string;
   nit_entidad: string;
-  [key: string]: any;
+  ciudad_entidad: string;
+  departamento_entidad: string;
+  nombre_del_procedimiento: string;
+  descripci_n_del_procedimiento: string;
+  fase: string;
+  fecha_de_publicacion_del: string;
+  fecha_de_ultima_publicaci?: string;
 }
 
 // Estados posibles de un proceso

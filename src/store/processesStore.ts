@@ -30,7 +30,7 @@ interface ProcessesStore {
     status?: string,
     keyword?: string
   ) => Promise<void>;
-  fetchRecentProcesses: (days?: number) => Promise<void>;
+  fetchRecentProcesses: () => Promise<void>;
   clearFilters: () => void;
 }
 
@@ -53,12 +53,12 @@ export const useProcessesStore = create<ProcessesStore>((set, get) => ({
 
   removeFavorite: (processId) =>
     set((state) => ({
-      favorites: state.favorites.filter((p) => p.id_proceso !== processId),
+      favorites: state.favorites.filter((p) => p.id_del_proceso !== processId),
     })),
 
   isFavorite: (processId) => {
     const state = get();
-    return state.favorites.some((p) => p.id_proceso === processId);
+    return state.favorites.some((p) => p.id_del_proceso === processId);
   },
 
   setLoading: (loading) => set({ loading }),
@@ -78,25 +78,31 @@ export const useProcessesStore = create<ProcessesStore>((set, get) => ({
   ) => {
     set({ loading: true, error: null });
     try {
+      console.log("🔍 fetchProcesses iniciado");
       const data = await searchProcesses(municipality, status, keyword);
+      console.log("✅ fetchProcesses completado:", data.length);
       set({ processes: data });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Error desconocido";
+      console.error("❌ fetchProcesses error:", errorMessage);
       set({ error: errorMessage });
     } finally {
       set({ loading: false });
     }
   },
 
-  fetchRecentProcesses: async (days = 7) => {
+  fetchRecentProcesses: async () => {
     set({ loading: true, error: null });
     try {
-      const data = await getRecentProcesses(days);
+      console.log("📅 Cargando procesos recientes...");
+      const data = await getRecentProcesses(5);
+      console.log("✅ Procesos recientes cargados:", data.length);
       set({ processes: data });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Error desconocido";
+      console.error("❌ Error cargando procesos recientes:", errorMessage);
       set({ error: errorMessage });
     } finally {
       set({ loading: false });
