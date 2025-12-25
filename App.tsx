@@ -11,6 +11,7 @@ import {
   FavoritesScreen,
   DetailScreen,
 } from "./src/screens/index";
+import { HomeIcon, HomeSolidIcon } from "./src/assets/icons";
 
 // Tema centralizado
 const colors = {
@@ -109,11 +110,7 @@ function TabNavigator() {
         options={{
           tabBarLabel: "Inicio",
           tabBarIcon: ({ focused, color }) => (
-            <Ionicons
-              name={focused ? "home" : "home-outline"}
-              size={24}
-              color={color}
-            />
+            <HomeIcon size={24} color={color} filled={focused} />
           ),
         }}
       />
