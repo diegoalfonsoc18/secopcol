@@ -27,8 +27,8 @@ export interface SecopProcess {
   // ============================================
   // 13-15: ESTADO Y FASE
   // ============================================
-  fase: string; // 13. Fase actual del proceso
-  fecha_de_publicacion_del: string; // 14. Fecha publicación inicial
+  fase?: string; // 13. Fase actual (puede no venir)
+  fecha_de_publicacion_del?: string; // 14. Fecha publicación inicial (puede no venir)
   fecha_de_ultima_publicaci?: string; // 15. Fecha última publicación
 
   // ============================================
@@ -41,12 +41,12 @@ export interface SecopProcess {
   fecha_de_publicacion_fase_3?: string; // 20. Fecha fase Selección
 
   // ============================================
-  // 21-25: VALORES Y DURACIÓN
+  // 21-25: VALORES Y DURACIÓN (vienen como strings)
   // ============================================
-  precio_base?: number; // 21. Precio base proyectado
+  precio_base?: string | number; // 21. Precio base proyectado
   modalidad_de_contratacion?: string; // 22. Modalidad de selección
   justificaci_n_modalidad_de?: string; // 23. Justificación de modalidad
-  duracion?: number; // 24. Duración estimada
+  duracion?: string | number; // 24. Duración estimada
   unidad_de_duracion?: string; // 25. Unidad de duración
 
   // ============================================
@@ -59,23 +59,23 @@ export interface SecopProcess {
   nombre_de_la_unidad_de?: string; // 30. Nombre unidad contratación
 
   // ============================================
-  // 31-39: ESTADÍSTICAS DE PROVEEDORES
+  // 31-39: ESTADÍSTICAS DE PROVEEDORES (vienen como strings)
   // ============================================
-  proveedores_invitados?: number; // 31. Total invitados
-  proveedores_con_invitacion?: number; // 32. Con invitación directa
-  visualizaciones_del?: number; // 33. Visualizaciones del proceso
-  proveedores_que_manifestaron?: number; // 34. Manifestaron interés
-  respuestas_al_procedimiento?: number; // 35. Total respuestas
-  respuestas_externas?: number; // 36. Respuestas externas
-  conteo_de_respuestas_a_ofertas?: number; // 37. Respuestas a ofertas
-  proveedores_unicos_con?: number; // 38. Proveedores únicos con respuestas
-  numero_de_lotes?: number; // 39. Número de lotes
+  proveedores_invitados?: string | number; // 31. Total invitados
+  proveedores_con_invitacion?: string | number; // 32. Con invitación directa
+  visualizaciones_del?: string | number; // 33. Visualizaciones del proceso
+  proveedores_que_manifestaron?: string | number; // 34. Manifestaron interés
+  respuestas_al_procedimiento?: string | number; // 35. Total respuestas
+  respuestas_externas?: string | number; // 36. Respuestas externas
+  conteo_de_respuestas_a_ofertas?: string | number; // 37. Respuestas a ofertas
+  proveedores_unicos_con?: string | number; // 38. Proveedores únicos con respuestas
+  numero_de_lotes?: string | number; // 39. Número de lotes
 
   // ============================================
   // 40-43: ESTADO DEL PROCEDIMIENTO
   // ============================================
   estado_del_procedimiento?: string; // 40. Estado actual
-  id_estado_del_procedimiento?: number; // 41. ID del estado
+  id_estado_del_procedimiento?: string | number; // 41. ID del estado
   adjudicado?: string; // 42. Si fue adjudicado (Sí/No)
   id_adjudicacion?: string; // 43. ID de adjudicación
 
@@ -86,7 +86,7 @@ export interface SecopProcess {
   departamento_proveedor?: string; // 45. Departamento del proveedor
   ciudad_proveedor?: string; // 46. Ciudad del proveedor
   fecha_adjudicacion?: string; // 47. Fecha de adjudicación
-  valor_total_adjudicacion?: number; // 48. Valor total adjudicado
+  valor_total_adjudicacion?: string | number; // 48. Valor total adjudicado
   nombre_del_adjudicador?: string; // 49. Nombre del adjudicador
   nombre_del_proveedor?: string; // 50. Nombre del proveedor
   nit_del_proveedor_adjudicado?: string; // 51. NIT del proveedor
@@ -103,8 +103,8 @@ export interface SecopProcess {
   // ============================================
   // 57-59: METADATOS
   // ============================================
-  urlproceso?: string; // 57. URL del proceso en SECOP II
-  codigo_entidad?: number; // 58. Código de la entidad
+  urlproceso?: string | { url: string }; // 57. URL del proceso (puede ser objeto)
+  codigo_entidad?: string | number; // 58. Código de la entidad
   estado_resumen?: string; // 59. Resumen del estado
 }
 
@@ -333,6 +333,147 @@ export const COLOMBIAN_DEPARTMENTS = [
   "Vaupés",
   "Vichada",
 ] as const;
+
+// Mapa de departamentos con sus municipios principales
+export const MUNICIPALITIES_BY_DEPARTMENT: Record<string, string[]> = {
+  Amazonas: ["Leticia", "Puerto Nariño"],
+  Antioquia: [
+    "Medellín",
+    "Bello",
+    "Itagüí",
+    "Envigado",
+    "Apartadó",
+    "Rionegro",
+    "Turbo",
+    "Caucasia",
+    "Copacabana",
+    "La Estrella",
+    "Sabaneta",
+  ],
+  Arauca: ["Arauca", "Tame", "Saravena", "Fortul"],
+  Atlántico: [
+    "Barranquilla",
+    "Soledad",
+    "Malambo",
+    "Sabanalarga",
+    "Puerto Colombia",
+    "Galapa",
+  ],
+  "Bogotá D.C.": ["Bogotá D.C."],
+  Bolívar: [
+    "Cartagena de Indias",
+    "Magangué",
+    "Turbaco",
+    "Arjona",
+    "El Carmen de Bolívar",
+  ],
+  Boyacá: [
+    "Tunja",
+    "Duitama",
+    "Sogamoso",
+    "Chiquinquirá",
+    "Puerto Boyacá",
+    "Paipa",
+    "Guateque",
+  ],
+  Caldas: ["Manizales", "La Dorada", "Chinchiná", "Villamaría", "Riosucio"],
+  Caquetá: [
+    "Florencia",
+    "San Vicente del Caguán",
+    "Puerto Rico",
+    "El Doncello",
+  ],
+  Casanare: ["Yopal", "Aguazul", "Villanueva", "Tauramena", "Paz de Ariporo"],
+  Cauca: [
+    "Popayán",
+    "Santander de Quilichao",
+    "Puerto Tejada",
+    "Patía",
+    "El Tambo",
+  ],
+  Cesar: [
+    "Valledupar",
+    "Aguachica",
+    "Codazzi",
+    "Bosconia",
+    "La Jagua de Ibirico",
+  ],
+  Chocó: ["Quibdó", "Istmina", "Tadó", "Condoto", "Riosucio"],
+  Córdoba: [
+    "Montería",
+    "Cereté",
+    "Lorica",
+    "Sahagún",
+    "Planeta Rica",
+    "Montelíbano",
+  ],
+  Cundinamarca: [
+    "Soacha",
+    "Facatativá",
+    "Zipaquirá",
+    "Chía",
+    "Fusagasugá",
+    "Girardot",
+    "Madrid",
+    "Mosquera",
+    "Funza",
+    "Cajicá",
+    "Tocancipá",
+    "Sopó",
+    "La Calera",
+    "Cota",
+    "Tabio",
+    "Tenjo",
+    "Sibaté",
+    "Ubaté",
+  ],
+  Guainía: ["Inírida"],
+  Guaviare: ["San José del Guaviare", "Calamar", "El Retorno"],
+  Huila: ["Neiva", "Pitalito", "Garzón", "La Plata", "Campoalegre"],
+  "La Guajira": [
+    "Riohacha",
+    "Maicao",
+    "Uribia",
+    "Manaure",
+    "San Juan del Cesar",
+  ],
+  Magdalena: ["Santa Marta", "Ciénaga", "Fundación", "El Banco", "Plato"],
+  Meta: ["Villavicencio", "Acacías", "Granada", "Puerto López", "San Martín"],
+  Nariño: ["Pasto", "Tumaco", "Ipiales", "Túquerres", "La Unión"],
+  "Norte de Santander": [
+    "Cúcuta",
+    "Ocaña",
+    "Pamplona",
+    "Villa del Rosario",
+    "Los Patios",
+  ],
+  Putumayo: ["Mocoa", "Puerto Asís", "Orito", "Valle del Guamuez"],
+  Quindío: ["Armenia", "Calarcá", "Montenegro", "La Tebaida", "Quimbaya"],
+  Risaralda: ["Pereira", "Dosquebradas", "Santa Rosa de Cabal", "La Virginia"],
+  "San Andrés y Providencia": ["San Andrés", "Providencia"],
+  Santander: [
+    "Bucaramanga",
+    "Floridablanca",
+    "Girón",
+    "Piedecuesta",
+    "Barrancabermeja",
+    "San Gil",
+  ],
+  Sucre: ["Sincelejo", "Corozal", "San Marcos", "Sampués", "Tolú"],
+  Tolima: ["Ibagué", "Espinal", "Melgar", "Chaparral", "Honda", "Mariquita"],
+  "Valle del Cauca": [
+    "Cali",
+    "Buenaventura",
+    "Palmira",
+    "Tuluá",
+    "Cartago",
+    "Buga",
+    "Jamundí",
+    "Yumbo",
+  ],
+  Vaupés: ["Mitú", "Carurú"],
+  Vichada: ["Puerto Carreño", "La Primavera", "Cumaribo"],
+};
 
 // URL base de la API
 export const SECOP_API_BASE_URL =

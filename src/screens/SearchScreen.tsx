@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import {
   Animated,
   Keyboard,
@@ -10,12 +10,18 @@ import {
   View,
   Pressable,
   ActivityIndicator,
+  Modal,
+  FlatList,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ProcessCard } from "../components/index";
 import { SecopProcess, advancedSearch } from "../api/secop";
 import { colors, spacing, borderRadius } from "../theme";
+import {
+  COLOMBIAN_DEPARTMENTS,
+  MUNICIPALITIES_BY_DEPARTMENT,
+} from "../types/index";
 
 // ============================================
 // CONSTANTES DE FILTROS
@@ -94,6 +100,135 @@ const FASE_MAP: Record<string, string> = {
 };
 
 // ============================================
+// COMPONENTE DE SELECTOR MODAL
+// ============================================
+interface SelectorModalProps {
+  visible: boolean;
+  onClose: () => void;
+  title: string;
+  options: string[];
+  selectedValue: string;
+  onSelect: (value: string) => void;
+  searchable?: boolean;
+}
+
+const SelectorModal: React.FC<SelectorModalProps> = ({
+  visible,
+  onClose,
+  title,
+  options,
+  selectedValue,
+  onSelect,
+  searchable = true,
+}) => {
+  const insets = useSafeAreaInsets();
+  const [searchText, setSearchText] = useState("");
+
+  const filteredOptions = useMemo(() => {
+    if (!searchText) return options;
+    return options.filter((opt) =>
+      opt.toLowerCase().includes(searchText.toLowerCase())
+    );
+  }, [options, searchText]);
+
+  const handleSelect = (value: string) => {
+    onSelect(value);
+    setSearchText("");
+    onClose();
+  };
+
+  const handleClear = () => {
+    onSelect("");
+    setSearchText("");
+    onClose();
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}>
+      <View style={[modalStyles.container, { paddingTop: insets.top }]}>
+        {/* Header */}
+        <View style={modalStyles.header}>
+          <TouchableOpacity onPress={onClose} style={modalStyles.closeButton}>
+            <Text style={modalStyles.closeText}>Cancelar</Text>
+          </TouchableOpacity>
+          <Text style={modalStyles.title}>{title}</Text>
+          <TouchableOpacity
+            onPress={handleClear}
+            style={modalStyles.clearButton}>
+            <Text style={modalStyles.clearText}>Limpiar</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Search */}
+        {searchable && (
+          <View style={modalStyles.searchContainer}>
+            <Ionicons name="search" size={18} color={colors.textTertiary} />
+            <TextInput
+              style={modalStyles.searchInput}
+              placeholder="Buscar..."
+              placeholderTextColor={colors.textTertiary}
+              value={searchText}
+              onChangeText={setSearchText}
+              autoCapitalize="none"
+            />
+            {searchText.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchText("")}>
+                <Ionicons
+                  name="close-circle"
+                  size={18}
+                  color={colors.textTertiary}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {/* Lista */}
+        <FlatList
+          data={filteredOptions}
+          keyExtractor={(item) => item}
+          renderItem={({ item }) => {
+            const isSelected = item === selectedValue;
+            return (
+              <TouchableOpacity
+                style={[
+                  modalStyles.option,
+                  isSelected && modalStyles.optionSelected,
+                ]}
+                onPress={() => handleSelect(item)}>
+                <Text
+                  style={[
+                    modalStyles.optionText,
+                    isSelected && modalStyles.optionTextSelected,
+                  ]}>
+                  {item}
+                </Text>
+                {isSelected && (
+                  <Ionicons name="checkmark" size={20} color={colors.accent} />
+                )}
+              </TouchableOpacity>
+            );
+          }}
+          ItemSeparatorComponent={() => <View style={modalStyles.separator} />}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+          ListEmptyComponent={() => (
+            <View style={modalStyles.emptyContainer}>
+              <Text style={modalStyles.emptyText}>
+                No se encontraron resultados
+              </Text>
+            </View>
+          )}
+        />
+      </View>
+    </Modal>
+  );
+};
+
+// ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
 export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
@@ -103,16 +238,28 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   // Estados de filtros
   const [keyword, setKeyword] = useState("");
+  const [selectedDepartamento, setSelectedDepartamento] = useState("");
+  const [selectedMunicipio, setSelectedMunicipio] = useState("");
   const [selectedModalidad, setSelectedModalidad] = useState("");
   const [selectedTipoContrato, setSelectedTipoContrato] = useState("");
   const [selectedFase, setSelectedFase] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  // Estados de modales
+  const [showDepartamentoModal, setShowDepartamentoModal] = useState(false);
+  const [showMunicipioModal, setShowMunicipioModal] = useState(false);
 
   // Estados de resultados
   const [processes, setProcesses] = useState<SecopProcess[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+
+  // Municipios filtrados por departamento
+  const availableMunicipios = useMemo(() => {
+    if (!selectedDepartamento) return [];
+    return MUNICIPALITIES_BY_DEPARTMENT[selectedDepartamento] || [];
+  }, [selectedDepartamento]);
 
   // Animaciones del header
   const headerHeight = scrollY.interpolate({
@@ -137,6 +284,8 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     try {
       const results = await advancedSearch({
         keyword: keyword || undefined,
+        departamento: selectedDepartamento || undefined,
+        municipio: selectedMunicipio || undefined,
         modalidad: selectedModalidad
           ? MODALIDAD_MAP[selectedModalidad]
           : undefined,
@@ -147,7 +296,7 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         limit: 50,
       });
 
-      // Filtrar duplicados por id_del_proceso
+      // Filtrar duplicados
       const uniqueResults = results.filter(
         (process, index, self) =>
           index ===
@@ -168,6 +317,8 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   };
 
   const handleClearFilters = () => {
+    setSelectedDepartamento("");
+    setSelectedMunicipio("");
     setSelectedModalidad("");
     setSelectedTipoContrato("");
     setSelectedFase("");
@@ -181,6 +332,14 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     searchInputRef.current?.focus();
   };
 
+  const handleDepartamentoSelect = (value: string) => {
+    setSelectedDepartamento(value);
+    // Limpiar municipio si cambia el departamento
+    if (value !== selectedDepartamento) {
+      setSelectedMunicipio("");
+    }
+  };
+
   const toggleFilter = (
     current: string,
     value: string,
@@ -190,9 +349,16 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   };
 
   const hasActiveFilters =
-    selectedModalidad || selectedTipoContrato || selectedFase || keyword;
+    selectedDepartamento ||
+    selectedMunicipio ||
+    selectedModalidad ||
+    selectedTipoContrato ||
+    selectedFase ||
+    keyword;
 
   const activeFiltersCount = [
+    selectedDepartamento,
+    selectedMunicipio,
     selectedModalidad,
     selectedTipoContrato,
     selectedFase,
@@ -266,6 +432,131 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         )}
         scrollEventThrottle={16}
         keyboardShouldPersistTaps="handled">
+        {/* Sección: Ubicación */}
+        <View style={styles.filterSection}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="location-outline" size={18} color={colors.accent} />
+            <Text style={styles.sectionLabel}>Ubicación</Text>
+          </View>
+
+          <View style={styles.locationSelectors}>
+            {/* Selector de Departamento */}
+            <TouchableOpacity
+              style={[
+                styles.locationSelector,
+                selectedDepartamento && styles.locationSelectorActive,
+              ]}
+              onPress={() => setShowDepartamentoModal(true)}>
+              <Ionicons
+                name="map-outline"
+                size={18}
+                color={
+                  selectedDepartamento ? colors.accent : colors.textSecondary
+                }
+              />
+              <Text
+                style={[
+                  styles.locationSelectorText,
+                  selectedDepartamento && styles.locationSelectorTextActive,
+                ]}
+                numberOfLines={1}>
+                {selectedDepartamento || "Departamento"}
+              </Text>
+              <Ionicons
+                name="chevron-down"
+                size={16}
+                color={
+                  selectedDepartamento ? colors.accent : colors.textTertiary
+                }
+              />
+            </TouchableOpacity>
+
+            {/* Selector de Municipio */}
+            <TouchableOpacity
+              style={[
+                styles.locationSelector,
+                selectedMunicipio && styles.locationSelectorActive,
+                !selectedDepartamento && styles.locationSelectorDisabled,
+              ]}
+              onPress={() =>
+                selectedDepartamento && setShowMunicipioModal(true)
+              }
+              disabled={!selectedDepartamento}>
+              <Ionicons
+                name="business-outline"
+                size={18}
+                color={
+                  !selectedDepartamento
+                    ? colors.textTertiary
+                    : selectedMunicipio
+                    ? colors.accent
+                    : colors.textSecondary
+                }
+              />
+              <Text
+                style={[
+                  styles.locationSelectorText,
+                  selectedMunicipio && styles.locationSelectorTextActive,
+                  !selectedDepartamento && styles.locationSelectorTextDisabled,
+                ]}
+                numberOfLines={1}>
+                {selectedMunicipio || "Municipio"}
+              </Text>
+              <Ionicons
+                name="chevron-down"
+                size={16}
+                color={
+                  !selectedDepartamento
+                    ? colors.textTertiary
+                    : selectedMunicipio
+                    ? colors.accent
+                    : colors.textTertiary
+                }
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Chips de ubicación seleccionada */}
+          {(selectedDepartamento || selectedMunicipio) && (
+            <View style={styles.selectedLocationChips}>
+              {selectedDepartamento && (
+                <View style={styles.selectedChip}>
+                  <Ionicons name="map" size={12} color={colors.accent} />
+                  <Text style={styles.selectedChipText}>
+                    {selectedDepartamento}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSelectedDepartamento("");
+                      setSelectedMunicipio("");
+                    }}>
+                    <Ionicons
+                      name="close-circle"
+                      size={16}
+                      color={colors.textTertiary}
+                    />
+                  </TouchableOpacity>
+                </View>
+              )}
+              {selectedMunicipio && (
+                <View style={styles.selectedChip}>
+                  <Ionicons name="business" size={12} color={colors.accent} />
+                  <Text style={styles.selectedChipText}>
+                    {selectedMunicipio}
+                  </Text>
+                  <TouchableOpacity onPress={() => setSelectedMunicipio("")}>
+                    <Ionicons
+                      name="close-circle"
+                      size={16}
+                      color={colors.textTertiary}
+                    />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+
         {/* Sección: Modalidad de Contratación */}
         <View style={styles.filterSection}>
           <View style={styles.sectionHeader}>
@@ -504,7 +795,6 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             <Text style={styles.emptyTitle}>Configura tu búsqueda</Text>
             <Text style={styles.emptyMessage}>
               Selecciona los filtros y presiona buscar para encontrar procesos
-              de contratación
             </Text>
           </View>
         ) : null}
@@ -522,12 +812,117 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </View>
         </View>
       )}
+
+      {/* Modales */}
+      <SelectorModal
+        visible={showDepartamentoModal}
+        onClose={() => setShowDepartamentoModal(false)}
+        title="Seleccionar Departamento"
+        options={[...COLOMBIAN_DEPARTMENTS]}
+        selectedValue={selectedDepartamento}
+        onSelect={handleDepartamentoSelect}
+      />
+
+      <SelectorModal
+        visible={showMunicipioModal}
+        onClose={() => setShowMunicipioModal(false)}
+        title="Seleccionar Municipio"
+        options={availableMunicipios}
+        selectedValue={selectedMunicipio}
+        onSelect={setSelectedMunicipio}
+      />
     </View>
   );
 };
 
 // ============================================
-// ESTILOS
+// ESTILOS DEL MODAL
+// ============================================
+const modalStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.separatorLight,
+    backgroundColor: colors.backgroundSecondary,
+  },
+  closeButton: {
+    padding: spacing.sm,
+  },
+  closeText: {
+    fontSize: 16,
+    color: colors.accent,
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: colors.textPrimary,
+  },
+  clearButton: {
+    padding: spacing.sm,
+  },
+  clearText: {
+    fontSize: 16,
+    color: colors.danger,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.backgroundTertiary,
+    margin: spacing.lg,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    height: 40,
+    gap: spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.textPrimary,
+  },
+  option: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.backgroundSecondary,
+  },
+  optionSelected: {
+    backgroundColor: colors.accentLight,
+  },
+  optionText: {
+    fontSize: 16,
+    color: colors.textPrimary,
+  },
+  optionTextSelected: {
+    color: colors.accent,
+    fontWeight: "600",
+  },
+  separator: {
+    height: 1,
+    backgroundColor: colors.separatorLight,
+    marginLeft: spacing.lg,
+  },
+  emptyContainer: {
+    padding: spacing.xl,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 15,
+    color: colors.textTertiary,
+  },
+});
+
+// ============================================
+// ESTILOS PRINCIPALES
 // ============================================
 const styles = StyleSheet.create({
   container: {
@@ -617,6 +1012,69 @@ const styles = StyleSheet.create({
   chipsContainer: {
     paddingHorizontal: spacing.lg,
     gap: spacing.sm,
+  },
+
+  // Location selectors
+  locationSelectors: {
+    flexDirection: "row",
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+  },
+  locationSelector: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.backgroundSecondary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    gap: spacing.sm,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  locationSelectorActive: {
+    backgroundColor: colors.accentLight,
+    borderWidth: 1,
+    borderColor: colors.accent,
+  },
+  locationSelectorDisabled: {
+    opacity: 0.5,
+  },
+  locationSelectorText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  locationSelectorTextActive: {
+    color: colors.accent,
+    fontWeight: "600",
+  },
+  locationSelectorTextDisabled: {
+    color: colors.textTertiary,
+  },
+  selectedLocationChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+  },
+  selectedChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.accentLight,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    gap: spacing.xs,
+  },
+  selectedChipText: {
+    fontSize: 12,
+    color: colors.accent,
+    fontWeight: "500",
   },
 
   // Chips

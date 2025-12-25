@@ -11,7 +11,7 @@ import {
   FavoritesScreen,
   DetailScreen,
 } from "./src/screens/index";
-import { HomeIcon, HomeSolidIcon } from "./src/assets/icons";
+import { HomeIcon } from "./src/assets/icons";
 
 // Tema centralizado
 const colors = {
