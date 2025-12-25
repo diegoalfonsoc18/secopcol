@@ -30,11 +30,12 @@ const buildQuery = (params: {
   departamento?: string;
   fase?: string;
   modalidad?: string;
+  tipoContrato?: string;
   keyword?: string;
   limit?: number;
   offset?: number;
   orderBy?: string;
-  requireDate?: boolean; // Filtrar solo procesos con fecha de publicación
+  requireDate?: boolean;
 }): string => {
   const conditions: string[] = [];
 
@@ -60,6 +61,10 @@ const buildQuery = (params: {
 
   if (params.modalidad) {
     conditions.push(`modalidad_de_contratacion='${params.modalidad}'`);
+  }
+
+  if (params.tipoContrato) {
+    conditions.push(`tipo_de_contrato='${params.tipoContrato}'`);
   }
 
   if (params.keyword) {
@@ -207,6 +212,7 @@ export const advancedSearch = async (params: {
   departamento?: string;
   fase?: string;
   modalidad?: string;
+  tipoContrato?: string;
   keyword?: string;
   limit?: number;
   offset?: number;

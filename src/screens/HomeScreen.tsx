@@ -119,7 +119,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       </Pressable>
     </View>
   );
-  console.log("📦 Primer proceso:", JSON.stringify(processes[0], null, 2));
+
   return (
     <View style={styles.container}>
       {/* Header Animado */}

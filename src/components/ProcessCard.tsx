@@ -122,11 +122,7 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
   const fase = process.fase || "Desconocido";
   const phaseStyle = phaseConfig[fase] || defaultPhase;
   // Justo antes del return del componente
-  console.log("🔍 Proceso:", {
-    id: process.id_del_proceso,
-    fecha: process.fecha_de_publicacion_del,
-    tipoFecha: typeof process.fecha_de_publicacion_del,
-  });
+
   return (
     <Pressable
       onPress={onPress}
