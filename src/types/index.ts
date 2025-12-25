@@ -1,17 +1,131 @@
+// Tipos basados en el Diccionario de Datos SECOP II - Procesos de Contratación
+// Fuente: Agencia Nacional de Contratación Pública – Colombia Compra Eficiente
+// Versión: 1.0 - Octubre 2025
+// Total: 59 campos según diccionario oficial
+
 export interface SecopProcess {
-  id_del_proceso: string;
-  entidad: string;
-  nit_entidad: string;
-  ciudad_entidad: string;
-  departamento_entidad: string;
-  nombre_del_procedimiento: string;
-  descripci_n_del_procedimiento: string;
-  fase: string;
-  fecha_de_publicacion_del: string;
-  fecha_de_ultima_publicaci?: string;
+  // ============================================
+  // 1-6: INFORMACIÓN DE LA ENTIDAD
+  // ============================================
+  entidad: string; // 1. Nombre de la Entidad
+  nit_entidad: string; // 2. NIT de la Entidad
+  departamento_entidad: string; // 3. Departamento de la entidad
+  ciudad_entidad: string; // 4. Ciudad de la entidad
+  ordenentidad?: string; // 5. Orden (Nacional, Regional)
+  codigo_pci?: string; // 6. Si es centralizada
+
+  // ============================================
+  // 7-12: IDENTIFICACIÓN DEL PROCESO
+  // ============================================
+  id_del_proceso: string; // 7. ID único (generado por plataforma)
+  referencia_del_proceso?: string; // 8. ID generado por la Entidad
+  ppi?: string; // 9. Código Unidad-SubUnidad
+  id_del_portafolio?: string; // 10. ID del portafolio
+  nombre_del_procedimiento: string; // 11. Nombre del proceso
+  descripci_n_del_procedimiento: string; // 12. Descripción del proceso (typo en API)
+
+  // ============================================
+  // 13-15: ESTADO Y FASE
+  // ============================================
+  fase: string; // 13. Fase actual del proceso
+  fecha_de_publicacion_del: string; // 14. Fecha publicación inicial
+  fecha_de_ultima_publicaci?: string; // 15. Fecha última publicación
+
+  // ============================================
+  // 16-20: FECHAS DE PUBLICACIÓN POR FASE
+  // ============================================
+  fecha_de_publicacion_fase?: string; // 16. Fecha fase Planeación Precalificación
+  fecha_de_publicacion_fase_1?: string; // 17. Fecha fase Selección Precalificación
+  fecha_de_publicacion?: string; // 18. Fecha Manifestación de Interés
+  fecha_de_publicacion_fase_2?: string; // 19. Fecha fase Borrador
+  fecha_de_publicacion_fase_3?: string; // 20. Fecha fase Selección
+
+  // ============================================
+  // 21-25: VALORES Y DURACIÓN
+  // ============================================
+  precio_base?: number; // 21. Precio base proyectado
+  modalidad_de_contratacion?: string; // 22. Modalidad de selección
+  justificaci_n_modalidad_de?: string; // 23. Justificación de modalidad
+  duracion?: number; // 24. Duración estimada
+  unidad_de_duracion?: string; // 25. Unidad de duración
+
+  // ============================================
+  // 26-30: FECHAS DE RESPUESTA Y APERTURA
+  // ============================================
+  fecha_de_recepcion_de?: string; // 26. Fecha recepción respuestas
+  fecha_de_apertura_de_respuesta?: string; // 27. Fecha estimada apertura
+  fecha_de_apertura_efectiva?: string; // 28. Fecha real apertura
+  ciudad_de_la_unidad_de?: string; // 29. Ciudad unidad contratación
+  nombre_de_la_unidad_de?: string; // 30. Nombre unidad contratación
+
+  // ============================================
+  // 31-39: ESTADÍSTICAS DE PROVEEDORES
+  // ============================================
+  proveedores_invitados?: number; // 31. Total invitados
+  proveedores_con_invitacion?: number; // 32. Con invitación directa
+  visualizaciones_del?: number; // 33. Visualizaciones del proceso
+  proveedores_que_manifestaron?: number; // 34. Manifestaron interés
+  respuestas_al_procedimiento?: number; // 35. Total respuestas
+  respuestas_externas?: number; // 36. Respuestas externas
+  conteo_de_respuestas_a_ofertas?: number; // 37. Respuestas a ofertas
+  proveedores_unicos_con?: number; // 38. Proveedores únicos con respuestas
+  numero_de_lotes?: number; // 39. Número de lotes
+
+  // ============================================
+  // 40-43: ESTADO DEL PROCEDIMIENTO
+  // ============================================
+  estado_del_procedimiento?: string; // 40. Estado actual
+  id_estado_del_procedimiento?: number; // 41. ID del estado
+  adjudicado?: string; // 42. Si fue adjudicado (Sí/No)
+  id_adjudicacion?: string; // 43. ID de adjudicación
+
+  // ============================================
+  // 44-51: INFORMACIÓN DEL PROVEEDOR ADJUDICADO
+  // ============================================
+  codigoproveedor?: string; // 44. Código del proveedor
+  departamento_proveedor?: string; // 45. Departamento del proveedor
+  ciudad_proveedor?: string; // 46. Ciudad del proveedor
+  fecha_adjudicacion?: string; // 47. Fecha de adjudicación
+  valor_total_adjudicacion?: number; // 48. Valor total adjudicado
+  nombre_del_adjudicador?: string; // 49. Nombre del adjudicador
+  nombre_del_proveedor?: string; // 50. Nombre del proveedor
+  nit_del_proveedor_adjudicado?: string; // 51. NIT del proveedor
+
+  // ============================================
+  // 52-56: CATEGORÍAS Y TIPO DE CONTRATO
+  // ============================================
+  codigo_principal_de_categoria?: string; // 52. Código UNSPSC principal
+  estado_de_apertura_del_proceso?: string; // 53. Estado de apertura
+  tipo_de_contrato?: string; // 54. Tipo de contrato
+  subtipo_de_contrato?: string; // 55. Subtipo de contrato
+  categorias_adicionales?: string; // 56. Categorías adicionales
+
+  // ============================================
+  // 57-59: METADATOS
+  // ============================================
+  urlproceso?: string; // 57. URL del proceso en SECOP II
+  codigo_entidad?: number; // 58. Código de la entidad
+  estado_resumen?: string; // 59. Resumen del estado
 }
 
-// Estados posibles de un proceso
+// ============================================
+// TIPOS AUXILIARES
+// ============================================
+
+// Fases del proceso según SECOP II
+export type ProcessPhase =
+  | "Borrador"
+  | "Planeación"
+  | "Selección"
+  | "Contratación"
+  | "Ejecución"
+  | "Liquidación"
+  | "Terminado"
+  | "Cancelado"
+  | "Suspendido"
+  | "Desierto";
+
+// Estados del procedimiento
 export type ProcessStatus =
   | "Publicado"
   | "Adjudicado"
@@ -21,1077 +135,64 @@ export type ProcessStatus =
   | "Suspendido"
   | "Desierto";
 
-// Tipos de proceso de contratación
-export type ProcessType =
-  | "Licititud Pública"
-  | "Selección Abreviada"
-  | "Contratación Directa"
-  | "Concurso de Méritos"
-  | "Procedimiento Especial";
+// Modalidades de contratación
+export type ContractModality =
+  | "Licitación pública"
+  | "Selección abreviada menor cuantía"
+  | "Selección abreviada subasta inversa"
+  | "Selección abreviada acuerdo marco"
+  | "Contratación directa"
+  | "Concurso de méritos abierto"
+  | "Concurso de méritos con lista corta"
+  | "Mínima cuantía"
+  | "Contratación régimen especial"
+  | "Contratación régimen especial (con ofertas)"
+  | "Asociación Público Privada";
 
-// Municipios principales de Colombia (sin duplicados)
-export const COLOMBIAN_MUNICIPALITIES = [
-  "Abejorral",
-  "Ábrego",
-  "Abriaquí",
-  "Acacías",
-  "Acandí",
-  "Acevedo",
-  "Achí",
-  "Agrado",
-  "Agua de Dios",
-  "Aguachica",
-  "Aguada",
-  "Aguadas",
-  "Aguazul",
-  "Agustín Codazzi",
-  "Aipe",
-  "Albán",
-  "Albania",
-  "Alcalá",
-  "Aldana",
-  "Alejandría",
-  "Algarrobo",
-  "Algeciras",
-  "Almaguer",
-  "Almeida",
-  "Alpujarra",
-  "Altamira",
-  "Alto Baudó",
-  "Altos del Rosario",
-  "Alvarado",
-  "Amagá",
-  "Amalfi",
-  "Ambalema",
-  "Anapoima",
-  "Ancuya",
-  "Andalucía",
-  "Andes",
-  "Angelópolis",
-  "Angostura",
-  "Anolaima",
-  "Anorí",
-  "Anserma",
-  "Ansermanuevo",
-  "Anzá",
-  "Anzoátegui",
-  "Apartadó",
-  "Apía",
-  "Apulo",
-  "Aquitania",
-  "Aracataca",
-  "Aranzazu",
-  "Aratoca",
-  "Arauca",
-  "Arauquita",
-  "Arbeláez",
-  "Arboleda",
-  "Arboledas",
-  "Arboletes",
-  "Arcabuco",
-  "Arenal",
-  "Argelia",
-  "Ariguaní",
-  "Arjona",
-  "Armenia",
-  "Armero",
-  "Arroyohondo",
-  "Astrea",
-  "Ataco",
-  "Ayapel",
-  "Bagadó",
-  "Bahía Solano",
-  "Bajo Baudó",
-  "Balboa",
-  "Baranoa",
-  "Baraya",
-  "Barbacoas",
-  "Barbosa",
-  "Barichara",
-  "Barranca de Upía",
-  "Barrancabermeja",
-  "Barrancas",
-  "Barranco de Loba",
-  "Barrancominas",
-  "Barranquilla",
-  "Becerril",
-  "Belalcázar",
-  "Belén",
-  "Belén de los Andaquíes",
-  "Belén de Umbría",
-  "Bello",
-  "Belmira",
-  "Beltrán",
-  "Berbeo",
-  "Betania",
-  "Betéitiva",
-  "Betulia",
-  "Bituima",
-  "Boavita",
-  "Bogotá",
-  "Bochalema",
-  "Bojacá",
-  "Bojayá",
-  "Bolívar",
-  "Bosconia",
-  "Boyacá",
-  "Briceño",
-  "Bucaramanga",
-  "Bucarasica",
-  "Buenaventura",
-  "Buenavista",
-  "Buenos Aires",
-  "Buesaco",
-  "Buga",
-  "Bugalagrande",
-  "Buriticá",
-  "Busbanzá",
-  "Cabrera",
-  "Cabuyaro",
-  "Cáceres",
-  "Cachipay",
-  "Cáchira",
-  "Cácota",
-  "Caicedo",
-  "Caicedonia",
-  "Caimito",
-  "Cajamarca",
-  "Cajibío",
-  "Cajicá",
-  "Calamar",
-  "Calarcá",
-  "Caldas",
-  "Caldono",
-  "Cali",
-  "California",
-  "Calima",
-  "Caloto",
-  "Campamento",
-  "Campo de la Cruz",
-  "Campoalegre",
-  "Campohermoso",
-  "Canalete",
-  "Candelaria",
-  "Cantagallo",
-  "Cantón de San Pablo",
-  "Cañasgordas",
-  "Caparrapí",
-  "Capitanejo",
-  "Cáqueza",
-  "Caracolí",
-  "Caramanta",
-  "Carcasí",
-  "Carepa",
-  "Carmen de Apicalá",
-  "Carmen de Carupa",
-  "Carolina del Príncipe",
-  "Cartagena de Indias",
-  "Cartagena del Chairá",
-  "Cartago",
-  "Carurú",
-  "Casabianca",
-  "Castilla la Nueva",
-  "Caucasia",
-  "Cepitá",
-  "Cereté",
-  "Cerinza",
-  "Cerrito",
-  "Cerro de San Antonio",
-  "Cértegui",
-  "Chachagüí",
-  "Chaguaní",
-  "Chalán",
-  "Chámeza",
-  "Chaparral",
-  "Charalá",
-  "Charta",
-  "Chía",
-  "Chibolo",
-  "Chigorodó",
-  "Chima",
-  "Chimá",
-  "Chimichagua",
-  "Chinácota",
-  "Chinavita",
-  "Chinchiná",
-  "Chinú",
-  "Chipaque",
-  "Chipatá",
-  "Chiquinquirá",
-  "Chíquiza",
-  "Chiriguaná",
-  "Chiscas",
-  "Chita",
-  "Chitagá",
-  "Chitaraque",
-  "Chivatá",
-  "Chivor",
-  "Choachí",
-  "Chocontá",
-  "Cicuco",
-  "Ciénaga",
-  "Ciénaga de Oro",
-  "Ciénega",
-  "Cimitarra",
-  "Circasia",
-  "Cisneros",
-  "Ciudad Bolívar",
-  "Clemencia",
-  "Cocorná",
-  "Coello",
-  "Cogua",
-  "Colombia",
-  "Colón",
-  "Colosó",
-  "Cómbita",
-  "Concepción",
-  "Concordia",
-  "Condoto",
-  "Confines",
-  "Consacá",
-  "Contadero",
-  "Contratación",
-  "Convención",
-  "Copacabana",
-  "Coper",
-  "Córdoba",
-  "Corinto",
-  "Coromoro",
-  "Corozal",
-  "Corrales",
-  "Cota",
-  "Cotorra",
-  "Covarachía",
-  "Coveñas",
-  "Coyaima",
-  "Cravo Norte",
-  "Cuaspud",
-  "Cubará",
-  "Cubarral",
-  "Cucaita",
-  "Cucunubá",
-  "Cúcuta",
-  "Cucutilla",
-  "Cuítiva",
-  "Cumaral",
-  "Cumaribo",
-  "Cumbal",
-  "Cumbitara",
-  "Cunday",
-  "Curillo",
-  "Curití",
-  "Curumaní",
-  "Dabeiba",
-  "Dagua",
-  "Dibulla",
-  "Distracción",
-  "Dolores",
-  "Donmatías",
-  "Dosquebradas",
-  "Duitama",
-  "Duranía",
-  "Ebéjico",
-  "El Águila",
-  "El Atrato",
-  "El Bagre",
-  "El Banco",
-  "El Cairo",
-  "El Calvario",
-  "El Carmen",
-  "El Carmen de Atrato",
-  "El Carmen de Bolívar",
-  "El Carmen de Chucurí",
-  "El Carmen de Viboral",
-  "El Carmen del Darién",
-  "El Castillo",
-  "El Cerrito",
-  "El Charco",
-  "El Cocuy",
-  "El Colegio",
-  "El Copey",
-  "El Doncello",
-  "El Dorado",
-  "El Dovio",
-  "El Espinal",
-  "El Espino",
-  "El Guacamayo",
-  "El Guamo",
-  "El Molino",
-  "El Paso",
-  "El Paujil",
-  "El Peñol",
-  "El Peñón",
-  "El Piñón",
-  "El Pital",
-  "El Playón",
-  "El Retén",
-  "El Retorno",
-  "El Roble",
-  "El Rosal",
-  "El Rosario",
-  "El Santuario",
-  "El Socorro",
-  "El Tablón",
-  "El Tambo",
-  "El Tarra",
-  "El Zulia",
-  "Elías",
-  "Encino",
-  "Enciso",
-  "Entrerríos",
-  "Envigado",
-  "Facatativá",
-  "Falan",
-  "Filadelfia",
-  "Filandia",
-  "Firavitoba",
-  "Flandes",
-  "Florencia",
-  "Floresta",
-  "Florián",
-  "Florida",
-  "Floridablanca",
-  "Fómeque",
-  "Fonseca",
-  "Fortul",
-  "Fosca",
-  "Francisco Pizarro",
-  "Fredonia",
-  "Fresno",
-  "Frontino",
-  "Fuente de Oro",
-  "Fundación",
-  "Funes",
-  "Funza",
-  "Fúquene",
-  "Fusagasugá",
-  "Gachalá",
-  "Gachancipá",
-  "Gachantivá",
-  "Gachetá",
-  "Galán",
-  "Galapa",
-  "Galeras",
-  "Gama",
-  "Gamarra",
-  "Gámbita",
-  "Gámeza",
-  "Garagoa",
-  "Garzón",
-  "Génova",
-  "Gigante",
-  "Ginebra",
-  "Giraldo",
-  "Girardot",
-  "Girardota",
-  "Girón",
-  "Gómez Plata",
-  "González",
-  "Gramalote",
-  "Granada",
-  "Guaca",
-  "Guacamayas",
-  "Guacarí",
-  "Guachené",
-  "Guachetá",
-  "Guachucal",
-  "Guadalupe",
-  "Guaduas",
-  "Guaitarilla",
-  "Gualmatán",
-  "Guamal",
-  "Guamo",
-  "Guapí",
-  "Guapotá",
-  "Guaranda",
-  "Guarne",
-  "Guasca",
-  "Guatapé",
-  "Guataquí",
-  "Guatavita",
-  "Guateque",
-  "Guática",
-  "Guavatá",
-  "Guayabal de Síquima",
-  "Guayabetal",
-  "Guayatá",
-  "Güepsa",
-  "Güicán",
-  "Gutiérrez",
-  "Hacarí",
-  "Hatillo de Loba",
-  "Hato Corozal",
-  "Hato",
-  "Hatonuevo",
-  "Heliconia",
-  "Herrán",
-  "Herveo",
-  "Hispania",
-  "Hobo",
-  "Honda",
-  "Ibagué",
-  "Icononzo",
-  "Iles",
-  "Imués",
-  "Inírida",
-  "Inzá",
-  "Ipiales",
-  "Íquira",
-  "Isnos",
-  "Itagüí",
-  "Istmina",
-  "Ituango",
-  "Iza",
-  "Jambaló",
-  "Jamundí",
-  "Jardín",
-  "Jenesano",
-  "Jericó",
-  "Jerusalén",
-  "Jesús María",
-  "Jordán",
-  "Juan de Acosta",
-  "Junín",
-  "Juradó",
-  "La Apartada",
-  "La Argentina",
-  "La Belleza",
-  "La Calera",
-  "La Capilla",
-  "La Ceja",
-  "La Celia",
-  "La Cruz",
-  "La Cumbre",
-  "La Dorada",
-  "La Esperanza",
-  "La Estrella",
-  "La Florida",
-  "La Gloria",
-  "La Jagua de Ibirico",
-  "La Jagua del Pilar",
-  "La Llanada",
-  "La Macarena",
-  "La Merced",
-  "La Mesa",
-  "La Montañita",
-  "La Palma",
-  "La Paz",
-  "La Peña",
-  "La Pintada",
-  "La Plata",
-  "La Playa de Belén",
-  "La Primavera",
-  "La Salina",
-  "La Sierra",
-  "La Tebaida",
-  "La Tola",
-  "La Uvita",
-  "La Unión",
-  "La Uribe",
-  "La Vega",
-  "La Victoria",
-  "La Virginia",
-  "Labateca",
-  "Labranzagrande",
-  "Landázuri",
-  "Lebrija",
-  "Leiva",
-  "Lejanías",
-  "Lenguazaque",
-  "Lérida",
-  "Leticia",
-  "Líbano",
-  "Liborina",
-  "Linares",
-  "Litoral de San Juan",
-  "Lloró",
-  "López de Micay",
-  "Lorica",
-  "Los Andes",
-  "Los Córdobas",
-  "Los Palmitos",
-  "Los Patios",
-  "Los Santos",
-  "Lourdes",
-  "Luruaco",
-  "Macanal",
-  "Macaravita",
-  "Maceo",
-  "Machetá",
-  "Madrid",
-  "Magangué",
-  "Magüí Payán",
-  "Mahates",
-  "Maicao",
-  "Majagual",
-  "Málaga",
-  "Malambo",
-  "Mallama",
-  "Manatí",
-  "Manaure Balcón del Cesar",
-  "Manaure",
-  "Maní",
-  "Manizales",
-  "Manta",
-  "Manzanares",
-  "Mapiripán",
-  "Margarita",
-  "María La Baja",
-  "Marinilla",
-  "Maripí",
-  "Mariquita",
-  "Marmato",
-  "Marquetalia",
-  "Marsella",
-  "Marulanda",
-  "Matanza",
-  "Medellín",
-  "Medio Atrato",
-  "Medio Baudó",
-  "Medio San Juan",
-  "Medina",
-  "Melgar",
-  "Mercaderes",
-  "Mesetas",
-  "Milán",
-  "Miraflores",
-  "Miranda",
-  "Mistrató",
-  "Mitú",
-  "Mocoa",
-  "Mogotes",
-  "Molagavita",
-  "Momil",
-  "Mongua",
-  "Monguí",
-  "Moniquirá",
-  "Montebello",
-  "Montecristo",
-  "Montelíbano",
-  "Montenegro",
-  "Montería",
-  "Monterrey",
-  "Moñitos",
-  "Morales",
-  "Morelia",
-  "Morroa",
-  "Mosquera",
-  "Motavita",
-  "Murillo",
-  "Murindó",
-  "Mutatá",
-  "Mutiscua",
-  "Muzo",
-  "Nariño",
-  "Nátaga",
-  "Natagaima",
-  "Nechí",
-  "Necoclí",
-  "Neira",
-  "Neiva",
-  "Nemocón",
-  "Nilo",
-  "Nimaima",
-  "Nobsa",
-  "Nocaima",
-  "Norcasia",
-  "Norosí",
-  "Nóvita",
-  "Nueva Granada",
-  "Nuevo Belén de Bajirá",
-  "Nuevo Colón",
-  "Nunchía",
-  "Nuquí",
-  "Obando",
-  "Ocamonte",
-  "Ocaña",
-  "Oiba",
-  "Oicatá",
-  "Olaya",
-  "Olaya Herrera",
-  "Onzaga",
-  "Oporapa",
-  "Orito",
-  "Orocué",
-  "Ortega",
-  "Ospina",
-  "Otanche",
-  "Ovejas",
-  "Pachavita",
-  "Pacho",
-  "Pácora",
-  "Padilla",
-  "Páez",
-  "Paicol",
-  "Pailitas",
-  "Paime",
-  "Paipa",
-  "Pajarito",
-  "Palermo",
-  "Palestina",
-  "Palmar de Varela",
-  "Palmar",
-  "Palmas del Socorro",
-  "Palmira",
-  "Palocabildo",
-  "Pamplona",
-  "Pamplonita",
-  "Pandi",
-  "Panqueba",
-  "Páramo",
-  "Paratebueno",
-  "Pasca",
-  "Pasto",
-  "Patía",
-  "Pauna",
-  "Paya",
-  "Paz de Ariporo",
-  "Paz del Río",
-  "Pedraza",
-  "Pelaya",
-  "Pensilvania",
-  "Peque",
-  "Pereira",
-  "Pesca",
-  "Piamonte",
-  "Piedecuesta",
-  "Piedras",
-  "Piendamó",
-  "Pijao",
-  "Pijiño del Carmen",
-  "Pinchote",
-  "Pinillos",
-  "Piojó",
-  "Pisba",
-  "Pitalito",
-  "Pivijay",
-  "Planadas",
-  "Planeta Rica",
-  "Plato",
-  "Policarpa",
-  "Polonuevo",
-  "Ponedera",
-  "Popayán",
-  "Pore",
-  "Potosí",
-  "Pradera",
-  "Prado",
-  "Providencia",
-  "Pueblo Viejo",
-  "Pueblo Bello",
-  "Pueblo Nuevo",
-  "Pueblo Rico",
-  "Pueblorrico",
-  "Puente Nacional",
-  "Puerres",
-  "Puerto Asís",
-  "Puerto Berrío",
-  "Puerto Boyacá",
-  "Puerto Caicedo",
-  "Puerto Carreño",
-  "Puerto Colombia",
-  "Puerto Concordia",
-  "Puerto Escondido",
-  "Puerto Gaitán",
-  "Puerto Guzmán",
-  "Puerto Leguízamo",
-  "Puerto Libertador",
-  "Puerto Lleras",
-  "Puerto López",
-  "Puerto Nare",
-  "Puerto Nariño",
-  "Puerto Parra",
-  "Puerto Rico",
-  "Puerto Rondón",
-  "Puerto Salgar",
-  "Puerto Santander",
-  "Puerto Tejada",
-  "Puerto Triunfo",
-  "Puerto Wilches",
-  "Pulí",
-  "Pupiales",
-  "Puracé",
-  "Purificación",
-  "Purísima",
-  "Quebradanegra",
-  "Quetame",
-  "Quibdó",
-  "Quimbaya",
-  "Quinchía",
-  "Quípama",
-  "Quipile",
-  "Ragonvalia",
-  "Ramiriquí",
-  "Ráquira",
-  "Recetor",
-  "Regidor",
-  "Remedios",
-  "Remolino",
-  "Repelón",
-  "Restrepo",
-  "Retiro",
-  "Ricaurte",
-  "Río de Oro",
-  "Río Iró",
-  "Río Quito",
-  "Río Viejo",
-  "Rioblanco",
-  "Riofrío",
-  "Riohacha",
-  "Rionegro",
-  "Riosucio",
-  "Risaralda",
-  "Rivera",
-  "Roberto Payán",
-  "Roldanillo",
-  "Roncesvalles",
-  "Rondón",
-  "Rosas",
-  "Rovira",
-  "Sabana de Torres",
-  "Sabanas de San Ángel",
-  "Sabanagrande",
-  "Sabanalarga",
-  "Sabaneta",
-  "Saboyá",
-  "Sácama",
-  "Sáchica",
-  "Sahagún",
-  "Saladoblanco",
-  "Salamina",
-  "Salazar de Las Palmas",
-  "Saldaña",
-  "Salento",
-  "Salgar",
-  "Samacá",
-  "Samaná",
-  "Samaniego",
-  "Sampués",
-  "Sandoná",
-  "San Agustín",
-  "San Alberto",
-  "San Andrés",
-  "San Andrés de Cuerquia",
-  "San Andrés de Sotavento",
-  "San Antero",
-  "San Antonio",
-  "San Antonio de Palmito",
-  "San Antonio del Tequendama",
-  "San Benito",
-  "San Benito Abad",
-  "San Bernardo",
-  "San Bernardo del Viento",
-  "San Calixto",
-  "San Carlos",
-  "San Carlos de Guaroa",
-  "San Cayetano",
-  "San Cristóbal",
-  "San Diego",
-  "San Eduardo",
-  "San Estanislao",
-  "San Fernando",
-  "San Francisco",
-  "San Gil",
-  "San Jacinto del Cauca",
-  "San Jacinto",
-  "San Jerónimo",
-  "San Joaquín",
-  "San José",
-  "San José de Albán",
-  "San José de Miranda",
-  "San José de Pare",
-  "San José de Uré",
-  "San José de la Montaña",
-  "San José del Fragua",
-  "San José del Guaviare",
-  "San José del Palmar",
-  "San Juan de Arama",
-  "San Juan de Betulia",
-  "San Juan de Rioseco",
-  "San Juan de Urabá",
-  "San Juan del Cesar",
-  "San Juan Nepomuceno",
-  "San Juanito",
-  "San Lorenzo",
-  "San Luis",
-  "San Luis de Gaceno",
-  "San Luis de Palenque",
-  "San Marcos",
-  "San Martín",
-  "San Martín de Loba",
-  "San Mateo",
-  "San Miguel",
-  "San Miguel de Sema",
-  "San Onofre",
-  "San Pablo",
-  "San Pablo de Borbur",
-  "San Pedro",
-  "San Pedro de Cartago",
-  "San Pedro de Urabá",
-  "San Pedro de los Milagros",
-  "San Pelayo",
-  "San Rafael",
-  "San Roque",
-  "San Sebastián",
-  "San Sebastián de Buenavista",
-  "San Vicente",
-  "San Vicente de Chucurí",
-  "San Vicente del Caguán",
-  "San Zenón",
-  "Santa Ana",
-  "Santa Bárbara",
-  "Santa Bárbara de Pinto",
-  "Santa Catalina",
-  "Santa Cruz de Mompós",
-  "Santa Fe de Antioquia",
-  "Santa Helena del Opón",
-  "Santa Isabel",
-  "Santa Lucía",
-  "Santa María",
-  "Santa Marta",
-  "Santa Rosa",
-  "Santa Rosa de Cabal",
-  "Santa Rosa de Osos",
-  "Santa Rosa de Viterbo",
-  "Santa Rosa del Sur",
-  "Santa Rosalía",
-  "Santa Sofía",
-  "Santacruz",
-  "Santana",
-  "Santander de Quilichao",
-  "Santiago",
-  "Santo Domingo",
-  "Santo Domingo de Silos",
-  "Santo Tomás",
-  "Santuario",
-  "Sapuyes",
-  "Saravena",
-  "Sardinata",
-  "Sasaima",
-  "Sativanorte",
-  "Sativasur",
-  "Segovia",
-  "Sesquilé",
-  "Sevilla",
-  "Siachoque",
-  "Sibaté",
-  "Sibundoy",
-  "Silvania",
-  "Silvia",
-  "Simacota",
-  "Simijaca",
-  "Simití",
-  "Sincé",
-  "Sincelejo",
-  "Sipí",
-  "Sitionuevo",
-  "Soacha",
-  "Soatá",
-  "Socha",
-  "Socotá",
-  "Sogamoso",
-  "Solano",
-  "Soledad",
-  "Solita",
-  "Somondoco",
-  "Sonsón",
-  "Sopetrán",
-  "Soplaviento",
-  "Sopó",
-  "Sora",
-  "Soracá",
-  "Sotaquirá",
-  "Sotará",
-  "Suaita",
-  "Suán",
-  "Suárez",
-  "Suaza",
-  "Subachoque",
-  "Sucre",
-  "Suesca",
-  "Supatá",
-  "Supía",
-  "Suratá",
-  "Susa",
-  "Susacón",
-  "Sutamarchán",
-  "Sutatausa",
-  "Sutatenza",
-  "Tabio",
-  "Tadó",
-  "Talaigua Nuevo",
-  "Tamalameque",
-  "Támara",
-  "Tame",
-  "Támesis",
-  "Taminango",
-  "Tangua",
-  "Tarazá",
-  "Tarqui",
-  "Tarso",
-  "Tasco",
-  "Taraira",
-  "Tauramena",
-  "Tausa",
-  "Tello",
-  "Tena",
-  "Tenerife",
-  "Tenjo",
-  "Tenza",
-  "Teorama",
-  "Teruel",
-  "Tesalia",
-  "Tibacuy",
-  "Tibaná",
-  "Tibasosa",
-  "Tibirita",
-  "Tibú",
-  "Tierralta",
-  "Timaná",
-  "Timbío",
-  "Timbiquí",
-  "Tinjacá",
-  "Tipacoque",
-  "Tiquisio",
-  "Titiribí",
-  "Toca",
-  "Tocaima",
-  "Tocancipá",
-  "Togüí",
-  "Toledo",
-  "Tolú",
-  "Tolú Viejo",
-  "Tona",
-  "Tópaga",
-  "Topaipí",
-  "Toribío",
-  "Toro",
-  "Tota",
-  "Totoró",
-  "Trinidad",
-  "Trujillo",
-  "Tubará",
-  "Tuchín",
-  "Tuluá",
-  "Tumaco",
-  "Tunja",
-  "Tununguá",
-  "Túquerres",
-  "Turbaco",
-  "Turbaná",
-  "Turbo",
-  "Turmequé",
-  "Tuta",
-  "Tutazá",
-  "Ubalá",
-  "Ubaque",
-  "Ubaté",
-  "Ulloa",
-  "Úmbita",
-  "Une",
-  "Unión Panamericana",
-  "Unguía",
-  "Uramita",
-  "Uribia",
-  "Urrao",
-  "Urumita",
-  "Usiacurí",
-  "Útica",
-  "Valdivia",
-  "Valencia",
-  "Valle de San José",
-  "Valle de San Juan",
-  "Valle del Guamuez",
-  "Valledupar",
-  "Valparaíso",
-  "Vegachí",
-  "Vélez",
-  "Venadillo",
-  "Venecia",
-  "Ventaquemada",
-  "Vergara",
-  "Versalles",
-  "Vetas",
-  "Vianí",
-  "Victoria",
-  "Vigía del Fuerte",
-  "Vijes",
-  "Villa Caro",
-  "Villa de Leyva",
-  "Villa del Rosario",
-  "Villa Rica",
-  "Villagarzón",
-  "Villagómez",
-  "Villahermosa",
-  "Villamaría",
-  "Villanueva",
-  "Villapinzón",
-  "Villarrica",
-  "Villavicencio",
-  "Villavieja",
-  "Villeta",
-  "Viotá",
-  "Viracachá",
-  "Vista Hermosa",
-  "Viterbo",
-  "Yacopí",
-  "Yacuanquer",
-  "Yaguará",
-  "Yalí",
-  "Yarumal",
-  "Yolombó",
-  "Yondó",
-  "Yopal",
-  "Yotoco",
-  "Yumbo",
-  "Zambrano",
-  "Zapatoca",
-  "Zapayán",
-  "Zaragoza",
-  "Zarzal",
-  "Zetaquira",
-  "Zipacón",
-  "Zipaquirá",
-  "Zona Bananera",
-] as const;
+// Tipos de contrato
+export type ContractType =
+  | "Obra"
+  | "Consultoría"
+  | "Prestación de servicios"
+  | "Suministro"
+  | "Compraventa"
+  | "Arrendamiento"
+  | "Interventoría"
+  | "Concesión"
+  | "Seguros"
+  | "Comodato";
 
-// Parámetros de búsqueda
+// ============================================
+// INTERFACES DE BÚSQUEDA
+// ============================================
+
 export interface SearchParams {
-  municipio?: string;
-  status?: ProcessStatus;
+  // Filtros de ubicación
+  departamento_entidad?: string;
+  ciudad_entidad?: string;
+
+  // Filtros de estado
+  fase?: ProcessPhase | string;
+  estado_del_procedimiento?: ProcessStatus | string;
+  modalidad_de_contratacion?: ContractModality | string;
+
+  // Filtros de texto
   keyword?: string;
+  entidad?: string;
+
+  // Filtros de fecha
+  fecha_desde?: string;
+  fecha_hasta?: string;
+
+  // Paginación
   limit?: number;
-  days?: number;
+  offset?: number;
 }
 
-// Respuesta de error
-export interface ApiError {
-  message: string;
-  code?: string;
-  statusCode?: number;
-}
+// ============================================
+// INTERFACES DE API
+// ============================================
 
-// Interfaz para notificaciones
-export interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  timestamp: Date;
-  read: boolean;
-  processId?: string;
-}
-
-// Interfaz para filtros guardados
-export interface SavedFilter {
-  id: string;
-  name: string;
-  municipio?: string;
-  status?: ProcessStatus;
-  keyword?: string;
-  createdAt: Date;
-}
-
-// Respuesta de la API Socrata
 export interface SocrataApiResponse {
   data: SecopProcess[];
   meta?: {
@@ -1102,3 +203,140 @@ export interface SocrataApiResponse {
     };
   };
 }
+
+export interface ApiError {
+  message: string;
+  code?: string;
+  statusCode?: number;
+}
+
+// ============================================
+// INTERFACES DE LA APP
+// ============================================
+
+export interface FavoriteProcess extends SecopProcess {
+  savedAt: Date;
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  timestamp: Date;
+  read: boolean;
+  processId?: string;
+}
+
+export interface SavedFilter {
+  id: string;
+  name: string;
+  params: SearchParams;
+  createdAt: Date;
+}
+
+// ============================================
+// CONSTANTES
+// ============================================
+
+// Fases disponibles
+export const SECOP_PHASES: ProcessPhase[] = [
+  "Borrador",
+  "Planeación",
+  "Selección",
+  "Contratación",
+  "Ejecución",
+  "Liquidación",
+  "Terminado",
+  "Cancelado",
+  "Suspendido",
+  "Desierto",
+];
+
+// Modalidades disponibles
+export const SECOP_MODALITIES = [
+  "Licitación pública",
+  "Selección abreviada menor cuantía",
+  "Selección abreviada subasta inversa",
+  "Contratación directa",
+  "Concurso de méritos abierto",
+  "Mínima cuantía",
+  "Contratación régimen especial",
+] as const;
+
+// Municipios principales de Colombia
+export const COLOMBIAN_MUNICIPALITIES = [
+  "Bogotá D.C.",
+  "Medellín",
+  "Cali",
+  "Barranquilla",
+  "Cartagena de Indias",
+  "Bucaramanga",
+  "Pereira",
+  "Manizales",
+  "Santa Marta",
+  "Ibagué",
+  "Cúcuta",
+  "Villavicencio",
+  "Pasto",
+  "Montería",
+  "Neiva",
+  "Valledupar",
+  "Armenia",
+  "Sincelejo",
+  "Popayán",
+  "Floridablanca",
+  "Tunja",
+  "Palmira",
+  "Buenaventura",
+  "Soacha",
+  "Bello",
+  "Soledad",
+  "Itagüí",
+  "Envigado",
+  "Dosquebradas",
+  "Tocancipá",
+] as const;
+
+// Departamentos de Colombia
+export const COLOMBIAN_DEPARTMENTS = [
+  "Amazonas",
+  "Antioquia",
+  "Arauca",
+  "Atlántico",
+  "Bogotá D.C.",
+  "Bolívar",
+  "Boyacá",
+  "Caldas",
+  "Caquetá",
+  "Casanare",
+  "Cauca",
+  "Cesar",
+  "Chocó",
+  "Córdoba",
+  "Cundinamarca",
+  "Guainía",
+  "Guaviare",
+  "Huila",
+  "La Guajira",
+  "Magdalena",
+  "Meta",
+  "Nariño",
+  "Norte de Santander",
+  "Putumayo",
+  "Quindío",
+  "Risaralda",
+  "San Andrés y Providencia",
+  "Santander",
+  "Sucre",
+  "Tolima",
+  "Valle del Cauca",
+  "Vaupés",
+  "Vichada",
+] as const;
+
+// URL base de la API
+export const SECOP_API_BASE_URL =
+  "https://www.datos.gov.co/resource/p6dx-8zbt.json";
+
+// App Token (opcional)
+export const SECOP_APP_TOKEN = "";

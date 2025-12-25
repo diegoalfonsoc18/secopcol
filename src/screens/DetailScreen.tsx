@@ -7,31 +7,153 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Pressable,
 } from "react-native";
-import { StatusBadge } from "../components/index";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
+import { colors, spacing, borderRadius } from "../theme";
 
-interface DetailScreenProps {
-  route: {
-    params: {
-      process: SecopProcess;
-    };
+// ============================================
+// CONFIGURACIÓN DE FASES
+// ============================================
+const phaseConfig: Record<string, { color: string; bg: string; icon: string }> =
+  {
+    Borrador: {
+      color: colors.textSecondary,
+      bg: colors.backgroundTertiary,
+      icon: "document-outline",
+    },
+    Planeación: {
+      color: colors.warning,
+      bg: colors.warningLight,
+      icon: "clipboard-outline",
+    },
+    Selección: {
+      color: colors.accent,
+      bg: colors.accentLight,
+      icon: "search-outline",
+    },
+    Contratación: {
+      color: colors.accent,
+      bg: colors.accentLight,
+      icon: "document-text-outline",
+    },
+    Ejecución: {
+      color: colors.success,
+      bg: colors.successLight,
+      icon: "play-circle-outline",
+    },
+    Liquidación: {
+      color: colors.warning,
+      bg: colors.warningLight,
+      icon: "checkmark-done-outline",
+    },
+    Terminado: {
+      color: colors.textSecondary,
+      bg: colors.backgroundTertiary,
+      icon: "checkmark-circle-outline",
+    },
+    Cancelado: {
+      color: colors.danger,
+      bg: colors.dangerLight,
+      icon: "close-circle-outline",
+    },
+    Suspendido: {
+      color: colors.warning,
+      bg: colors.warningLight,
+      icon: "pause-circle-outline",
+    },
+    Desierto: {
+      color: colors.textSecondary,
+      bg: colors.backgroundTertiary,
+      icon: "remove-circle-outline",
+    },
   };
-  navigation: any;
-}
 
-export const DetailScreen: React.FC<DetailScreenProps> = ({
-  route,
-  navigation,
-}) => {
-  const { process } = route.params;
+const defaultPhase = {
+  color: colors.textSecondary,
+  bg: colors.backgroundTertiary,
+  icon: "help-circle-outline",
+};
+
+// ============================================
+// UTILIDADES
+// ============================================
+const formatCurrency = (value: string | number | undefined): string => {
+  if (!value) return "No especificado";
+  const numValue = typeof value === "string" ? parseFloat(value) : value;
+  if (isNaN(numValue)) return "No especificado";
+  return new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: "COP",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(numValue);
+};
+
+const formatDateTime = (dateString: string | undefined): string => {
+  if (!dateString) return "No disponible";
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("es-CO", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return dateString;
+  }
+};
+
+// ============================================
+// COMPONENTES AUXILIARES
+// ============================================
+const InfoRow: React.FC<{
+  icon: string;
+  label: string;
+  value: string | undefined;
+  isLast?: boolean;
+}> = ({ icon, label, value, isLast }) => (
+  <View style={[styles.infoRow, !isLast && styles.infoRowBorder]}>
+    <View style={styles.infoIconContainer}>
+      <Ionicons name={icon as any} size={18} color={colors.accent} />
+    </View>
+    <View style={styles.infoContent}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value || "No disponible"}</Text>
+    </View>
+  </View>
+);
+
+const Section: React.FC<{
+  title: string;
+  children: React.ReactNode;
+}> = ({ title, children }) => (
+  <View style={styles.section}>
+    <Text style={styles.sectionTitle}>{title}</Text>
+    <View style={styles.sectionContent}>{children}</View>
+  </View>
+);
+
+// ============================================
+// COMPONENTE PRINCIPAL
+// ============================================
+export const DetailScreen = ({ route, navigation }: any) => {
+  const insets = useSafeAreaInsets();
+  const { process } = route.params as { process: SecopProcess };
   const { isFavorite, addFavorite, removeFavorite } = useProcessesStore();
-  const favorite = isFavorite(process.id_proceso);
+  const favorite = isFavorite(process.id_del_proceso);
+
+  const fase = process.fase || "Desconocido";
+  const phaseStyle = phaseConfig[fase] || defaultPhase;
 
   const handleToggleFavorite = () => {
     if (favorite) {
-      removeFavorite(process.id_proceso);
+      removeFavorite(process.id_del_proceso);
     } else {
       addFavorite(process);
     }
@@ -39,365 +161,617 @@ export const DetailScreen: React.FC<DetailScreenProps> = ({
 
   const handleShare = async () => {
     try {
+      const message = `📋 Proceso SECOP II
+
+${process.nombre_del_procedimiento || "Sin nombre"}
+
+🏢 Entidad: ${process.entidad}
+📍 Ubicación: ${process.ciudad_entidad}, ${process.departamento_entidad}
+💰 Precio base: ${formatCurrency(process.precio_base)}
+📊 Fase: ${process.fase}
+
+🔗 Ver más en SECOP II`;
+
       await Share.share({
-        message: `Proceso SECOP: ${process.objeto}\nMunicipio: ${
-          process.municipio
-        }\nValor: $${process.valor_estimado?.toLocaleString("es-CO")}`,
-        title: "Compartir Proceso",
+        message,
+        title: "Compartir Proceso SECOP",
       });
     } catch (error) {
       console.error("Error sharing:", error);
     }
   };
 
-  const formatCurrency = (value: number) => {
-    if (!value) return "No disponible";
-    return new Intl.NumberFormat("es-CO", {
-      style: "currency",
-      currency: "COP",
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "No disponible";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("es-CO", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const getRemainingDays = (fechaCierre: string) => {
-    if (!fechaCierre) return "N/A";
-    const closing = new Date(fechaCierre);
-    const today = new Date();
-    const diff = closing.getTime() - today.getTime();
-    const days = Math.ceil(diff / (1000 * 3600 * 24));
-
-    if (days < 0) return "Vencido";
-    if (days === 0) return "Vence hoy";
-    if (days === 1) return "Vence mañana";
-    return `${days} días restantes`;
+  const handleOpenSecop = () => {
+    if (process.urlproceso) {
+      Linking.openURL(process.urlproceso);
+    } else {
+      // URL genérica de SECOP II
+      Linking.openURL(
+        "https://community.secop.gov.co/Public/Tendering/ContractNoticeManagement/Index"
+      );
+    }
   };
 
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={styles.backButton}>
-          <Text style={styles.backIcon}>←</Text>
+          style={styles.backButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <Ionicons name="chevron-back" size={24} color={colors.accent} />
+          <Text style={styles.backText}>Atrás</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={2}>
-          Detalles del Proceso
-        </Text>
-        <TouchableOpacity
-          onPress={handleToggleFavorite}
-          style={styles.favoriteHeaderButton}>
-          <Text style={styles.favoriteHeaderIcon}>{favorite ? "★" : "☆"}</Text>
-        </TouchableOpacity>
+
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={handleShare}
+            style={styles.headerButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Ionicons name="share-outline" size={22} color={colors.accent} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleToggleFavorite}
+            style={styles.headerButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Ionicons
+              name={favorite ? "heart" : "heart-outline"}
+              size={22}
+              color={favorite ? colors.danger : colors.accent}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Main Info Card */}
-        <View style={styles.mainCard}>
-          <StatusBadge status={process.estado_proceso} size="large" />
-          <Text style={styles.entidad}>{process.nombre_entidad}</Text>
-          <Text style={styles.municipio}>📍 {process.municipio}</Text>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + spacing.xxl },
+        ]}
+        showsVerticalScrollIndicator={false}>
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          {/* ID y Fase */}
+          <View style={styles.idContainer}>
+            <Text style={styles.idLabel}>PROCESO</Text>
+            <Text style={styles.idValue}>{process.id_del_proceso}</Text>
+          </View>
+
+          <View style={[styles.phaseBadge, { backgroundColor: phaseStyle.bg }]}>
+            <Ionicons
+              name={phaseStyle.icon as any}
+              size={14}
+              color={phaseStyle.color}
+            />
+            <Text style={[styles.phaseText, { color: phaseStyle.color }]}>
+              {fase}
+            </Text>
+          </View>
         </View>
 
-        {/* Objeto */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Objeto de la Contratación</Text>
-          <Text style={styles.sectionContent}>{process.objeto}</Text>
-        </View>
+        {/* Nombre del Procedimiento */}
+        {process.nombre_del_procedimiento && (
+          <Text style={styles.procedureName}>
+            {process.nombre_del_procedimiento}
+          </Text>
+        )}
 
-        {/* Valor */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💰 Valor Estimado</Text>
-          <Text style={styles.valorText}>
-            {formatCurrency(process.valor_estimado)}
+        {/* Descripción Card */}
+        <View style={styles.descriptionCard}>
+          <Text style={styles.descriptionLabel}>Objeto del Proceso</Text>
+          <Text style={styles.descriptionText}>
+            {process.descripci_n_del_procedimiento ||
+              "Sin descripción disponible"}
           </Text>
         </View>
 
-        {/* Tipo de Proceso */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tipo de Proceso</Text>
-          <View style={styles.typeTag}>
-            <Text style={styles.typeText}>{process.tipo_proceso}</Text>
-          </View>
-        </View>
-
-        {/* Fechas Importantes */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📅 Fechas Importantes</Text>
-          <View style={styles.dateRow}>
-            <View style={styles.dateItem}>
-              <Text style={styles.dateLabel}>Publicado</Text>
-              <Text style={styles.dateValue}>
-                {formatDate(process.fecha_publicacion)}
-              </Text>
+        {/* Precio Base Card */}
+        {process.precio_base && (
+          <View style={styles.priceCard}>
+            <View style={styles.priceHeader}>
+              <Ionicons name="cash-outline" size={22} color={colors.success} />
+              <Text style={styles.priceLabel}>Precio Base</Text>
             </View>
+            <Text style={styles.priceValue}>
+              {formatCurrency(process.precio_base)}
+            </Text>
           </View>
-          <View style={styles.dateRow}>
-            <View style={styles.dateItem}>
-              <Text style={styles.dateLabel}>Fecha de Cierre</Text>
-              <Text style={styles.dateValue}>
-                {formatDate(process.fecha_cierre)}
-              </Text>
-              <Text
-                style={[
-                  styles.remainingDays,
-                  getRemainingDays(process.fecha_cierre) === "Vencido" && {
-                    color: "#EF4444",
-                  },
-                ]}>
-                {getRemainingDays(process.fecha_cierre)}
-              </Text>
+        )}
+
+        {/* Valor Adjudicado (si existe) */}
+        {process.valor_total_adjudicacion && (
+          <View style={[styles.priceCard, { borderLeftColor: colors.accent }]}>
+            <View style={styles.priceHeader}>
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={22}
+                color={colors.accent}
+              />
+              <Text style={styles.priceLabel}>Valor Adjudicado</Text>
             </View>
+            <Text style={[styles.priceValue, { color: colors.accent }]}>
+              {formatCurrency(process.valor_total_adjudicacion)}
+            </Text>
           </View>
-        </View>
+        )}
 
-        {/* Entidad Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Entidad Contratante</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>NIT</Text>
-            <Text style={styles.infoValue}>{process.nit_entidad || "N/A"}</Text>
+        {/* Entidad Contratante */}
+        <Section title="Entidad Contratante">
+          <InfoRow icon="business" label="Nombre" value={process.entidad} />
+          <InfoRow
+            icon="card-outline"
+            label="NIT"
+            value={process.nit_entidad}
+          />
+          <InfoRow
+            icon="location"
+            label="Ciudad"
+            value={process.ciudad_entidad}
+          />
+          <InfoRow
+            icon="map-outline"
+            label="Departamento"
+            value={process.departamento_entidad}
+            isLast
+          />
+        </Section>
+
+        {/* Información del Proceso */}
+        <Section title="Información del Proceso">
+          {process.modalidad_de_contratacion && (
+            <InfoRow
+              icon="layers-outline"
+              label="Modalidad"
+              value={process.modalidad_de_contratacion}
+            />
+          )}
+          {process.tipo_de_contrato && (
+            <InfoRow
+              icon="document-text-outline"
+              label="Tipo de Contrato"
+              value={process.tipo_de_contrato}
+            />
+          )}
+          {process.duracion && (
+            <InfoRow
+              icon="time-outline"
+              label="Duración"
+              value={`${process.duracion} ${process.unidad_de_duracion || ""}`}
+            />
+          )}
+          {process.estado_del_procedimiento && (
+            <InfoRow
+              icon="flag-outline"
+              label="Estado"
+              value={process.estado_del_procedimiento}
+              isLast
+            />
+          )}
+        </Section>
+
+        {/* Fechas */}
+        <Section title="Fechas">
+          <InfoRow
+            icon="calendar-outline"
+            label="Publicación"
+            value={formatDateTime(process.fecha_de_publicacion_del)}
+          />
+          {process.fecha_de_ultima_publicaci && (
+            <InfoRow
+              icon="refresh-outline"
+              label="Última Actualización"
+              value={formatDateTime(process.fecha_de_ultima_publicaci)}
+            />
+          )}
+          {process.fecha_de_recepcion_de && (
+            <InfoRow
+              icon="download-outline"
+              label="Recepción de Ofertas"
+              value={formatDateTime(process.fecha_de_recepcion_de)}
+            />
+          )}
+          {process.fecha_adjudicacion && (
+            <InfoRow
+              icon="checkmark-done-outline"
+              label="Adjudicación"
+              value={formatDateTime(process.fecha_adjudicacion)}
+              isLast
+            />
+          )}
+        </Section>
+
+        {/* Proveedor Adjudicado (si existe) */}
+        {process.nombre_del_proveedor && (
+          <Section title="Proveedor Adjudicado">
+            <InfoRow
+              icon="person"
+              label="Nombre"
+              value={process.nombre_del_proveedor}
+            />
+            {process.nit_del_proveedor_adjudicado && (
+              <InfoRow
+                icon="card-outline"
+                label="NIT"
+                value={process.nit_del_proveedor_adjudicado}
+              />
+            )}
+            {process.ciudad_proveedor && (
+              <InfoRow
+                icon="location"
+                label="Ciudad"
+                value={`${process.ciudad_proveedor}${
+                  process.departamento_proveedor
+                    ? `, ${process.departamento_proveedor}`
+                    : ""
+                }`}
+                isLast
+              />
+            )}
+          </Section>
+        )}
+
+        {/* Estadísticas (si existen) */}
+        {(process.proveedores_invitados || process.visualizaciones_del) && (
+          <View style={styles.statsContainer}>
+            {process.proveedores_invitados && (
+              <View style={styles.statItem}>
+                <Ionicons
+                  name="people-outline"
+                  size={20}
+                  color={colors.accent}
+                />
+                <Text style={styles.statValue}>
+                  {process.proveedores_invitados}
+                </Text>
+                <Text style={styles.statLabel}>Invitados</Text>
+              </View>
+            )}
+            {process.visualizaciones_del && (
+              <View style={styles.statItem}>
+                <Ionicons name="eye-outline" size={20} color={colors.accent} />
+                <Text style={styles.statValue}>
+                  {process.visualizaciones_del}
+                </Text>
+                <Text style={styles.statLabel}>Vistas</Text>
+              </View>
+            )}
+            {process.respuestas_al_procedimiento && (
+              <View style={styles.statItem}>
+                <Ionicons
+                  name="chatbubbles-outline"
+                  size={20}
+                  color={colors.accent}
+                />
+                <Text style={styles.statValue}>
+                  {process.respuestas_al_procedimiento}
+                </Text>
+                <Text style={styles.statLabel}>Respuestas</Text>
+              </View>
+            )}
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Nombre</Text>
-            <Text style={styles.infoValue}>{process.nombre_entidad}</Text>
+        )}
+
+        {/* Botón Ver en SECOP */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.secopButton,
+            pressed && styles.secopButtonPressed,
+          ]}
+          onPress={handleOpenSecop}>
+          <Ionicons
+            name="open-outline"
+            size={20}
+            color={colors.backgroundSecondary}
+          />
+          <Text style={styles.secopButtonText}>Ver en SECOP II</Text>
+        </Pressable>
+
+        {/* Referencia */}
+        {process.referencia_del_proceso && (
+          <View style={styles.referenceContainer}>
+            <Text style={styles.referenceLabel}>Referencia del Proceso</Text>
+            <Text style={styles.referenceValue}>
+              {process.referencia_del_proceso}
+            </Text>
           </View>
-        </View>
+        )}
 
-        {/* ID Proceso */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Identificador del Proceso</Text>
-          <Text style={styles.idText}>{process.id_proceso}</Text>
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.shareButton]}
-            onPress={handleShare}>
-            <Text style={styles.actionButtonText}>📤 Compartir</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.viewButton]}
-            onPress={() => {
-              // Aquí puedes agregar lógica para ver el proceso en SECOP
-              Linking.openURL("https://contratos.gov.co");
-            }}>
-            <Text style={styles.viewButtonText}>🔗 Ver en SECOP</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Footer spacing */}
-        <View style={styles.footer} />
+        {/* Disclaimer */}
+        <Text style={styles.disclaimer}>
+          La información presentada proviene del Sistema Electrónico de
+          Contratación Pública (SECOP II) y puede estar sujeta a
+          actualizaciones.
+        </Text>
       </ScrollView>
     </View>
   );
 };
 
+// ============================================
+// ESTILOS
+// ============================================
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: colors.background,
   },
+
+  // Header
   header: {
-    backgroundColor: "#3B82F6",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingTop: 16,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.background,
   },
   backButton: {
-    padding: 8,
+    flexDirection: "row",
+    alignItems: "center",
   },
-  backIcon: {
-    fontSize: 24,
-    color: "#FFFFFF",
-    fontWeight: "700",
+  backText: {
+    fontSize: 17,
+    color: colors.accent,
+    marginLeft: spacing.xs,
   },
-  headerTitle: {
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.lg,
+  },
+  headerButton: {
+    padding: spacing.xs,
+  },
+
+  // Scroll
+  scrollView: {
     flex: 1,
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    marginHorizontal: 12,
   },
-  favoriteHeaderButton: {
-    padding: 8,
+  scrollContent: {
+    paddingHorizontal: spacing.lg,
   },
-  favoriteHeaderIcon: {
-    fontSize: 24,
-    color: "#F59E0B",
+
+  // Hero
+  heroSection: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: spacing.lg,
   },
-  content: {
+  idContainer: {
     flex: 1,
-    paddingHorizontal: 16,
   },
-  mainCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    marginVertical: 16,
+  idLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.textTertiary,
+    letterSpacing: 1,
+    marginBottom: spacing.xs,
+  },
+  idValue: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.accent,
+  },
+  phaseBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    gap: spacing.xs,
+  },
+  phaseText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+
+  // Procedure Name
+  procedureName: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    lineHeight: 28,
+    marginBottom: spacing.lg,
+  },
+
+  // Description Card
+  descriptionCard: {
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  entidad: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1F2937",
-    marginVertical: 12,
+  descriptionLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.textTertiary,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+    marginBottom: spacing.sm,
   },
-  municipio: {
-    fontSize: 14,
-    color: "#6B7280",
+  descriptionText: {
+    fontSize: 15,
+    color: colors.textPrimary,
+    lineHeight: 23,
+  },
+
+  // Price Card
+  priceCard: {
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.success,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  priceHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  priceLabel: {
+    fontSize: 13,
+    color: colors.textSecondary,
     fontWeight: "500",
   },
+  priceValue: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: colors.success,
+  },
+
+  // Sections
   section: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    marginBottom: spacing.xl,
   },
   sectionTitle: {
     fontSize: 13,
-    fontWeight: "700",
-    color: "#374151",
-    marginBottom: 10,
+    fontWeight: "600",
+    color: colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 0.5,
+    marginBottom: spacing.md,
+    marginLeft: spacing.xs,
   },
   sectionContent: {
-    fontSize: 14,
-    color: "#4B5563",
-    lineHeight: 22,
-    fontWeight: "500",
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  valorText: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#059669",
-  },
-  typeTag: {
-    backgroundColor: "#EFF6FF",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: "#3B82F6",
-    alignSelf: "flex-start",
-  },
-  typeText: {
-    color: "#3B82F6",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  dateRow: {
-    marginBottom: 12,
-  },
-  dateItem: {
-    backgroundColor: "#F9FAFB",
-    borderRadius: 8,
-    padding: 12,
-  },
-  dateLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-    fontWeight: "600",
-    marginBottom: 4,
-    textTransform: "uppercase",
-    letterSpacing: 0.3,
-  },
-  dateValue: {
-    fontSize: 13,
-    color: "#1F2937",
-    fontWeight: "500",
-    marginBottom: 4,
-  },
-  remainingDays: {
-    fontSize: 12,
-    color: "#10B981",
-    fontWeight: "600",
-  },
+
+  // Info Row
   infoRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 10,
+    alignItems: "center",
+    padding: spacing.lg,
+  },
+  infoRowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: colors.separatorLight,
+  },
+  infoIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.accentLight,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: spacing.md,
+  },
+  infoContent: {
+    flex: 1,
   },
   infoLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-    fontWeight: "600",
+    fontSize: 11,
+    color: colors.textTertiary,
+    marginBottom: 2,
   },
   infoValue: {
-    fontSize: 13,
-    color: "#1F2937",
+    fontSize: 15,
+    color: colors.textPrimary,
     fontWeight: "500",
-    flex: 1,
-    textAlign: "right",
   },
-  idText: {
-    fontSize: 12,
-    color: "#3B82F6",
-    fontFamily: "monospace",
-    backgroundColor: "#EFF6FF",
-    padding: 10,
-    borderRadius: 6,
-    overflow: "hidden",
-  },
-  actionsContainer: {
+
+  // Stats
+  statsContainer: {
     flexDirection: "row",
-    gap: 12,
-    marginVertical: 20,
+    justifyContent: "space-around",
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  actionButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
+  statItem: {
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
+
+  // SECOP Button
+  secopButton: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: colors.accent,
+    borderRadius: borderRadius.md,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+    gap: spacing.sm,
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  shareButton: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+  secopButtonPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
-  actionButtonText: {
-    fontSize: 14,
+  secopButtonText: {
+    fontSize: 17,
     fontWeight: "600",
-    color: "#6B7280",
+    color: colors.backgroundSecondary,
   },
-  viewButton: {
-    backgroundColor: "#3B82F6",
+
+  // Reference
+  referenceContainer: {
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.md,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
   },
-  viewButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#FFFFFF",
+  referenceLabel: {
+    fontSize: 11,
+    color: colors.textTertiary,
+    marginBottom: spacing.xs,
   },
-  footer: {
-    height: 20,
+  referenceValue: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontFamily: "monospace",
+  },
+
+  // Disclaimer
+  disclaimer: {
+    fontSize: 12,
+    color: colors.textTertiary,
+    textAlign: "center",
+    lineHeight: 18,
+    paddingHorizontal: spacing.lg,
   },
 });
+
+export default DetailScreen;

@@ -1,7 +1,6 @@
 import React, { useState, useRef, useCallback } from "react";
 import {
   Animated,
-  FlatList,
   Keyboard,
   ScrollView,
   StyleSheet,
@@ -14,49 +13,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  EmptyState,
-  MunicipalityFilter,
-  ProcessCard,
-} from "../components/index";
+import { MunicipalityFilter, ProcessCard } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
-
-// ============================================
-// TEMA ESTILO APPLE
-// ============================================
-const colors = {
-  background: "#F2F2F7",
-  backgroundSecondary: "#FFFFFF",
-  backgroundTertiary: "#E5E5EA",
-  textPrimary: "#1C1C1E",
-  textSecondary: "#8E8E93",
-  textTertiary: "#AEAEB2",
-  accent: "#007AFF",
-  accentLight: "#E3F2FF",
-  success: "#34C759",
-  warning: "#FF9500",
-  danger: "#FF3B30",
-  dangerLight: "#FFEBE9",
-  separator: "#C6C6C8",
-  separatorLight: "#E5E5EA",
-};
-
-const spacing = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  xxl: 24,
-};
-
-const borderRadius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  full: 9999,
-};
+import { colors, spacing, borderRadius } from "../theme";
 
 // ============================================
 // ESTADOS DE PROCESO

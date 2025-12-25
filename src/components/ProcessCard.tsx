@@ -1,201 +1,391 @@
 import React from "react";
 import {
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
   View,
+  Text,
+  StyleSheet,
+  Pressable,
+  TouchableOpacity,
 } from "react-native";
-import { useProcessesStore } from "../store/processesStore";
+import { Ionicons } from "@expo/vector-icons";
 import { SecopProcess } from "../types/index";
+import { colors, spacing, borderRadius } from "../theme";
 
+// ============================================
+// CONFIGURACIÓN DE FASES (Estados del proceso)
+// ============================================
+const phaseConfig: Record<string, { color: string; bg: string; icon: string }> =
+  {
+    Borrador: {
+      color: colors.textSecondary,
+      bg: colors.backgroundTertiary,
+      icon: "document-outline",
+    },
+    Planeación: {
+      color: colors.warning,
+      bg: colors.warningLight,
+      icon: "clipboard-outline",
+    },
+    Selección: {
+      color: colors.accent,
+      bg: colors.accentLight,
+      icon: "search-outline",
+    },
+    Contratación: {
+      color: colors.accent,
+      bg: colors.accentLight,
+      icon: "document-text-outline",
+    },
+    Ejecución: {
+      color: colors.success,
+      bg: colors.successLight,
+      icon: "play-circle-outline",
+    },
+    Liquidación: {
+      color: colors.warning,
+      bg: colors.warningLight,
+      icon: "checkmark-done-outline",
+    },
+    Terminado: {
+      color: colors.textSecondary,
+      bg: colors.backgroundTertiary,
+      icon: "checkmark-circle-outline",
+    },
+    Cancelado: {
+      color: colors.danger,
+      bg: colors.dangerLight,
+      icon: "close-circle-outline",
+    },
+    Suspendido: {
+      color: colors.warning,
+      bg: colors.warningLight,
+      icon: "pause-circle-outline",
+    },
+    Desierto: {
+      color: colors.textSecondary,
+      bg: colors.backgroundTertiary,
+      icon: "remove-circle-outline",
+    },
+  };
+
+const defaultPhase = {
+  color: colors.textSecondary,
+  bg: colors.backgroundTertiary,
+  icon: "help-circle-outline",
+};
+
+// ============================================
+// UTILIDADES
+// ============================================
+const formatDate = (dateString: string | undefined): string => {
+  if (!dateString) return "No especificada";
+  try {
+    // La API de SECOP puede devolver fechas en formato ISO o timestamp
+    const date = new Date(dateString);
+
+    // Verificar si la fecha es válida
+    if (isNaN(date.getTime())) {
+      return "No especificada";
+    }
+
+    return date.toLocaleDateString("es-CO", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return "No especificada";
+  }
+};
+
+const truncateText = (text: string | undefined, maxLength: number): string => {
+  if (!text) return "Sin descripción";
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength).trim() + "...";
+};
+
+// ============================================
+// COMPONENTE PRINCIPAL
+// ============================================
 interface ProcessCardProps {
   process: SecopProcess;
-  onPress?: () => void;
+  onPress: () => void;
+  onFavoritePress?: () => void;
+  isFavorite?: boolean;
 }
 
 export const ProcessCard: React.FC<ProcessCardProps> = ({
   process,
   onPress,
+  onFavoritePress,
+  isFavorite = false,
 }) => {
-  const { isFavorite, addFavorite, removeFavorite } = useProcessesStore();
-  const favorite = isFavorite(process.id_proceso);
-
-  const handleToggleFavorite = () => {
-    if (favorite) {
-      removeFavorite(process.id_proceso);
-    } else {
-      addFavorite(process);
-    }
-  };
-
-  const formatCurrency = (value: number) => {
-    if (!value) return "N/A";
-    return new Intl.NumberFormat("es-CO", {
-      style: "currency",
-      currency: "COP",
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("es-CO");
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "publicado":
-        return "#3B82F6"; // Blue
-      case "adjudicado":
-        return "#10B981"; // Green
-      case "cerrado":
-        return "#6B7280"; // Gray
-      case "en evaluación":
-        return "#F59E0B"; // Amber
-      case "cancelado":
-        return "#EF4444"; // Red
-      default:
-        return "#8B5CF6"; // Purple
-    }
-  };
-
+  const fase = process.fase || "Desconocido";
+  const phaseStyle = phaseConfig[fase] || defaultPhase;
+  // Justo antes del return del componente
+  console.log("🔍 Proceso:", {
+    id: process.id_del_proceso,
+    fecha: process.fecha_de_publicacion_del,
+    tipoFecha: typeof process.fecha_de_publicacion_del,
+  });
   return (
-    <TouchableOpacity
-      style={styles.container}
+    <Pressable
       onPress={onPress}
-      activeOpacity={0.7}>
-      {/* Header */}
+      style={({ pressed }) => [
+        styles.container,
+        pressed && styles.containerPressed,
+      ]}>
+      {/* Header: ID y Fase */}
       <View style={styles.header}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.entity} numberOfLines={1}>
-            {process.nombre_entidad}
+        <View style={styles.idContainer}>
+          <Text style={styles.idLabel}>PROCESO</Text>
+          <Text style={styles.idValue} numberOfLines={1}>
+            {process.id_del_proceso || "Sin ID"}
           </Text>
-          <Text style={styles.municipality}>{process.municipio}</Text>
         </View>
-        <Pressable onPress={handleToggleFavorite} style={styles.favoriteButton}>
-          <Text style={styles.favoriteIcon}>{favorite ? "★" : "☆"}</Text>
-        </Pressable>
+
+        <View style={[styles.statusBadge, { backgroundColor: phaseStyle.bg }]}>
+          <Ionicons
+            name={phaseStyle.icon as any}
+            size={12}
+            color={phaseStyle.color}
+          />
+          <Text style={[styles.statusText, { color: phaseStyle.color }]}>
+            {fase}
+          </Text>
+        </View>
       </View>
 
-      {/* Objeto */}
-      <Text style={styles.objeto} numberOfLines={2}>
-        {process.objeto}
+      {/* Nombre del procedimiento */}
+      {process.nombre_del_procedimiento && (
+        <Text style={styles.procedureName} numberOfLines={1}>
+          {process.nombre_del_procedimiento}
+        </Text>
+      )}
+
+      {/* Descripción */}
+      <Text style={styles.description} numberOfLines={2}>
+        {truncateText(process.descripci_n_del_procedimiento, 120)}
       </Text>
 
-      {/* Status y Valor */}
-      <View style={styles.statusRow}>
-        <View
-          style={[
-            styles.statusBadge,
-            { backgroundColor: getStatusColor(process.estado_proceso) },
-          ]}>
-          <Text style={styles.statusText}>{process.estado_proceso}</Text>
+      {/* Entidad */}
+      <View style={styles.infoRow}>
+        <Ionicons
+          name="business-outline"
+          size={14}
+          color={colors.textSecondary}
+        />
+        <Text style={styles.infoText} numberOfLines={1}>
+          {truncateText(process.entidad, 50)}
+        </Text>
+      </View>
+
+      {/* Ciudad / Departamento */}
+      {process.ciudad_entidad && (
+        <View style={styles.infoRow}>
+          <Ionicons
+            name="location-outline"
+            size={14}
+            color={colors.textSecondary}
+          />
+          <Text style={styles.infoText} numberOfLines={1}>
+            {process.ciudad_entidad}
+            {process.departamento_entidad
+              ? `, ${process.departamento_entidad}`
+              : ""}
+          </Text>
         </View>
-        <Text style={styles.valor}>
-          {formatCurrency(process.valor_estimado)}
-        </Text>
-      </View>
+      )}
 
-      {/* Fechas */}
+      {/* Separador */}
+      <View style={styles.separator} />
+
+      {/* Footer: NIT y Fecha */}
       <View style={styles.footer}>
-        <Text style={styles.date}>
-          Publicado: {formatDate(process.fecha_publicacion)}
-        </Text>
-        <Text style={styles.date}>
-          Cierre: {formatDate(process.fecha_cierre)}
-        </Text>
+        <View style={styles.valueContainer}>
+          <Text style={styles.valueLabel}>NIT Entidad</Text>
+          <Text style={styles.nitValue}>
+            {process.nit_entidad || "No especificado"}
+          </Text>
+        </View>
+
+        <View style={styles.dateContainer}>
+          <Text style={styles.dateLabel}>Publicación</Text>
+          <Text style={styles.dateValue}>
+            {formatDate(process.fecha_de_publicacion_del)}
+          </Text>
+        </View>
       </View>
 
-      {/* Tipo de proceso */}
-      <Text style={styles.type}>{process.tipo_proceso}</Text>
-    </TouchableOpacity>
+      {/* Botón favorito */}
+      {onFavoritePress && (
+        <TouchableOpacity
+          style={styles.favoriteButton}
+          onPress={onFavoritePress}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <Ionicons
+            name={isFavorite ? "heart" : "heart-outline"}
+            size={22}
+            color={isFavorite ? colors.danger : colors.textTertiary}
+          />
+        </TouchableOpacity>
+      )}
+
+      {/* Chevron */}
+      <View style={styles.chevronContainer}>
+        <Ionicons
+          name="chevron-forward"
+          size={18}
+          color={colors.textTertiary}
+        />
+      </View>
+    </Pressable>
   );
 };
 
+// ============================================
+// ESTILOS
+// ============================================
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    marginHorizontal: 16,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
+  containerPressed: {
+    opacity: 0.97,
+    transform: [{ scale: 0.99 }],
+  },
+
+  // Header
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
-  titleContainer: {
+  idContainer: {
     flex: 1,
-    marginRight: 12,
+    marginRight: spacing.md,
   },
-  entity: {
+  idLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: colors.textTertiary,
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  idValue: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 4,
-  },
-  municipality: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-  favoriteButton: {
-    padding: 8,
-  },
-  favoriteIcon: {
-    fontSize: 20,
-    color: "#F59E0B",
-  },
-  objeto: {
-    fontSize: 14,
-    color: "#374151",
-    lineHeight: 20,
-    marginBottom: 12,
-    fontWeight: "500",
-  },
-  statusRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
+    color: colors.accent,
   },
   statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    gap: spacing.xs,
   },
   statusText: {
-    color: "#FFFFFF",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
   },
-  valor: {
+
+  // Descripción
+  procedureName: {
     fontSize: 13,
-    fontWeight: "700",
-    color: "#059669",
+    fontWeight: "600",
+    color: colors.accent,
+    marginBottom: spacing.xs,
   },
+  description: {
+    fontSize: 15,
+    fontWeight: "400",
+    color: colors.textPrimary,
+    lineHeight: 21,
+    marginBottom: spacing.md,
+  },
+
+  // Info rows
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.xs,
+    gap: spacing.sm,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+
+  // Separator
+  separator: {
+    height: 1,
+    backgroundColor: colors.separatorLight,
+    marginVertical: spacing.md,
+  },
+
+  // Footer
   footer: {
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    paddingTop: 10,
-    marginBottom: 8,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
   },
-  date: {
-    fontSize: 11,
-    color: "#9CA3AF",
-    marginBottom: 4,
+  valueContainer: {
+    flex: 1,
   },
-  type: {
-    fontSize: 11,
-    color: "#6366F1",
+  valueLabel: {
+    fontSize: 10,
     fontWeight: "500",
+    color: colors.textTertiary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  nitValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.textPrimary,
+  },
+  dateContainer: {
+    alignItems: "flex-end",
+  },
+  dateLabel: {
+    fontSize: 10,
+    fontWeight: "500",
+    color: colors.textTertiary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  dateValue: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: colors.textSecondary,
+  },
+
+  // Favorite button
+  favoriteButton: {
+    position: "absolute",
+    top: spacing.lg,
+    right: spacing.lg + 24,
+  },
+
+  // Chevron
+  chevronContainer: {
+    position: "absolute",
+    right: spacing.md,
+    top: "50%",
+    marginTop: -9,
   },
 });
+
+export default ProcessCard;

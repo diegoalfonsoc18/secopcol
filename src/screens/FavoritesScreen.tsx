@@ -1,7 +1,6 @@
 import React, { useRef, useCallback } from "react";
 import {
   Animated,
-  FlatList,
   StyleSheet,
   Text,
   View,
@@ -13,40 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ProcessCard } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
-
-// ============================================
-// TEMA ESTILO APPLE
-// ============================================
-const colors = {
-  background: "#F2F2F7",
-  backgroundSecondary: "#FFFFFF",
-  backgroundTertiary: "#E5E5EA",
-  textPrimary: "#1C1C1E",
-  textSecondary: "#8E8E93",
-  textTertiary: "#AEAEB2",
-  accent: "#007AFF",
-  accentLight: "#E3F2FF",
-  danger: "#FF3B30",
-  dangerLight: "#FFEBE9",
-  warning: "#FF9500",
-  warningLight: "#FFF4E5",
-};
-
-const spacing = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  xxl: 24,
-};
-
-const borderRadius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  full: 9999,
-};
+import { colors, spacing, borderRadius } from "../theme";
 
 // ============================================
 // COMPONENTE PRINCIPAL
@@ -95,7 +61,7 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
     (process: SecopProcess) => {
       Alert.alert(
         "Eliminar favorito",
-        `¿Deseas eliminar "${process.descripcion_del_procedimiento?.substring(
+        `¿Deseas eliminar "${process.descripci_n_del_procedimiento?.substring(
           0,
           50
         )}..." de tus favoritos?`,
