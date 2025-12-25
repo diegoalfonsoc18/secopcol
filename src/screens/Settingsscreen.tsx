@@ -27,7 +27,7 @@ import {
   removeWatchedMunicipality,
   checkForNewProcesses,
   NotificationSettings,
-} from "../services/notifications";
+} from "../services/Notificaciones";
 
 // ============================================
 // COMPONENTE DE SELECTOR DE MUNICIPIO
