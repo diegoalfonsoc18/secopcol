@@ -10,8 +10,8 @@ import {
   SearchScreen,
   FavoritesScreen,
   DetailScreen,
+  SettingsScreen,
 } from "./src/screens/index";
-import { HomeIcon } from "./src/assets/icons";
 
 // Tema centralizado
 const colors = {
@@ -37,6 +37,11 @@ function HomeStackNavigator() {
       }}>
       <Stack.Screen name="HomeTab" component={HomeScreen} />
       <Stack.Screen name="Detail" component={DetailScreen} />
+      <Stack.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ animation: "slide_from_bottom" }}
+      />
     </Stack.Navigator>
   );
 }
@@ -110,7 +115,11 @@ function TabNavigator() {
         options={{
           tabBarLabel: "Inicio",
           tabBarIcon: ({ focused, color }) => (
-            <HomeIcon size={24} color={color} filled={focused} />
+            <Ionicons
+              name={focused ? "home" : "home-outline"}
+              size={24}
+              color={color}
+            />
           ),
         }}
       />
