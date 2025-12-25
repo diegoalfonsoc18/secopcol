@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -25,8 +25,12 @@ import {
   setNotificationsEnabled,
   addWatchedMunicipality,
   removeWatchedMunicipality,
+  toggleWatchedModality,
+  toggleWatchedContractType,
   checkForNewProcesses,
   NotificationSettings,
+  MODALIDADES_CONTRATACION,
+  TIPOS_CONTRATO,
 } from "../services/Notificaciones";
 
 // ============================================
@@ -49,10 +53,8 @@ const MunicipalitySelector: React.FC<MunicipalitySelectorProps> = ({
   const [searchText, setSearchText] = useState("");
   const [selectedDept, setSelectedDept] = useState<string | null>(null);
 
-  // Obtener todos los municipios o filtrar por departamento
   const allMunicipalities = React.useMemo(() => {
     const result: { municipality: string; department: string }[] = [];
-
     const departments = selectedDept
       ? [selectedDept]
       : Object.keys(MUNICIPALITIES_BY_DEPARTMENT);
@@ -69,7 +71,6 @@ const MunicipalitySelector: React.FC<MunicipalitySelectorProps> = ({
     return result;
   }, [selectedDept, selectedMunicipalities]);
 
-  // Filtrar por búsqueda
   const filteredMunicipalities = React.useMemo(() => {
     if (!searchText) return allMunicipalities;
     const search = searchText.toLowerCase();
@@ -86,7 +87,6 @@ const MunicipalitySelector: React.FC<MunicipalitySelectorProps> = ({
       animationType="slide"
       presentationStyle="pageSheet">
       <View style={[selectorStyles.container, { paddingTop: insets.top }]}>
-        {/* Header */}
         <View style={selectorStyles.header}>
           <TouchableOpacity onPress={onClose}>
             <Text style={selectorStyles.cancelText}>Cancelar</Text>
@@ -95,7 +95,6 @@ const MunicipalitySelector: React.FC<MunicipalitySelectorProps> = ({
           <View style={{ width: 60 }} />
         </View>
 
-        {/* Search */}
         <View style={selectorStyles.searchContainer}>
           <Ionicons name="search" size={18} color={colors.textTertiary} />
           <TextInput
@@ -116,7 +115,6 @@ const MunicipalitySelector: React.FC<MunicipalitySelectorProps> = ({
           )}
         </View>
 
-        {/* Filtro por departamento */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -156,7 +154,6 @@ const MunicipalitySelector: React.FC<MunicipalitySelectorProps> = ({
           ))}
         </ScrollView>
 
-        {/* Lista */}
         <FlatList
           data={filteredMunicipalities}
           keyExtractor={(item) => `${item.department}-${item.municipality}`}
@@ -212,11 +209,12 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
   const [settings, setSettings] = useState<NotificationSettings>({
     enabled: false,
     watchedMunicipalities: [],
+    watchedModalities: [],
+    watchedContractTypes: [],
     lastCheckDate: null,
   });
   const [showSelector, setShowSelector] = useState(false);
 
-  // Cargar configuración
   useEffect(() => {
     loadSettings();
   }, []);
@@ -228,7 +226,6 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
     setLoading(false);
   };
 
-  // Toggle notificaciones
   const handleToggleNotifications = async (value: boolean) => {
     if (value) {
       const granted = await requestNotificationPermissions();
@@ -245,13 +242,11 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
     setSettings((prev) => ({ ...prev, enabled: value }));
   };
 
-  // Agregar municipio
   const handleAddMunicipality = async (municipality: string) => {
     const updated = await addWatchedMunicipality(municipality);
     setSettings((prev) => ({ ...prev, watchedMunicipalities: updated }));
   };
 
-  // Eliminar municipio
   const handleRemoveMunicipality = async (municipality: string) => {
     Alert.alert(
       "Eliminar municipio",
@@ -273,7 +268,16 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
     );
   };
 
-  // Verificar ahora
+  const handleToggleModality = async (modalityId: string) => {
+    const updated = await toggleWatchedModality(modalityId);
+    setSettings((prev) => ({ ...prev, watchedModalities: updated }));
+  };
+
+  const handleToggleContractType = async (typeId: string) => {
+    const updated = await toggleWatchedContractType(typeId);
+    setSettings((prev) => ({ ...prev, watchedContractTypes: updated }));
+  };
+
   const handleCheckNow = async () => {
     if (settings.watchedMunicipalities.length === 0) {
       Alert.alert(
@@ -296,14 +300,12 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
       Alert.alert("Sin novedades", "No hay procesos nuevos en este momento.");
     }
 
-    // Actualizar última fecha
     setSettings((prev) => ({
       ...prev,
       lastCheckDate: new Date().toISOString(),
     }));
   };
 
-  // Formatear fecha
   const formatLastCheck = (dateString: string | null): string => {
     if (!dateString) return "Nunca";
     const date = new Date(dateString);
@@ -313,6 +315,14 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const getActiveFiltersCount = () => {
+    return (
+      settings.watchedMunicipalities.length +
+      settings.watchedModalities.length +
+      settings.watchedContractTypes.length
+    );
   };
 
   if (loading) {
@@ -396,17 +406,34 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
               </>
             )}
           </View>
+
+          {/* Resumen de filtros activos */}
+          {getActiveFiltersCount() > 0 && (
+            <View style={styles.filtersSummary}>
+              <Ionicons name="funnel-outline" size={16} color={colors.accent} />
+              <Text style={styles.filtersSummaryText}>
+                {getActiveFiltersCount()} filtro(s) activo(s)
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Sección: Municipios de interés */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="location-outline" size={20} color={colors.accent} />
-            <Text style={styles.sectionTitle}>Municipios de interés</Text>
+            <Text style={styles.sectionTitle}>Municipios</Text>
+            {settings.watchedMunicipalities.length > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {settings.watchedMunicipalities.length}
+                </Text>
+              </View>
+            )}
           </View>
 
           <Text style={styles.sectionDesc}>
-            Recibirás alertas cuando haya nuevos procesos en estos municipios
+            Recibirás alertas de procesos en estos municipios
           </Text>
 
           <View style={styles.card}>
@@ -464,6 +491,122 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
           </View>
         </View>
 
+        {/* Sección: Modalidad de contratación */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="layers-outline" size={20} color={colors.accent} />
+            <Text style={styles.sectionTitle}>Modalidad</Text>
+            {settings.watchedModalities.length > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {settings.watchedModalities.length}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <Text style={styles.sectionDesc}>
+            Filtra por modalidad. Sin selección = todas las modalidades.
+          </Text>
+
+          <View style={styles.chipsGrid}>
+            {MODALIDADES_CONTRATACION.map((modalidad) => {
+              const isSelected = settings.watchedModalities.includes(
+                modalidad.id
+              );
+              return (
+                <TouchableOpacity
+                  key={modalidad.id}
+                  style={[styles.chip, isSelected && styles.chipSelected]}
+                  onPress={() => handleToggleModality(modalidad.id)}
+                  activeOpacity={0.7}>
+                  <Ionicons
+                    name={modalidad.icon as any}
+                    size={16}
+                    color={
+                      isSelected ? colors.backgroundSecondary : colors.accent
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.chipText,
+                      isSelected && styles.chipTextSelected,
+                    ]}>
+                    {modalidad.label}
+                  </Text>
+                  {isSelected && (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={14}
+                      color={colors.backgroundSecondary}
+                    />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Sección: Tipo de contrato */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Ionicons
+              name="document-text-outline"
+              size={20}
+              color={colors.accent}
+            />
+            <Text style={styles.sectionTitle}>Tipo de Contrato</Text>
+            {settings.watchedContractTypes.length > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {settings.watchedContractTypes.length}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <Text style={styles.sectionDesc}>
+            Filtra por tipo. Sin selección = todos los tipos.
+          </Text>
+
+          <View style={styles.chipsGrid}>
+            {TIPOS_CONTRATO.map((tipo) => {
+              const isSelected = settings.watchedContractTypes.includes(
+                tipo.id
+              );
+              return (
+                <TouchableOpacity
+                  key={tipo.id}
+                  style={[styles.chip, isSelected && styles.chipSelected]}
+                  onPress={() => handleToggleContractType(tipo.id)}
+                  activeOpacity={0.7}>
+                  <Ionicons
+                    name={tipo.icon as any}
+                    size={16}
+                    color={
+                      isSelected ? colors.backgroundSecondary : colors.success
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.chipText,
+                      isSelected && styles.chipTextSelected,
+                    ]}>
+                    {tipo.label}
+                  </Text>
+                  {isSelected && (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={14}
+                      color={colors.backgroundSecondary}
+                    />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
         {/* Info */}
         <View style={styles.infoCard}>
           <Ionicons
@@ -472,8 +615,9 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
             color={colors.textSecondary}
           />
           <Text style={styles.infoText}>
-            Las notificaciones se verifican cuando abres la app. Para
-            verificación automática en segundo plano, mantén la app actualizada.
+            Las notificaciones se verifican cuando abres la app. Combina
+            municipios con modalidades y tipos de contrato para filtros
+            precisos.
           </Text>
         </View>
       </ScrollView>
@@ -659,6 +803,37 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     lineHeight: 20,
   },
+  badge: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.full,
+    minWidth: 22,
+    alignItems: "center",
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.backgroundSecondary,
+  },
+
+  // Filters summary
+  filtersSummary: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.accentLight,
+    borderRadius: borderRadius.full,
+    alignSelf: "flex-start",
+  },
+  filtersSummaryText: {
+    fontSize: 13,
+    color: colors.accent,
+    fontWeight: "500",
+  },
 
   // Card
   card: {
@@ -739,6 +914,41 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.accent,
     fontWeight: "500",
+  },
+
+  // Chips grid
+  chipsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.backgroundSecondary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    gap: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.separatorLight,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  chipSelected: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  chipText: {
+    fontSize: 13,
+    color: colors.textPrimary,
+    fontWeight: "500",
+  },
+  chipTextSelected: {
+    color: colors.backgroundSecondary,
   },
 
   // Info

@@ -9,9 +9,69 @@ import { SecopProcess, getRecentProcesses } from "../api/secop";
 // ============================================
 const STORAGE_KEYS = {
   WATCHED_MUNICIPALITIES: "secop-watched-municipalities",
+  WATCHED_MODALITIES: "secop-watched-modalities",
+  WATCHED_CONTRACT_TYPES: "secop-watched-contract-types",
   LAST_CHECK_DATE: "secop-last-check-date",
   SEEN_PROCESS_IDS: "secop-seen-process-ids",
   NOTIFICATIONS_ENABLED: "secop-notifications-enabled",
+};
+
+// Modalidades disponibles
+export const MODALIDADES_CONTRATACION = [
+  { id: "licitacion", label: "Licitación pública", icon: "megaphone-outline" },
+  {
+    id: "seleccion_abreviada",
+    label: "Selección abreviada",
+    icon: "flash-outline",
+  },
+  {
+    id: "contratacion_directa",
+    label: "Contratación directa",
+    icon: "person-outline",
+  },
+  { id: "minima_cuantia", label: "Mínima cuantía", icon: "wallet-outline" },
+  {
+    id: "concurso_meritos",
+    label: "Concurso de méritos",
+    icon: "trophy-outline",
+  },
+  { id: "regimen_especial", label: "Régimen especial", icon: "star-outline" },
+] as const;
+
+// Tipos de contrato disponibles
+export const TIPOS_CONTRATO = [
+  { id: "obra", label: "Obra", icon: "construct-outline" },
+  { id: "consultoria", label: "Consultoría", icon: "bulb-outline" },
+  {
+    id: "prestacion_servicios",
+    label: "Prestación de servicios",
+    icon: "briefcase-outline",
+  },
+  { id: "suministro", label: "Suministro", icon: "cube-outline" },
+  { id: "compraventa", label: "Compraventa", icon: "cart-outline" },
+  { id: "interventoria", label: "Interventoría", icon: "eye-outline" },
+  { id: "arrendamiento", label: "Arrendamiento", icon: "home-outline" },
+] as const;
+
+// Mapeo de IDs a valores de la API - Modalidades
+export const MODALIDAD_API_MAP: Record<string, string> = {
+  licitacion: "Licitación pública",
+  seleccion_abreviada: "Selección abreviada menor cuantía",
+  contratacion_directa: "Contratación directa",
+  minima_cuantia: "Mínima cuantía",
+  concurso_meritos: "Concurso de méritos abierto",
+  regimen_especial: "Contratación régimen especial",
+};
+
+// Mapeo de IDs a valores de la API - Tipos de contrato
+export const TIPO_CONTRATO_API_MAP: Record<string, string> = {
+  obra: "Obra",
+  consultoria: "Consultoría",
+  prestacion_servicios: "Prestación de servicios",
+  suministro: "Suministro",
+  compraventa: "Compraventa",
+  interventoria: "Interventoría",
+  arrendamiento: "Arrendamiento",
 };
 
 // Configurar comportamiento de notificaciones
@@ -31,6 +91,8 @@ Notifications.setNotificationHandler({
 export interface NotificationSettings {
   enabled: boolean;
   watchedMunicipalities: string[];
+  watchedModalities: string[];
+  watchedContractTypes: string[];
   lastCheckDate: string | null;
 }
 
@@ -56,7 +118,6 @@ export async function requestNotificationPermissions(): Promise<boolean> {
     return false;
   }
 
-  // Configuración específica de Android
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("secop-alerts", {
       name: "Alertas SECOP",
@@ -75,15 +136,20 @@ export async function requestNotificationPermissions(): Promise<boolean> {
 // ============================================
 export async function getNotificationSettings(): Promise<NotificationSettings> {
   try {
-    const [enabled, municipalities, lastCheck] = await Promise.all([
-      AsyncStorage.getItem(STORAGE_KEYS.NOTIFICATIONS_ENABLED),
-      AsyncStorage.getItem(STORAGE_KEYS.WATCHED_MUNICIPALITIES),
-      AsyncStorage.getItem(STORAGE_KEYS.LAST_CHECK_DATE),
-    ]);
+    const [enabled, municipalities, modalities, contractTypes, lastCheck] =
+      await Promise.all([
+        AsyncStorage.getItem(STORAGE_KEYS.NOTIFICATIONS_ENABLED),
+        AsyncStorage.getItem(STORAGE_KEYS.WATCHED_MUNICIPALITIES),
+        AsyncStorage.getItem(STORAGE_KEYS.WATCHED_MODALITIES),
+        AsyncStorage.getItem(STORAGE_KEYS.WATCHED_CONTRACT_TYPES),
+        AsyncStorage.getItem(STORAGE_KEYS.LAST_CHECK_DATE),
+      ]);
 
     return {
       enabled: enabled === "true",
       watchedMunicipalities: municipalities ? JSON.parse(municipalities) : [],
+      watchedModalities: modalities ? JSON.parse(modalities) : [],
+      watchedContractTypes: contractTypes ? JSON.parse(contractTypes) : [],
       lastCheckDate: lastCheck,
     };
   } catch (error) {
@@ -91,6 +157,8 @@ export async function getNotificationSettings(): Promise<NotificationSettings> {
     return {
       enabled: false,
       watchedMunicipalities: [],
+      watchedModalities: [],
+      watchedContractTypes: [],
       lastCheckDate: null,
     };
   }
@@ -104,6 +172,9 @@ export async function setNotificationsEnabled(enabled: boolean): Promise<void> {
   console.log(`🔔 Notificaciones ${enabled ? "activadas" : "desactivadas"}`);
 }
 
+// ============================================
+// GESTIÓN DE MUNICIPIOS
+// ============================================
 export async function setWatchedMunicipalities(
   municipalities: string[]
 ): Promise<void> {
@@ -138,6 +209,90 @@ export async function removeWatchedMunicipality(
 }
 
 // ============================================
+// GESTIÓN DE MODALIDADES
+// ============================================
+export async function setWatchedModalities(
+  modalities: string[]
+): Promise<void> {
+  await AsyncStorage.setItem(
+    STORAGE_KEYS.WATCHED_MODALITIES,
+    JSON.stringify(modalities)
+  );
+  console.log(`📋 Modalidades vigiladas: ${modalities.join(", ")}`);
+}
+
+export async function addWatchedModality(modality: string): Promise<string[]> {
+  const settings = await getNotificationSettings();
+  if (!settings.watchedModalities.includes(modality)) {
+    const updated = [...settings.watchedModalities, modality];
+    await setWatchedModalities(updated);
+    return updated;
+  }
+  return settings.watchedModalities;
+}
+
+export async function removeWatchedModality(
+  modality: string
+): Promise<string[]> {
+  const settings = await getNotificationSettings();
+  const updated = settings.watchedModalities.filter((m) => m !== modality);
+  await setWatchedModalities(updated);
+  return updated;
+}
+
+export async function toggleWatchedModality(
+  modality: string
+): Promise<string[]> {
+  const settings = await getNotificationSettings();
+  if (settings.watchedModalities.includes(modality)) {
+    return removeWatchedModality(modality);
+  } else {
+    return addWatchedModality(modality);
+  }
+}
+
+// ============================================
+// GESTIÓN DE TIPOS DE CONTRATO
+// ============================================
+export async function setWatchedContractTypes(types: string[]): Promise<void> {
+  await AsyncStorage.setItem(
+    STORAGE_KEYS.WATCHED_CONTRACT_TYPES,
+    JSON.stringify(types)
+  );
+  console.log(`📄 Tipos de contrato vigilados: ${types.join(", ")}`);
+}
+
+export async function addWatchedContractType(type: string): Promise<string[]> {
+  const settings = await getNotificationSettings();
+  if (!settings.watchedContractTypes.includes(type)) {
+    const updated = [...settings.watchedContractTypes, type];
+    await setWatchedContractTypes(updated);
+    return updated;
+  }
+  return settings.watchedContractTypes;
+}
+
+export async function removeWatchedContractType(
+  type: string
+): Promise<string[]> {
+  const settings = await getNotificationSettings();
+  const updated = settings.watchedContractTypes.filter((t) => t !== type);
+  await setWatchedContractTypes(updated);
+  return updated;
+}
+
+export async function toggleWatchedContractType(
+  type: string
+): Promise<string[]> {
+  const settings = await getNotificationSettings();
+  if (settings.watchedContractTypes.includes(type)) {
+    return removeWatchedContractType(type);
+  } else {
+    return addWatchedContractType(type);
+  }
+}
+
+// ============================================
 // ENVIAR NOTIFICACIONES
 // ============================================
 export async function sendLocalNotification(
@@ -152,7 +307,7 @@ export async function sendLocalNotification(
       data,
       sound: true,
     },
-    trigger: null, // Inmediata
+    trigger: null,
   });
 
   console.log(`📬 Notificación enviada: ${title}`);
@@ -167,8 +322,10 @@ export async function sendNewProcessNotification(
     : "Sin valor";
 
   await sendLocalNotification(
-    `🆕 Nuevo proceso en ${process.ciudad_entidad}`,
-    `${process.nombre_del_procedimiento?.substring(0, 100)}...\n💰 ${valor}`,
+    `🆕 Nuevo proceso en ${process.ciudad_entidad || "Colombia"}`,
+    `${
+      process.nombre_del_procedimiento?.substring(0, 100) || "Sin descripción"
+    }...\n💰 ${valor}`,
     { processId: process.id_del_proceso, process }
   );
 }
@@ -198,13 +355,45 @@ export async function checkForNewProcesses(): Promise<SecopProcess[]> {
     // Obtener procesos recientes
     const recentProcesses = await getRecentProcesses(100);
 
-    // Filtrar procesos nuevos en municipios vigilados
+    // Convertir filtros seleccionados a valores de la API
+    const watchedModalityValues = settings.watchedModalities
+      .map((id) => MODALIDAD_API_MAP[id])
+      .filter(Boolean);
+
+    const watchedContractTypeValues = settings.watchedContractTypes
+      .map((id) => TIPO_CONTRATO_API_MAP[id])
+      .filter(Boolean);
+
+    // Filtrar procesos nuevos
     const newProcesses = recentProcesses.filter((process) => {
-      const isWatched = settings.watchedMunicipalities.includes(
-        process.ciudad_entidad
-      );
+      // Verificar municipio
+      const isWatchedMunicipality = process.ciudad_entidad
+        ? settings.watchedMunicipalities.includes(process.ciudad_entidad)
+        : false;
+
+      // Verificar si es nuevo
       const isNew = !seenIds.has(process.id_del_proceso);
-      return isWatched && isNew;
+
+      // Verificar modalidad (si no hay seleccionadas, acepta todas)
+      const isWatchedModality =
+        watchedModalityValues.length === 0 ||
+        (process.modalidad_de_contratacion
+          ? watchedModalityValues.includes(process.modalidad_de_contratacion)
+          : false);
+
+      // Verificar tipo de contrato (si no hay seleccionados, acepta todos)
+      const isWatchedContractType =
+        watchedContractTypeValues.length === 0 ||
+        (process.tipo_de_contrato
+          ? watchedContractTypeValues.includes(process.tipo_de_contrato)
+          : false);
+
+      return (
+        isWatchedMunicipality &&
+        isNew &&
+        isWatchedModality &&
+        isWatchedContractType
+      );
     });
 
     // Guardar nuevos IDs como vistos
@@ -212,14 +401,14 @@ export async function checkForNewProcesses(): Promise<SecopProcess[]> {
       const updatedSeenIds = [
         ...Array.from(seenIds),
         ...newProcesses.map((p) => p.id_del_proceso),
-      ].slice(-500); // Mantener solo los últimos 500
+      ].slice(-500);
 
       await AsyncStorage.setItem(
         STORAGE_KEYS.SEEN_PROCESS_IDS,
         JSON.stringify(updatedSeenIds)
       );
 
-      // Enviar notificaciones
+      // Enviar notificaciones (máximo 5)
       for (const process of newProcesses.slice(0, 5)) {
         await sendNewProcessNotification(process);
       }
@@ -279,9 +468,21 @@ export default {
   requestNotificationPermissions,
   getNotificationSettings,
   setNotificationsEnabled,
+  // Municipios
   setWatchedMunicipalities,
   addWatchedMunicipality,
   removeWatchedMunicipality,
+  // Modalidades
+  setWatchedModalities,
+  addWatchedModality,
+  removeWatchedModality,
+  toggleWatchedModality,
+  // Tipos de contrato
+  setWatchedContractTypes,
+  addWatchedContractType,
+  removeWatchedContractType,
+  toggleWatchedContractType,
+  // Notificaciones
   sendLocalNotification,
   sendNewProcessNotification,
   checkForNewProcesses,
@@ -289,4 +490,9 @@ export default {
   addNotificationResponseListener,
   setBadgeCount,
   clearBadge,
+  // Constantes
+  MODALIDADES_CONTRATACION,
+  MODALIDAD_API_MAP,
+  TIPOS_CONTRATO,
+  TIPO_CONTRATO_API_MAP,
 };
