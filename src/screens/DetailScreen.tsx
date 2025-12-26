@@ -13,13 +13,103 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
-import { colors, spacing, borderRadius } from "../theme";
+import { spacing, borderRadius } from "../theme";
+import { useTheme } from "../context/ThemeContext";
 
 // ============================================
-// CONFIGURACIÓN DE FASES
+// UTILIDADES
 // ============================================
-const phaseConfig: Record<string, { color: string; bg: string; icon: string }> =
-  {
+const formatCurrency = (value: string | number | undefined): string => {
+  if (!value) return "No especificado";
+  const numValue = typeof value === "string" ? parseFloat(value) : value;
+  if (isNaN(numValue)) return "No especificado";
+  return new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: "COP",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(numValue);
+};
+
+const formatDateTime = (dateString: string | undefined): string => {
+  if (!dateString) return "No disponible";
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "No disponible";
+    return date.toLocaleDateString("es-CO", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return dateString;
+  }
+};
+
+// Obtener el estado/fase del proceso
+const getProcessPhase = (process: SecopProcess): string => {
+  return process.fase || process.estado_del_procedimiento || "Desconocido";
+};
+
+// Obtener la URL del proceso (puede ser string u objeto)
+const getProcessUrl = (
+  urlproceso: string | { url: string } | undefined
+): string | null => {
+  if (!urlproceso) return null;
+  if (typeof urlproceso === "string") return urlproceso;
+  if (typeof urlproceso === "object" && urlproceso.url) return urlproceso.url;
+  return null;
+};
+
+// ============================================
+// COMPONENTES AUXILIARES
+// ============================================
+const InfoRow: React.FC<{
+  icon: string;
+  label: string;
+  value: string | undefined;
+  isLast?: boolean;
+}> = ({ icon, label, value, isLast }) => (
+  <View style={[styles.infoRow, !isLast && styles.infoRowBorder]}>
+    <View style={styles.infoIconContainer}>
+      <Ionicons name={icon as any} size={18} color={colors.accent} />
+    </View>
+    <View style={styles.infoContent}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value || "No disponible"}</Text>
+    </View>
+  </View>
+);
+
+const Section: React.FC<{
+  title: string;
+  children: React.ReactNode;
+}> = ({ title, children }) => (
+  <View style={styles.section}>
+    <Text style={styles.sectionTitle}>{title}</Text>
+    <View style={styles.sectionContent}>{children}</View>
+  </View>
+);
+
+// ============================================
+// COMPONENTE PRINCIPAL
+// ============================================
+export const DetailScreen = ({ route, navigation }: any) => {
+  const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const { process } = route.params as { process: SecopProcess };
+  const { isFavorite, addFavorite, removeFavorite } = useProcessesStore();
+  const favorite = isFavorite(process.id_del_proceso);
+
+  const styles = createStyles(colors);
+
+  // Configuración de fases
+  const phaseConfig: Record<
+    string,
+    { color: string; bg: string; icon: string }
+  > = {
     Borrador: {
       color: colors.textSecondary,
       bg: colors.backgroundTertiary,
@@ -71,84 +161,13 @@ const phaseConfig: Record<string, { color: string; bg: string; icon: string }> =
       icon: "remove-circle-outline",
     },
   };
+  const defaultPhase = {
+    color: colors.textSecondary,
+    bg: colors.backgroundTertiary,
+    icon: "help-circle-outline",
+  };
 
-const defaultPhase = {
-  color: colors.textSecondary,
-  bg: colors.backgroundTertiary,
-  icon: "help-circle-outline",
-};
-
-// ============================================
-// UTILIDADES
-// ============================================
-const formatCurrency = (value: string | number | undefined): string => {
-  if (!value) return "No especificado";
-  const numValue = typeof value === "string" ? parseFloat(value) : value;
-  if (isNaN(numValue)) return "No especificado";
-  return new Intl.NumberFormat("es-CO", {
-    style: "currency",
-    currency: "COP",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(numValue);
-};
-
-const formatDateTime = (dateString: string | undefined): string => {
-  if (!dateString) return "No disponible";
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("es-CO", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return dateString;
-  }
-};
-
-// ============================================
-// COMPONENTES AUXILIARES
-// ============================================
-const InfoRow: React.FC<{
-  icon: string;
-  label: string;
-  value: string | undefined;
-  isLast?: boolean;
-}> = ({ icon, label, value, isLast }) => (
-  <View style={[styles.infoRow, !isLast && styles.infoRowBorder]}>
-    <View style={styles.infoIconContainer}>
-      <Ionicons name={icon as any} size={18} color={colors.accent} />
-    </View>
-    <View style={styles.infoContent}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value || "No disponible"}</Text>
-    </View>
-  </View>
-);
-
-const Section: React.FC<{
-  title: string;
-  children: React.ReactNode;
-}> = ({ title, children }) => (
-  <View style={styles.section}>
-    <Text style={styles.sectionTitle}>{title}</Text>
-    <View style={styles.sectionContent}>{children}</View>
-  </View>
-);
-
-// ============================================
-// COMPONENTE PRINCIPAL
-// ============================================
-export const DetailScreen = ({ route, navigation }: any) => {
-  const insets = useSafeAreaInsets();
-  const { process } = route.params as { process: SecopProcess };
-  const { isFavorite, addFavorite, removeFavorite } = useProcessesStore();
-  const favorite = isFavorite(process.id_del_proceso);
-
-  const fase = process.fase || "Desconocido";
+  const fase = getProcessPhase(process);
   const phaseStyle = phaseConfig[fase] || defaultPhase;
 
   const handleToggleFavorite = () => {
@@ -168,7 +187,7 @@ ${process.nombre_del_procedimiento || "Sin nombre"}
 🏢 Entidad: ${process.entidad}
 📍 Ubicación: ${process.ciudad_entidad}, ${process.departamento_entidad}
 💰 Precio base: ${formatCurrency(process.precio_base)}
-📊 Fase: ${process.fase}
+📊 Fase: ${fase}
 
 🔗 Ver más en SECOP II`;
 
@@ -182,8 +201,9 @@ ${process.nombre_del_procedimiento || "Sin nombre"}
   };
 
   const handleOpenSecop = () => {
-    if (process.urlproceso) {
-      Linking.openURL(process.urlproceso);
+    const url = getProcessUrl(process.urlproceso);
+    if (url) {
+      Linking.openURL(url);
     } else {
       // URL genérica de SECOP II
       Linking.openURL(
@@ -493,285 +513,286 @@ ${process.nombre_del_procedimiento || "Sin nombre"}
 // ============================================
 // ESTILOS
 // ============================================
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
 
-  // Header
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
-    backgroundColor: colors.background,
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  backText: {
-    fontSize: 17,
-    color: colors.accent,
-    marginLeft: spacing.xs,
-  },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.lg,
-  },
-  headerButton: {
-    padding: spacing.xs,
-  },
+    // Header
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: spacing.md,
+      paddingBottom: spacing.md,
+      backgroundColor: colors.background,
+    },
+    backButton: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    backText: {
+      fontSize: 17,
+      color: colors.accent,
+      marginLeft: spacing.xs,
+    },
+    headerActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.lg,
+    },
+    headerButton: {
+      padding: spacing.xs,
+    },
 
-  // Scroll
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: spacing.lg,
-  },
+    // Scroll
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: spacing.lg,
+    },
 
-  // Hero
-  heroSection: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing.lg,
-  },
-  idContainer: {
-    flex: 1,
-  },
-  idLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.textTertiary,
-    letterSpacing: 1,
-    marginBottom: spacing.xs,
-  },
-  idValue: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: colors.accent,
-  },
-  phaseBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-    gap: spacing.xs,
-  },
-  phaseText: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
+    // Hero
+    heroSection: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: spacing.lg,
+    },
+    idContainer: {
+      flex: 1,
+    },
+    idLabel: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: colors.textTertiary,
+      letterSpacing: 1,
+      marginBottom: spacing.xs,
+    },
+    idValue: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: colors.accent,
+    },
+    phaseBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.full,
+      gap: spacing.xs,
+    },
+    phaseText: {
+      fontSize: 13,
+      fontWeight: "600",
+    },
 
-  // Procedure Name
-  procedureName: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: colors.textPrimary,
-    lineHeight: 28,
-    marginBottom: spacing.lg,
-  },
+    // Procedure Name
+    procedureName: {
+      fontSize: 22,
+      fontWeight: "700",
+      color: colors.textPrimary,
+      lineHeight: 28,
+      marginBottom: spacing.lg,
+    },
 
-  // Description Card
-  descriptionCard: {
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  descriptionLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.textTertiary,
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
-    marginBottom: spacing.sm,
-  },
-  descriptionText: {
-    fontSize: 15,
-    color: colors.textPrimary,
-    lineHeight: 23,
-  },
+    // Description Card
+    descriptionCard: {
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: borderRadius.lg,
+      padding: spacing.lg,
+      marginBottom: spacing.lg,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.06,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    descriptionLabel: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: colors.textTertiary,
+      letterSpacing: 0.5,
+      textTransform: "uppercase",
+      marginBottom: spacing.sm,
+    },
+    descriptionText: {
+      fontSize: 15,
+      color: colors.textPrimary,
+      lineHeight: 23,
+    },
 
-  // Price Card
-  priceCard: {
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.success,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  priceHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  priceLabel: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    fontWeight: "500",
-  },
-  priceValue: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: colors.success,
-  },
+    // Price Card
+    priceCard: {
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: borderRadius.lg,
+      padding: spacing.lg,
+      marginBottom: spacing.lg,
+      borderLeftWidth: 4,
+      borderLeftColor: colors.success,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.06,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    priceHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      marginBottom: spacing.sm,
+    },
+    priceLabel: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      fontWeight: "500",
+    },
+    priceValue: {
+      fontSize: 28,
+      fontWeight: "700",
+      color: colors.success,
+    },
 
-  // Sections
-  section: {
-    marginBottom: spacing.xl,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: spacing.md,
-    marginLeft: spacing.xs,
-  },
-  sectionContent: {
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.lg,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
+    // Sections
+    section: {
+      marginBottom: spacing.xl,
+    },
+    sectionTitle: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: colors.textSecondary,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+      marginBottom: spacing.md,
+      marginLeft: spacing.xs,
+    },
+    sectionContent: {
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: borderRadius.lg,
+      overflow: "hidden",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.04,
+      shadowRadius: 4,
+      elevation: 1,
+    },
 
-  // Info Row
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: spacing.lg,
-  },
-  infoRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.separatorLight,
-  },
-  infoIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.sm,
-    backgroundColor: colors.accentLight,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: spacing.md,
-  },
-  infoContent: {
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: 11,
-    color: colors.textTertiary,
-    marginBottom: 2,
-  },
-  infoValue: {
-    fontSize: 15,
-    color: colors.textPrimary,
-    fontWeight: "500",
-  },
+    // Info Row
+    infoRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: spacing.lg,
+    },
+    infoRowBorder: {
+      borderBottomWidth: 1,
+      borderBottomColor: colors.separatorLight,
+    },
+    infoIconContainer: {
+      width: 36,
+      height: 36,
+      borderRadius: borderRadius.sm,
+      backgroundColor: colors.accentLight,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: spacing.md,
+    },
+    infoContent: {
+      flex: 1,
+    },
+    infoLabel: {
+      fontSize: 11,
+      color: colors.textTertiary,
+      marginBottom: 2,
+    },
+    infoValue: {
+      fontSize: 15,
+      color: colors.textPrimary,
+      fontWeight: "500",
+    },
 
-  // Stats
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.xl,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  statItem: {
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.textPrimary,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: colors.textSecondary,
-  },
+    // Stats
+    statsContainer: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: borderRadius.lg,
+      padding: spacing.lg,
+      marginBottom: spacing.xl,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.04,
+      shadowRadius: 4,
+      elevation: 1,
+    },
+    statItem: {
+      alignItems: "center",
+      gap: spacing.xs,
+    },
+    statValue: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: colors.textPrimary,
+    },
+    statLabel: {
+      fontSize: 11,
+      color: colors.textSecondary,
+    },
 
-  // SECOP Button
-  secopButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.accent,
-    borderRadius: borderRadius.md,
-    padding: spacing.lg,
-    marginBottom: spacing.xl,
-    gap: spacing.sm,
-    shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  secopButtonPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
-  },
-  secopButtonText: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: colors.backgroundSecondary,
-  },
+    // SECOP Button
+    secopButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.accent,
+      borderRadius: borderRadius.md,
+      padding: spacing.lg,
+      marginBottom: spacing.xl,
+      gap: spacing.sm,
+      shadowColor: colors.accent,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    secopButtonPressed: {
+      opacity: 0.9,
+      transform: [{ scale: 0.98 }],
+    },
+    secopButtonText: {
+      fontSize: 17,
+      fontWeight: "600",
+      color: colors.backgroundSecondary,
+    },
 
-  // Reference
-  referenceContainer: {
-    backgroundColor: colors.backgroundTertiary,
-    borderRadius: borderRadius.md,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  referenceLabel: {
-    fontSize: 11,
-    color: colors.textTertiary,
-    marginBottom: spacing.xs,
-  },
-  referenceValue: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    fontFamily: "monospace",
-  },
+    // Reference
+    referenceContainer: {
+      backgroundColor: colors.backgroundTertiary,
+      borderRadius: borderRadius.md,
+      padding: spacing.lg,
+      marginBottom: spacing.lg,
+    },
+    referenceLabel: {
+      fontSize: 11,
+      color: colors.textTertiary,
+      marginBottom: spacing.xs,
+    },
+    referenceValue: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      fontFamily: "monospace",
+    },
 
-  // Disclaimer
-  disclaimer: {
-    fontSize: 12,
-    color: colors.textTertiary,
-    textAlign: "center",
-    lineHeight: 18,
-    paddingHorizontal: spacing.lg,
-  },
-});
+    // Disclaimer
+    disclaimer: {
+      fontSize: 12,
+      color: colors.textTertiary,
+      textAlign: "center",
+      lineHeight: 18,
+      paddingHorizontal: spacing.lg,
+    },
+  });
 
 export default DetailScreen;

@@ -17,7 +17,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ProcessCard } from "../components/index";
 import { SecopProcess, advancedSearch } from "../api/secop";
-import { colors, spacing, borderRadius } from "../theme";
+import { spacing, borderRadius } from "../theme";
+import { useTheme } from "../context/ThemeContext";
 import {
   COLOMBIAN_DEPARTMENTS,
   MUNICIPALITIES_BY_DEPARTMENT,
@@ -161,7 +162,10 @@ const SelectorModal: React.FC<SelectorModalProps> = ({
   searchable = true,
 }) => {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const [searchText, setSearchText] = useState("");
+
+  const modalStyles = createModalStyles(colors);
 
   const filteredOptions = useMemo(() => {
     if (!searchText) return options;
@@ -272,8 +276,12 @@ const SelectorModal: React.FC<SelectorModalProps> = ({
 // ============================================
 export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const scrollY = useRef(new Animated.Value(0)).current;
   const searchInputRef = useRef<TextInput>(null);
+
+  const styles = createStyles(colors);
+  const modalStyles = createModalStyles(colors);
 
   // Estados de filtros
   const [keyword, setKeyword] = useState("");
@@ -950,441 +958,443 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 // ============================================
 // ESTILOS DEL MODAL
 // ============================================
-const modalStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.separatorLight,
-    backgroundColor: colors.backgroundSecondary,
-  },
-  closeButton: {
-    padding: spacing.sm,
-  },
-  closeText: {
-    fontSize: 16,
-    color: colors.accent,
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: colors.textPrimary,
-  },
-  clearButton: {
-    padding: spacing.sm,
-  },
-  clearText: {
-    fontSize: 16,
-    color: colors.danger,
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.backgroundTertiary,
-    margin: spacing.lg,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    height: 40,
-    gap: spacing.sm,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.textPrimary,
-  },
-  option: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    backgroundColor: colors.backgroundSecondary,
-  },
-  optionSelected: {
-    backgroundColor: colors.accentLight,
-  },
-  optionText: {
-    fontSize: 16,
-    color: colors.textPrimary,
-  },
-  optionTextSelected: {
-    color: colors.accent,
-    fontWeight: "600",
-  },
-  separator: {
-    height: 1,
-    backgroundColor: colors.separatorLight,
-    marginLeft: spacing.lg,
-  },
-  emptyContainer: {
-    padding: spacing.xl,
-    alignItems: "center",
-  },
-  emptyText: {
-    fontSize: 15,
-    color: colors.textTertiary,
-  },
-});
+const createModalStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.separatorLight,
+      backgroundColor: colors.backgroundSecondary,
+    },
+    closeButton: {
+      padding: spacing.sm,
+    },
+    closeText: {
+      fontSize: 16,
+      color: colors.accent,
+    },
+    title: {
+      fontSize: 17,
+      fontWeight: "600",
+      color: colors.textPrimary,
+    },
+    clearButton: {
+      padding: spacing.sm,
+    },
+    clearText: {
+      fontSize: 16,
+      color: colors.danger,
+    },
+    searchContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.backgroundTertiary,
+      margin: spacing.lg,
+      paddingHorizontal: spacing.md,
+      borderRadius: borderRadius.md,
+      height: 40,
+      gap: spacing.sm,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 16,
+      color: colors.textPrimary,
+    },
+    option: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.lg,
+      backgroundColor: colors.backgroundSecondary,
+    },
+    optionSelected: {
+      backgroundColor: colors.accentLight,
+    },
+    optionText: {
+      fontSize: 16,
+      color: colors.textPrimary,
+    },
+    optionTextSelected: {
+      color: colors.accent,
+      fontWeight: "600",
+    },
+    separator: {
+      height: 1,
+      backgroundColor: colors.separatorLight,
+      marginLeft: spacing.lg,
+    },
+    emptyContainer: {
+      padding: spacing.xl,
+      alignItems: "center",
+    },
+    emptyText: {
+      fontSize: 15,
+      color: colors.textTertiary,
+    },
+  });
 
 // ============================================
 // ESTILOS PRINCIPALES
 // ============================================
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
 
-  // Header
-  header: {
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
-    justifyContent: "flex-end",
-    paddingBottom: spacing.md,
-  },
-  title: {
-    fontSize: 34,
-    fontWeight: "700",
-    color: colors.textPrimary,
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
+    // Header
+    header: {
+      backgroundColor: colors.background,
+      paddingHorizontal: spacing.lg,
+      justifyContent: "flex-end",
+      paddingBottom: spacing.md,
+    },
+    title: {
+      fontSize: 34,
+      fontWeight: "700",
+      color: colors.textPrimary,
+      letterSpacing: -0.5,
+    },
+    subtitle: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
 
-  // Search
-  searchSection: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    backgroundColor: colors.background,
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.backgroundTertiary,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    height: 44,
-  },
-  searchContainerFocused: {
-    backgroundColor: colors.backgroundSecondary,
-    borderWidth: 1,
-    borderColor: colors.accent,
-  },
-  searchIcon: {
-    marginRight: spacing.sm,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.textPrimary,
-  },
-  clearButton: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: colors.textTertiary,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+    // Search
+    searchSection: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.md,
+      backgroundColor: colors.background,
+    },
+    searchContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.backgroundTertiary,
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.md,
+      height: 44,
+    },
+    searchContainerFocused: {
+      backgroundColor: colors.backgroundSecondary,
+      borderWidth: 1,
+      borderColor: colors.accent,
+    },
+    searchIcon: {
+      marginRight: spacing.sm,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 16,
+      color: colors.textPrimary,
+    },
+    clearButton: {
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      backgroundColor: colors.textTertiary,
+      justifyContent: "center",
+      alignItems: "center",
+    },
 
-  // Scroll
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingTop: spacing.sm,
-  },
+    // Scroll
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingTop: spacing.sm,
+    },
 
-  // Filter sections
-  filterSection: {
-    marginBottom: spacing.lg,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-    gap: spacing.sm,
-  },
-  sectionLabel: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: colors.textPrimary,
-  },
-  chipsContainer: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-  },
+    // Filter sections
+    filterSection: {
+      marginBottom: spacing.lg,
+    },
+    sectionHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.sm,
+      gap: spacing.sm,
+    },
+    sectionLabel: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: colors.textPrimary,
+    },
+    chipsContainer: {
+      paddingHorizontal: spacing.lg,
+      gap: spacing.sm,
+    },
 
-  // Location selectors
-  locationSelectors: {
-    flexDirection: "row",
-    paddingHorizontal: spacing.lg,
-    gap: spacing.md,
-  },
-  locationSelector: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.backgroundSecondary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.md,
-    gap: spacing.sm,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  locationSelectorActive: {
-    backgroundColor: colors.accentLight,
-    borderWidth: 1,
-    borderColor: colors.accent,
-  },
-  locationSelectorDisabled: {
-    opacity: 0.5,
-  },
-  locationSelectorText: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  locationSelectorTextActive: {
-    color: colors.accent,
-    fontWeight: "600",
-  },
-  locationSelectorTextDisabled: {
-    color: colors.textTertiary,
-  },
-  selectedLocationChips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.sm,
-    gap: spacing.sm,
-  },
-  selectedChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.accentLight,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    gap: spacing.xs,
-  },
-  selectedChipText: {
-    fontSize: 12,
-    color: colors.accent,
-    fontWeight: "500",
-  },
+    // Location selectors
+    locationSelectors: {
+      flexDirection: "row",
+      paddingHorizontal: spacing.lg,
+      gap: spacing.md,
+    },
+    locationSelector: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.backgroundSecondary,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      borderRadius: borderRadius.md,
+      gap: spacing.sm,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+    locationSelectorActive: {
+      backgroundColor: colors.accentLight,
+      borderWidth: 1,
+      borderColor: colors.accent,
+    },
+    locationSelectorDisabled: {
+      opacity: 0.5,
+    },
+    locationSelectorText: {
+      flex: 1,
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    locationSelectorTextActive: {
+      color: colors.accent,
+      fontWeight: "600",
+    },
+    locationSelectorTextDisabled: {
+      color: colors.textTertiary,
+    },
+    selectedLocationChips: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      paddingHorizontal: spacing.lg,
+      marginTop: spacing.sm,
+      gap: spacing.sm,
+    },
+    selectedChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.accentLight,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.full,
+      gap: spacing.xs,
+    },
+    selectedChipText: {
+      fontSize: 12,
+      color: colors.accent,
+      fontWeight: "500",
+    },
 
-  // Chips
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.backgroundSecondary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-    marginRight: spacing.sm,
-    gap: spacing.xs,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  chipSelected: {
-    backgroundColor: colors.accent,
-  },
-  chipSelectedSuccess: {
-    backgroundColor: colors.success,
-  },
-  chipText: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: colors.textSecondary,
-  },
-  chipTextSelected: {
-    color: colors.backgroundSecondary,
-  },
+    // Chips
+    chip: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.backgroundSecondary,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.full,
+      marginRight: spacing.sm,
+      gap: spacing.xs,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+    chipSelected: {
+      backgroundColor: colors.accent,
+    },
+    chipSelectedSuccess: {
+      backgroundColor: colors.success,
+    },
+    chipText: {
+      fontSize: 13,
+      fontWeight: "500",
+      color: colors.textSecondary,
+    },
+    chipTextSelected: {
+      color: colors.backgroundSecondary,
+    },
 
-  // Active filters
-  activeFiltersSection: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  activeFiltersHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  activeFiltersTitle: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    fontWeight: "500",
-  },
-  clearAllText: {
-    fontSize: 13,
-    color: colors.accent,
-    fontWeight: "600",
-  },
+    // Active filters
+    activeFiltersSection: {
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    activeFiltersHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    activeFiltersTitle: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      fontWeight: "500",
+    },
+    clearAllText: {
+      fontSize: 13,
+      color: colors.accent,
+      fontWeight: "600",
+    },
 
-  // Actions
-  actionsSection: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
-  },
-  searchButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.accent,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
-    shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  searchButtonPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
-  },
-  searchButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.backgroundSecondary,
-  },
+    // Actions
+    actionsSection: {
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.xl,
+    },
+    searchButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.accent,
+      borderRadius: borderRadius.md,
+      paddingVertical: spacing.md,
+      gap: spacing.sm,
+      shadowColor: colors.accent,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    searchButtonPressed: {
+      opacity: 0.9,
+      transform: [{ scale: 0.98 }],
+    },
+    searchButtonText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.backgroundSecondary,
+    },
 
-  // Error
-  errorCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.dangerLight,
-    marginHorizontal: spacing.lg,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.lg,
-    gap: spacing.sm,
-  },
-  errorIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.backgroundSecondary,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  errorText: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.danger,
-  },
+    // Error
+    errorCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.dangerLight,
+      marginHorizontal: spacing.lg,
+      padding: spacing.md,
+      borderRadius: borderRadius.md,
+      marginBottom: spacing.lg,
+      gap: spacing.sm,
+    },
+    errorIconContainer: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.backgroundSecondary,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    errorText: {
+      flex: 1,
+      fontSize: 14,
+      color: colors.danger,
+    },
 
-  // Results
-  resultsSection: {
-    paddingHorizontal: spacing.lg,
-  },
-  resultsHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.md,
-    gap: spacing.sm,
-  },
-  resultsTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.textPrimary,
-  },
-  resultsBadge: {
-    backgroundColor: colors.accent,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: borderRadius.full,
-  },
-  resultsBadgeText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.backgroundSecondary,
-  },
+    // Results
+    resultsSection: {
+      paddingHorizontal: spacing.lg,
+    },
+    resultsHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: spacing.md,
+      gap: spacing.sm,
+    },
+    resultsTitle: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: colors.textPrimary,
+    },
+    resultsBadge: {
+      backgroundColor: colors.accent,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      borderRadius: borderRadius.full,
+    },
+    resultsBadgeText: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: colors.backgroundSecondary,
+    },
 
-  // Empty state
-  emptyStateContainer: {
-    alignItems: "center",
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.xxl,
-  },
-  emptyIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.backgroundTertiary,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: spacing.lg,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  emptyMessage: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  emptyAction: {
-    marginTop: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.accentLight,
-    borderRadius: borderRadius.full,
-  },
-  emptyActionText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.accent,
-  },
+    // Empty state
+    emptyStateContainer: {
+      alignItems: "center",
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.xxl,
+    },
+    emptyIconContainer: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: colors.backgroundTertiary,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: spacing.lg,
+    },
+    emptyTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: colors.textPrimary,
+      marginBottom: spacing.sm,
+    },
+    emptyMessage: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: "center",
+      lineHeight: 20,
+    },
+    emptyAction: {
+      marginTop: spacing.lg,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      backgroundColor: colors.accentLight,
+      borderRadius: borderRadius.full,
+    },
+    emptyActionText: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.accent,
+    },
 
-  // Loading
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingCard: {
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.lg,
-    padding: spacing.xl,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  loadingText: {
-    marginTop: spacing.md,
-    fontSize: 15,
-    color: colors.textSecondary,
-  },
-});
+    // Loading
+    loadingOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: "rgba(0, 0, 0, 0.3)",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    loadingCard: {
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: borderRadius.lg,
+      padding: spacing.xl,
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 12,
+      elevation: 8,
+    },
+    loadingText: {
+      marginTop: spacing.md,
+      fontSize: 15,
+      color: colors.textSecondary,
+    },
+  });
 
 export default SearchScreen;

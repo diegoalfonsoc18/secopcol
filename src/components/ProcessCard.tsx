@@ -8,13 +8,64 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SecopProcess } from "../types/index";
-import { colors, spacing, borderRadius } from "../theme";
+import { spacing, borderRadius } from "../theme";
+import { useTheme } from "../context/ThemeContext";
 
 // ============================================
-// CONFIGURACIÓN DE FASES (Estados del proceso)
+// UTILIDADES
 // ============================================
-const phaseConfig: Record<string, { color: string; bg: string; icon: string }> =
-  {
+const formatDate = (dateString: string | undefined): string => {
+  if (!dateString) return "No disponible";
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return "No disponible";
+    }
+    return date.toLocaleDateString("es-CO", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return "No disponible";
+  }
+};
+
+// Obtener el estado/fase del proceso (la API puede devolver uno u otro)
+const getProcessPhase = (process: SecopProcess): string => {
+  return process.fase || process.estado_del_procedimiento || "Desconocido";
+};
+
+const truncateText = (text: string | undefined, maxLength: number): string => {
+  if (!text) return "Sin descripción";
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength).trim() + "...";
+};
+
+// ============================================
+// COMPONENTE PRINCIPAL
+// ============================================
+interface ProcessCardProps {
+  process: SecopProcess;
+  onPress: () => void;
+  onFavoritePress?: () => void;
+  isFavorite?: boolean;
+}
+
+export const ProcessCard: React.FC<ProcessCardProps> = ({
+  process,
+  onPress,
+  onFavoritePress,
+  isFavorite = false,
+}) => {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
+
+  // Configuración de fases que depende del tema
+  const phaseConfig: Record<
+    string,
+    { color: string; bg: string; icon: string }
+  > = {
     Borrador: {
       color: colors.textSecondary,
       bg: colors.backgroundTertiary,
@@ -67,61 +118,14 @@ const phaseConfig: Record<string, { color: string; bg: string; icon: string }> =
     },
   };
 
-const defaultPhase = {
-  color: colors.textSecondary,
-  bg: colors.backgroundTertiary,
-  icon: "help-circle-outline",
-};
+  const defaultPhase = {
+    color: colors.textSecondary,
+    bg: colors.backgroundTertiary,
+    icon: "help-circle-outline",
+  };
 
-// ============================================
-// UTILIDADES
-// ============================================
-const formatDate = (dateString: string | undefined): string => {
-  if (!dateString) return "No especificada";
-  try {
-    // La API de SECOP puede devolver fechas en formato ISO o timestamp
-    const date = new Date(dateString);
-
-    // Verificar si la fecha es válida
-    if (isNaN(date.getTime())) {
-      return "No especificada";
-    }
-
-    return date.toLocaleDateString("es-CO", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  } catch {
-    return "No especificada";
-  }
-};
-
-const truncateText = (text: string | undefined, maxLength: number): string => {
-  if (!text) return "Sin descripción";
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength).trim() + "...";
-};
-
-// ============================================
-// COMPONENTE PRINCIPAL
-// ============================================
-interface ProcessCardProps {
-  process: SecopProcess;
-  onPress: () => void;
-  onFavoritePress?: () => void;
-  isFavorite?: boolean;
-}
-
-export const ProcessCard: React.FC<ProcessCardProps> = ({
-  process,
-  onPress,
-  onFavoritePress,
-  isFavorite = false,
-}) => {
-  const fase = process.fase || "Desconocido";
+  const fase = getProcessPhase(process);
   const phaseStyle = phaseConfig[fase] || defaultPhase;
-  // Justo antes del return del componente
 
   return (
     <Pressable
@@ -239,149 +243,150 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
 };
 
 // ============================================
-// ESTILOS
+// ESTILOS DINÁMICOS
 // ============================================
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  containerPressed: {
-    opacity: 0.97,
-    transform: [{ scale: 0.99 }],
-  },
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: borderRadius.lg,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.06,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    containerPressed: {
+      opacity: 0.97,
+      transform: [{ scale: 0.99 }],
+    },
 
-  // Header
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing.md,
-  },
-  idContainer: {
-    flex: 1,
-    marginRight: spacing.md,
-  },
-  idLabel: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: colors.textTertiary,
-    letterSpacing: 1,
-    marginBottom: 2,
-  },
-  idValue: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.accent,
-  },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    gap: spacing.xs,
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
+    // Header
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: spacing.md,
+    },
+    idContainer: {
+      flex: 1,
+      marginRight: spacing.md,
+    },
+    idLabel: {
+      fontSize: 10,
+      fontWeight: "600",
+      color: colors.textTertiary,
+      letterSpacing: 1,
+      marginBottom: 2,
+    },
+    idValue: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.accent,
+    },
+    statusBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.full,
+      gap: spacing.xs,
+    },
+    statusText: {
+      fontSize: 11,
+      fontWeight: "600",
+    },
 
-  // Descripción
-  procedureName: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.accent,
-    marginBottom: spacing.xs,
-  },
-  description: {
-    fontSize: 15,
-    fontWeight: "400",
-    color: colors.textPrimary,
-    lineHeight: 21,
-    marginBottom: spacing.md,
-  },
+    // Descripción
+    procedureName: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: colors.accent,
+      marginBottom: spacing.xs,
+    },
+    description: {
+      fontSize: 15,
+      fontWeight: "400",
+      color: colors.textPrimary,
+      lineHeight: 21,
+      marginBottom: spacing.md,
+    },
 
-  // Info rows
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.xs,
-    gap: spacing.sm,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
+    // Info rows
+    infoRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: spacing.xs,
+      gap: spacing.sm,
+    },
+    infoText: {
+      flex: 1,
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
 
-  // Separator
-  separator: {
-    height: 1,
-    backgroundColor: colors.separatorLight,
-    marginVertical: spacing.md,
-  },
+    // Separator
+    separator: {
+      height: 1,
+      backgroundColor: colors.separatorLight,
+      marginVertical: spacing.md,
+    },
 
-  // Footer
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-  },
-  valueContainer: {
-    flex: 1,
-  },
-  valueLabel: {
-    fontSize: 10,
-    fontWeight: "500",
-    color: colors.textTertiary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  nitValue: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.textPrimary,
-  },
-  dateContainer: {
-    alignItems: "flex-end",
-  },
-  dateLabel: {
-    fontSize: 10,
-    fontWeight: "500",
-    color: colors.textTertiary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  dateValue: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: colors.textSecondary,
-  },
+    // Footer
+    footer: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-end",
+    },
+    valueContainer: {
+      flex: 1,
+    },
+    valueLabel: {
+      fontSize: 10,
+      fontWeight: "500",
+      color: colors.textTertiary,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+      marginBottom: 2,
+    },
+    nitValue: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.textPrimary,
+    },
+    dateContainer: {
+      alignItems: "flex-end",
+    },
+    dateLabel: {
+      fontSize: 10,
+      fontWeight: "500",
+      color: colors.textTertiary,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+      marginBottom: 2,
+    },
+    dateValue: {
+      fontSize: 13,
+      fontWeight: "500",
+      color: colors.textSecondary,
+    },
 
-  // Favorite button
-  favoriteButton: {
-    position: "absolute",
-    top: spacing.lg,
-    right: spacing.lg + 24,
-  },
+    // Favorite button
+    favoriteButton: {
+      position: "absolute",
+      top: spacing.lg,
+      right: spacing.lg + 24,
+    },
 
-  // Chevron
-  chevronContainer: {
-    position: "absolute",
-    right: spacing.md,
-    top: "50%",
-    marginTop: -9,
-  },
-});
+    // Chevron
+    chevronContainer: {
+      position: "absolute",
+      right: spacing.md,
+      top: "50%",
+      marginTop: -9,
+    },
+  });
 
 export default ProcessCard;
