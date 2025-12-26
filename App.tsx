@@ -11,23 +11,17 @@ import {
   FavoritesScreen,
   DetailScreen,
   SettingsScreen,
+  AppSettingsScreen,
 } from "./src/screens/index";
-
-// Tema centralizado
-const colors = {
-  background: "#F2F2F7",
-  backgroundSecondary: "#FFFFFF",
-  tabBarBackground: "rgba(255, 255, 255, 0.94)",
-  accent: "#007AFF",
-  textSecondary: "#8E8E93",
-  separator: "#C6C6C8",
-};
+import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 // Stack Navigators para cada tab
 function HomeStackNavigator() {
+  const { colors } = useTheme();
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -42,11 +36,18 @@ function HomeStackNavigator() {
         component={SettingsScreen}
         options={{ animation: "slide_from_bottom" }}
       />
+      <Stack.Screen
+        name="AppSettings"
+        component={AppSettingsScreen}
+        options={{ animation: "slide_from_bottom" }}
+      />
     </Stack.Navigator>
   );
 }
 
 function SearchStackNavigator() {
+  const { colors } = useTheme();
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -61,6 +62,8 @@ function SearchStackNavigator() {
 }
 
 function FavoritesStackNavigator() {
+  const { colors } = useTheme();
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -76,6 +79,8 @@ function FavoritesStackNavigator() {
 
 // Tab Navigator con estilo Apple
 function TabNavigator() {
+  const { colors } = useTheme();
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -85,11 +90,10 @@ function TabNavigator() {
         tabBarStyle: {
           backgroundColor: colors.tabBarBackground,
           borderTopWidth: 0.5,
-          borderTopColor: colors.separator,
+          borderTopColor: colors.tabBarBorder,
           paddingTop: 8,
           paddingBottom: Platform.OS === "ios" ? 24 : 12,
           height: Platform.OS === "ios" ? 88 : 70,
-          // Efecto blur en iOS
           ...Platform.select({
             ios: {
               position: "absolute",
@@ -157,41 +161,52 @@ function TabNavigator() {
   );
 }
 
+// Contenedor principal de navegación
+function AppContent() {
+  const { colors, isDark } = useTheme();
+
+  return (
+    <NavigationContainer
+      theme={{
+        dark: isDark,
+        colors: {
+          primary: colors.accent,
+          background: colors.background,
+          card: colors.backgroundSecondary,
+          text: colors.textPrimary,
+          border: colors.separator,
+          notification: colors.accent,
+        },
+        fonts: {
+          regular: {
+            fontFamily: "System",
+            fontWeight: "400" as const,
+          },
+          medium: {
+            fontFamily: "System",
+            fontWeight: "500" as const,
+          },
+          bold: {
+            fontFamily: "System",
+            fontWeight: "700" as const,
+          },
+          heavy: {
+            fontFamily: "System",
+            fontWeight: "800" as const,
+          },
+        },
+      }}>
+      <TabNavigator />
+    </NavigationContainer>
+  );
+}
+
 export default function App() {
   return (
     <GestureHandlerRootView style={styles.container}>
-      <NavigationContainer
-        theme={{
-          dark: false,
-          colors: {
-            primary: colors.accent,
-            background: colors.background,
-            card: colors.backgroundSecondary,
-            text: "#1C1C1E",
-            border: colors.separator,
-            notification: colors.accent,
-          },
-          fonts: {
-            regular: {
-              fontFamily: "System",
-              fontWeight: "400" as const,
-            },
-            medium: {
-              fontFamily: "System",
-              fontWeight: "500" as const,
-            },
-            bold: {
-              fontFamily: "System",
-              fontWeight: "700" as const,
-            },
-            heavy: {
-              fontFamily: "System",
-              fontWeight: "800" as const,
-            },
-          },
-        }}>
-        <TabNavigator />
-      </NavigationContainer>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
     </GestureHandlerRootView>
   );
 }
@@ -199,6 +214,5 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
 });

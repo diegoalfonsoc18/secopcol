@@ -70,6 +70,45 @@ const FASES = [
   { id: "liquidacion", label: "Liquidación", icon: "checkmark-done-outline" },
 ];
 
+// Rangos de valor predefinidos
+const RANGOS_VALOR = [
+  {
+    id: "0-50M",
+    label: "Hasta $50M",
+    min: 0,
+    max: 50000000,
+    icon: "wallet-outline",
+  },
+  {
+    id: "50M-200M",
+    label: "$50M - $200M",
+    min: 50000000,
+    max: 200000000,
+    icon: "cash-outline",
+  },
+  {
+    id: "200M-500M",
+    label: "$200M - $500M",
+    min: 200000000,
+    max: 500000000,
+    icon: "card-outline",
+  },
+  {
+    id: "500M-1B",
+    label: "$500M - $1.000M",
+    min: 500000000,
+    max: 1000000000,
+    icon: "trending-up-outline",
+  },
+  {
+    id: "1B+",
+    label: "Más de $1.000M",
+    min: 1000000000,
+    max: null,
+    icon: "diamond-outline",
+  },
+];
+
 // Mapeo de IDs a valores reales de la API
 const MODALIDAD_MAP: Record<string, string> = {
   licitacion: "Licitación pública",
@@ -243,6 +282,7 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [selectedModalidad, setSelectedModalidad] = useState("");
   const [selectedTipoContrato, setSelectedTipoContrato] = useState("");
   const [selectedFase, setSelectedFase] = useState("");
+  const [selectedRangoValor, setSelectedRangoValor] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   // Estados de modales
@@ -293,15 +333,33 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           ? TIPO_CONTRATO_MAP[selectedTipoContrato]
           : undefined,
         fase: selectedFase ? FASE_MAP[selectedFase] : undefined,
-        limit: 50,
+        limit: 100, // Cargar más para filtrar por valor
       });
 
       // Filtrar duplicados
-      const uniqueResults = results.filter(
+      let uniqueResults = results.filter(
         (process, index, self) =>
           index ===
           self.findIndex((p) => p.id_del_proceso === process.id_del_proceso)
       );
+
+      // Filtrar por rango de valor si está seleccionado
+      if (selectedRangoValor) {
+        const rango = RANGOS_VALOR.find((r) => r.id === selectedRangoValor);
+        if (rango) {
+          uniqueResults = uniqueResults.filter((process) => {
+            const precio =
+              typeof process.precio_base === "string"
+                ? parseFloat(process.precio_base) || 0
+                : process.precio_base || 0;
+
+            const cumpleMin = precio >= rango.min;
+            const cumpleMax = rango.max === null || precio <= rango.max;
+
+            return cumpleMin && cumpleMax;
+          });
+        }
+      }
 
       setProcesses(uniqueResults);
     } catch (err) {
@@ -322,6 +380,7 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setSelectedModalidad("");
     setSelectedTipoContrato("");
     setSelectedFase("");
+    setSelectedRangoValor("");
     setKeyword("");
     setProcesses([]);
     setHasSearched(false);
@@ -354,6 +413,7 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     selectedModalidad ||
     selectedTipoContrato ||
     selectedFase ||
+    selectedRangoValor ||
     keyword;
 
   const activeFiltersCount = [
@@ -362,6 +422,7 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     selectedModalidad,
     selectedTipoContrato,
     selectedFase,
+    selectedRangoValor,
     keyword,
   ].filter(Boolean).length;
 
@@ -686,6 +747,57 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                     style={[
                       styles.chipText,
                       isSelected && styles.chipTextSelected,
+                    ]}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* Sección: Rango de Valor */}
+        <View style={styles.filterSection}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="cash-outline" size={18} color={colors.success} />
+            <Text style={styles.sectionLabel}>Rango de Valor</Text>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipsContainer}>
+            {RANGOS_VALOR.map((item) => {
+              const isSelected = selectedRangoValor === item.id;
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={[
+                    styles.chip,
+                    isSelected && styles.chipSelectedSuccess,
+                  ]}
+                  onPress={() =>
+                    toggleFilter(
+                      selectedRangoValor,
+                      item.id,
+                      setSelectedRangoValor
+                    )
+                  }
+                  activeOpacity={0.7}>
+                  <Ionicons
+                    name={item.icon as any}
+                    size={14}
+                    color={
+                      isSelected ? colors.backgroundSecondary : colors.success
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.chipText,
+                      {
+                        color: isSelected
+                          ? colors.backgroundSecondary
+                          : colors.success,
+                      },
                     ]}>
                     {item.label}
                   </Text>
@@ -1095,6 +1207,9 @@ const styles = StyleSheet.create({
   },
   chipSelected: {
     backgroundColor: colors.accent,
+  },
+  chipSelectedSuccess: {
+    backgroundColor: colors.success,
   },
   chipText: {
     fontSize: 13,

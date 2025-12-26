@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import {
   Animated,
-  FlatList,
   RefreshControl,
   StyleSheet,
   Text,
@@ -373,15 +372,26 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             </View>
           </Animated.View>
 
-          <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={() => navigation.navigate("Settings")}>
-            <Ionicons
-              name="notifications-outline"
-              size={24}
-              color={colors.accent}
-            />
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity
+              style={styles.settingsButton}
+              onPress={() => navigation.navigate("Settings")}>
+              <Ionicons
+                name="notifications-outline"
+                size={22}
+                color={colors.accent}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.settingsButton}
+              onPress={() => navigation.navigate("AppSettings")}>
+              <Ionicons
+                name="settings-outline"
+                size={22}
+                color={colors.accent}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <Animated.Text style={[styles.subtitle, { opacity: subtitleOpacity }]}>
@@ -539,6 +549,10 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  headerButtons: {
+    flexDirection: "row",
+    gap: spacing.sm,
   },
   titleRow: {
     flexDirection: "row",
