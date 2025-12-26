@@ -12,13 +12,15 @@ import {
   ActivityIndicator,
   Modal,
   FlatList,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { ProcessCard } from "../components/index";
+import { ProcessCard, SearchResultsSkeleton } from "../components/index";
 import { SecopProcess, advancedSearch } from "../api/secop";
 import { spacing, borderRadius } from "../theme";
 import { useTheme } from "../context/ThemeContext";
+import { exportSearchResults } from "../services/exportService";
 import {
   COLOMBIAN_DEPARTMENTS,
   MUNICIPALITIES_BY_DEPARTMENT,
@@ -300,6 +302,7 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   // Estados de resultados
   const [processes, setProcesses] = useState<SecopProcess[]>([]);
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
@@ -375,6 +378,26 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       setProcesses([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    if (processes.length === 0) {
+      Alert.alert("Sin datos", "No hay procesos para exportar");
+      return;
+    }
+
+    setExporting(true);
+    try {
+      await exportSearchResults(processes, keyword);
+      // El sharing se maneja en el servicio
+    } catch (err) {
+      Alert.alert(
+        "Error",
+        err instanceof Error ? err.message : "No se pudo exportar"
+      );
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -867,13 +890,38 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         )}
 
         {/* Resultados */}
-        {processes.length > 0 ? (
+        {loading ? (
+          <SearchResultsSkeleton count={5} />
+        ) : processes.length > 0 ? (
           <View style={styles.resultsSection}>
             <View style={styles.resultsHeader}>
-              <Text style={styles.resultsTitle}>Resultados</Text>
-              <View style={styles.resultsBadge}>
-                <Text style={styles.resultsBadgeText}>{processes.length}</Text>
+              <View style={styles.resultsHeaderLeft}>
+                <Text style={styles.resultsTitle}>Resultados</Text>
+                <View style={styles.resultsBadge}>
+                  <Text style={styles.resultsBadgeText}>
+                    {processes.length}
+                  </Text>
+                </View>
               </View>
+
+              {/* Botón exportar */}
+              <TouchableOpacity
+                style={styles.exportButton}
+                onPress={handleExport}
+                disabled={exporting}>
+                {exporting ? (
+                  <ActivityIndicator size="small" color={colors.accent} />
+                ) : (
+                  <>
+                    <Ionicons
+                      name="download-outline"
+                      size={18}
+                      color={colors.accent}
+                    />
+                    <Text style={styles.exportButtonText}>CSV</Text>
+                  </>
+                )}
+              </TouchableOpacity>
             </View>
 
             {processes.map((process, index) => (
@@ -1312,7 +1360,12 @@ const createStyles = (colors: any) =>
     resultsHeader: {
       flexDirection: "row",
       alignItems: "center",
+      justifyContent: "space-between",
       marginBottom: spacing.md,
+    },
+    resultsHeaderLeft: {
+      flexDirection: "row",
+      alignItems: "center",
       gap: spacing.sm,
     },
     resultsTitle: {
@@ -1330,6 +1383,20 @@ const createStyles = (colors: any) =>
       fontSize: 12,
       fontWeight: "700",
       color: colors.backgroundSecondary,
+    },
+    exportButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.accentLight,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.full,
+      gap: spacing.xs,
+    },
+    exportButtonText: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.accent,
     },
 
     // Empty state

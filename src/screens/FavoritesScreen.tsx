@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from "react";
+import React, { useRef, useCallback, useState } from "react";
 import {
   Animated,
   FlatList,
@@ -7,6 +7,8 @@ import {
   View,
   Pressable,
   Alert,
+  TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,6 +17,7 @@ import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
 import { spacing, borderRadius } from "../theme";
 import { useTheme } from "../context/ThemeContext";
+import { exportFavorites } from "../services/exportService";
 
 // ============================================
 // COMPONENTE PRINCIPAL
@@ -26,8 +29,29 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
   const { colors } = useTheme();
   const { favorites, removeFavorite } = useProcessesStore();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const [exporting, setExporting] = useState(false);
 
   const styles = createStyles(colors);
+
+  // Handler de exportación
+  const handleExport = async () => {
+    if (favorites.length === 0) {
+      Alert.alert("Sin datos", "No hay favoritos para exportar");
+      return;
+    }
+
+    setExporting(true);
+    try {
+      await exportFavorites(favorites);
+    } catch (err) {
+      Alert.alert(
+        "Error",
+        err instanceof Error ? err.message : "No se pudo exportar"
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
 
   // Animaciones del header
   const headerHeight = scrollY.interpolate({
@@ -192,20 +216,44 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
             height: Animated.add(headerHeight, insets.top),
           },
         ]}>
-        <Animated.View
-          style={{
-            transform: [{ scale: titleScale }, { translateY: titleTranslateY }],
-            transformOrigin: "left center",
-          }}>
-          <View style={styles.titleRow}>
-            <Text style={styles.title}>Favoritos</Text>
-            {favorites.length > 0 && (
-              <View style={styles.countBadge}>
-                <Text style={styles.countBadgeText}>{favorites.length}</Text>
-              </View>
-            )}
-          </View>
-        </Animated.View>
+        <View style={styles.headerRow}>
+          <Animated.View
+            style={{
+              flex: 1,
+              transform: [
+                { scale: titleScale },
+                { translateY: titleTranslateY },
+              ],
+              transformOrigin: "left center",
+            }}>
+            <View style={styles.titleRow}>
+              <Text style={styles.title}>Favoritos</Text>
+              {favorites.length > 0 && (
+                <View style={styles.countBadge}>
+                  <Text style={styles.countBadgeText}>{favorites.length}</Text>
+                </View>
+              )}
+            </View>
+          </Animated.View>
+
+          {/* Botón exportar */}
+          {favorites.length > 0 && (
+            <TouchableOpacity
+              style={styles.exportButton}
+              onPress={handleExport}
+              disabled={exporting}>
+              {exporting ? (
+                <ActivityIndicator size="small" color={colors.accent} />
+              ) : (
+                <Ionicons
+                  name="download-outline"
+                  size={22}
+                  color={colors.accent}
+                />
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
 
         <Animated.Text style={[styles.subtitle, { opacity: subtitleOpacity }]}>
           Procesos guardados
@@ -256,6 +304,10 @@ const createStyles = (colors: any) =>
       justifyContent: "flex-end",
       paddingBottom: spacing.sm,
     },
+    headerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
     titleRow: {
       flexDirection: "row",
       alignItems: "center",
@@ -266,6 +318,19 @@ const createStyles = (colors: any) =>
       fontWeight: "700",
       color: colors.textPrimary,
       letterSpacing: 0.37,
+    },
+    exportButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.backgroundSecondary,
+      justifyContent: "center",
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+      elevation: 2,
     },
     countBadge: {
       backgroundColor: colors.accent,

@@ -1,19 +1,21 @@
 import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import {
   Animated,
-  FlatList,
   RefreshControl,
   StyleSheet,
   Text,
   View,
   Pressable,
-  ActivityIndicator,
   ScrollView,
   TouchableOpacity,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { ProcessCard } from "../components/index";
+import {
+  ProcessCard,
+  DashboardSkeleton,
+  TopEntidades,
+} from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
 import { spacing, borderRadius } from "../theme";
@@ -275,6 +277,9 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         </ScrollView>
       </View>
 
+      {/* Top Entidades */}
+      <TopEntidades processes={processes} limit={5} />
+
       {/* Header de procesos recientes */}
       <View style={styles.recentHeader}>
         <Text style={styles.recentTitle}>Procesos Recientes</Text>
@@ -377,12 +382,11 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
       {/* Contenido */}
       {loading && processes.length === 0 ? (
-        <View style={styles.loadingContainer}>
-          <View style={styles.loadingCard}>
-            <ActivityIndicator size="large" color={colors.accent} />
-            <Text style={styles.loadingText}>Cargando estadísticas...</Text>
-          </View>
-        </View>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}>
+          <DashboardSkeleton />
+        </ScrollView>
       ) : (
         <Animated.FlatList
           data={processes.slice(0, 10)}
