@@ -11,6 +11,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
 import { spacing, borderRadius } from "../theme";
 
 type ThemeMode = "light" | "dark" | "system";
@@ -26,6 +27,7 @@ export const AppSettingsScreen: React.FC<{ navigation: any }> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const { mode, setMode, colors, isDark } = useTheme();
+  const { user, logout } = useAuth();
 
   const handleOpenSecop = () => {
     Linking.openURL("https://community.secop.gov.co/");
@@ -42,7 +44,32 @@ export const AppSettingsScreen: React.FC<{ navigation: any }> = ({
     );
   };
 
+  const handleLogout = () => {
+    Alert.alert(
+      "Cerrar Sesión",
+      "¿Estás seguro que deseas salir de tu cuenta?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Cerrar Sesión",
+          style: "destructive",
+          onPress: () => logout(),
+        },
+      ]
+    );
+  };
+
   const styles = createStyles(colors);
+
+  // Obtener iniciales del nombre
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -65,6 +92,76 @@ export const AppSettingsScreen: React.FC<{ navigation: any }> = ({
           styles.scrollContent,
           { paddingBottom: insets.bottom + 40 },
         ]}>
+        {/* Sección: Cuenta */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="person-outline" size={20} color={colors.accent} />
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+              Cuenta
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.card,
+              { backgroundColor: colors.backgroundSecondary },
+            ]}>
+            {/* Perfil del usuario */}
+            <View style={styles.profileRow}>
+              <View style={[styles.avatar, { backgroundColor: colors.accent }]}>
+                <Text style={styles.avatarText}>
+                  {user?.name ? getInitials(user.name) : "U"}
+                </Text>
+              </View>
+              <View style={styles.profileInfo}>
+                <Text
+                  style={[styles.profileName, { color: colors.textPrimary }]}>
+                  {user?.name || "Usuario"}
+                </Text>
+                <Text
+                  style={[
+                    styles.profileEmail,
+                    { color: colors.textSecondary },
+                  ]}>
+                  {user?.email || "Sin email"}
+                </Text>
+              </View>
+            </View>
+
+            <View
+              style={[
+                styles.divider,
+                { backgroundColor: colors.separatorLight, marginLeft: 0 },
+              ]}
+            />
+
+            {/* Botón cerrar sesión */}
+            <TouchableOpacity style={styles.logoutRow} onPress={handleLogout}>
+              <View style={styles.optionInfo}>
+                <View
+                  style={[
+                    styles.optionIcon,
+                    { backgroundColor: colors.dangerLight },
+                  ]}>
+                  <Ionicons
+                    name="log-out-outline"
+                    size={20}
+                    color={colors.danger}
+                  />
+                </View>
+                <Text style={[styles.optionText, { color: colors.danger }]}>
+                  Cerrar Sesión
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.textTertiary}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Sección: Apariencia */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -261,7 +358,7 @@ export const AppSettingsScreen: React.FC<{ navigation: any }> = ({
             <View
               style={[
                 styles.divider,
-                { backgroundColor: colors.separatorLight },
+                { backgroundColor: colors.separatorLight, marginLeft: 0 },
               ]}
             />
             <View style={styles.aboutRow}>
@@ -368,6 +465,42 @@ const createStyles = (colors: any) =>
       shadowOpacity: 0.05,
       shadowRadius: 3,
       elevation: 1,
+    },
+    // Profile styles
+    profileRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: spacing.lg,
+      gap: spacing.md,
+    },
+    avatar: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    avatarText: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: "#FFFFFF",
+    },
+    profileInfo: {
+      flex: 1,
+    },
+    profileName: {
+      fontSize: 18,
+      fontWeight: "600",
+      marginBottom: 2,
+    },
+    profileEmail: {
+      fontSize: 14,
+    },
+    logoutRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: spacing.lg,
     },
     optionRow: {
       flexDirection: "row",
