@@ -37,10 +37,8 @@ const formatDateTime = (dateString: string | undefined): string => {
     if (isNaN(date.getTime())) return "No disponible";
     return date.toLocaleDateString("es-CO", {
       year: "numeric",
-      month: "short",
+      month: "long",
       day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
     });
   } catch {
     return dateString;
@@ -60,6 +58,15 @@ const getProcessUrl = (
   return null;
 };
 
+const isAdjudicado = (process: SecopProcess): boolean => {
+  return (
+    process.adjudicado === "Si" ||
+    process.adjudicado === "Sí" ||
+    !!process.nombre_del_proveedor ||
+    !!process.valor_total_adjudicacion
+  );
+};
+
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
@@ -72,7 +79,6 @@ export const DetailScreen = ({ route, navigation }: any) => {
 
   const styles = createStyles(colors);
 
-  // Configuración de fases
   const phaseConfig: Record<
     string,
     { color: string; bg: string; icon: string }
@@ -128,6 +134,7 @@ export const DetailScreen = ({ route, navigation }: any) => {
       icon: "remove-circle-outline",
     },
   };
+
   const defaultPhase = {
     color: colors.textSecondary,
     bg: colors.backgroundTertiary,
@@ -136,6 +143,7 @@ export const DetailScreen = ({ route, navigation }: any) => {
 
   const fase = getProcessPhase(process);
   const phaseStyle = phaseConfig[fase] || defaultPhase;
+  const adjudicado = isAdjudicado(process);
 
   const handleToggleFavorite = () => {
     if (favorite) {
@@ -147,21 +155,16 @@ export const DetailScreen = ({ route, navigation }: any) => {
 
   const handleShare = async () => {
     try {
-      const message = `📋 Proceso SECOP II
-
-${process.nombre_del_procedimiento || "Sin nombre"}
-
-🏢 Entidad: ${process.entidad}
-📍 Ubicación: ${process.ciudad_entidad}, ${process.departamento_entidad}
-💰 Precio base: ${formatCurrency(process.precio_base)}
-📊 Fase: ${fase}
-
-🔗 Ver más en SECOP II`;
-
-      await Share.share({
-        message,
-        title: "Compartir Proceso SECOP",
-      });
+      const message = `📋 Proceso SECOP II\n\n${
+        process.nombre_del_procedimiento || "Sin nombre"
+      }\n\n🏢 Entidad: ${process.entidad}\n📍 Ubicación: ${
+        process.ciudad_entidad
+      }, ${process.departamento_entidad}\n💰 Precio base: ${formatCurrency(
+        process.precio_base
+      )}\n📊 Fase: ${fase}${
+        adjudicado ? `\n✅ Adjudicado a: ${process.nombre_del_proveedor}` : ""
+      }\n\n🔗 Ver más en SECOP II`;
+      await Share.share({ message, title: "Compartir Proceso SECOP" });
     } catch (error) {
       console.error("Error sharing:", error);
     }
@@ -178,7 +181,6 @@ ${process.nombre_del_procedimiento || "Sin nombre"}
     }
   };
 
-  // Componentes internos con acceso a styles y colors
   const InfoRow = ({
     icon,
     label,
@@ -204,12 +206,19 @@ ${process.nombre_del_procedimiento || "Sin nombre"}
   const Section = ({
     title,
     children,
+    icon,
   }: {
     title: string;
     children: React.ReactNode;
+    icon?: string;
   }) => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.sectionTitleRow}>
+        {icon && (
+          <Ionicons name={icon as any} size={18} color={colors.accent} />
+        )}
+        <Text style={styles.sectionTitle}>{title}</Text>
+      </View>
       <View style={styles.sectionContent}>{children}</View>
     </View>
   );
@@ -220,24 +229,18 @@ ${process.nombre_del_procedimiento || "Sin nombre"}
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={styles.backButton}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color={colors.accent} />
           <Text style={styles.backText}>Atrás</Text>
         </TouchableOpacity>
 
         <View style={styles.headerActions}>
-          <TouchableOpacity
-            onPress={handleShare}
-            style={styles.headerButton}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity onPress={handleShare} style={styles.headerButton}>
             <Ionicons name="share-outline" size={22} color={colors.accent} />
           </TouchableOpacity>
-
           <TouchableOpacity
             onPress={handleToggleFavorite}
-            style={styles.headerButton}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            style={styles.headerButton}>
             <Ionicons
               name={favorite ? "heart" : "heart-outline"}
               size={22}
@@ -261,15 +264,35 @@ ${process.nombre_del_procedimiento || "Sin nombre"}
             <Text style={styles.idValue}>{process.id_del_proceso}</Text>
           </View>
 
-          <View style={[styles.phaseBadge, { backgroundColor: phaseStyle.bg }]}>
-            <Ionicons
-              name={phaseStyle.icon as any}
-              size={14}
-              color={phaseStyle.color}
-            />
-            <Text style={[styles.phaseText, { color: phaseStyle.color }]}>
-              {fase}
-            </Text>
+          <View style={styles.badgesRow}>
+            {adjudicado && (
+              <View
+                style={[
+                  styles.phaseBadge,
+                  { backgroundColor: colors.backgroundTertiary },
+                ]}>
+                <Ionicons
+                  name="checkmark-circle"
+                  size={12}
+                  color={colors.textSecondary}
+                />
+                <Text
+                  style={[styles.phaseText, { color: colors.textSecondary }]}>
+                  ADJUDICADO
+                </Text>
+              </View>
+            )}
+            <View
+              style={[styles.phaseBadge, { backgroundColor: phaseStyle.bg }]}>
+              <Ionicons
+                name={phaseStyle.icon as any}
+                size={14}
+                color={phaseStyle.color}
+              />
+              <Text style={[styles.phaseText, { color: phaseStyle.color }]}>
+                {fase}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -280,7 +303,7 @@ ${process.nombre_del_procedimiento || "Sin nombre"}
           </Text>
         )}
 
-        {/* Descripción Card */}
+        {/* Descripción */}
         <View style={styles.descriptionCard}>
           <Text style={styles.descriptionLabel}>Objeto del Proceso</Text>
           <Text style={styles.descriptionText}>
@@ -289,11 +312,11 @@ ${process.nombre_del_procedimiento || "Sin nombre"}
           </Text>
         </View>
 
-        {/* Precio Base Card */}
+        {/* Precio Base */}
         {process.precio_base && (
           <View style={styles.priceCard}>
             <View style={styles.priceHeader}>
-              <Ionicons name="cash-outline" size={22} color={colors.success} />
+              <Ionicons name="cash-outline" size={22} color={colors.accent} />
               <Text style={styles.priceLabel}>Precio Base</Text>
             </View>
             <Text style={styles.priceValue}>
@@ -302,13 +325,56 @@ ${process.nombre_del_procedimiento || "Sin nombre"}
           </View>
         )}
 
+        {/* SECCIÓN ADJUDICACIÓN - Mismo estilo que las demás */}
+        {adjudicado && (
+          <Section title="Contrato Adjudicado" icon="trophy-outline">
+            {process.nombre_del_proveedor && (
+              <InfoRow
+                icon="person-outline"
+                label="Adjudicatario"
+                value={process.nombre_del_proveedor}
+              />
+            )}
+            {process.nit_del_proveedor_adjudicado && (
+              <InfoRow
+                icon="card-outline"
+                label="NIT"
+                value={process.nit_del_proveedor_adjudicado}
+              />
+            )}
+            {(process.ciudad_proveedor || process.departamento_proveedor) && (
+              <InfoRow
+                icon="location-outline"
+                label="Ubicación"
+                value={[
+                  process.ciudad_proveedor,
+                  process.departamento_proveedor,
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
+              />
+            )}
+            {process.fecha_adjudicacion && (
+              <InfoRow
+                icon="calendar-outline"
+                label="Fecha Adjudicación"
+                value={formatDateTime(process.fecha_adjudicacion)}
+              />
+            )}
+            {process.valor_total_adjudicacion && (
+              <InfoRow
+                icon="cash-outline"
+                label="Valor del Contrato"
+                value={formatCurrency(process.valor_total_adjudicacion)}
+                isLast
+              />
+            )}
+          </Section>
+        )}
+
         {/* Información de la Entidad */}
-        <Section title="Entidad Contratante">
-          <InfoRow
-            icon="business-outline"
-            label="Entidad"
-            value={process.entidad}
-          />
+        <Section title="Entidad Contratante" icon="business-outline">
+          <InfoRow icon="business" label="Entidad" value={process.entidad} />
           <InfoRow
             icon="card-outline"
             label="NIT"
@@ -327,10 +393,10 @@ ${process.nombre_del_procedimiento || "Sin nombre"}
           />
         </Section>
 
-        {/* Información del Proceso */}
-        <Section title="Detalles del Proceso">
+        {/* Detalles del Proceso */}
+        <Section title="Detalles del Proceso" icon="document-text-outline">
           <InfoRow
-            icon="document-text-outline"
+            icon="layers-outline"
             label="Modalidad"
             value={process.modalidad_de_contratacion}
           />
@@ -339,18 +405,44 @@ ${process.nombre_del_procedimiento || "Sin nombre"}
             label="Tipo de Contrato"
             value={process.tipo_de_contrato}
           />
+          {process.duracion && (
+            <InfoRow
+              icon="time-outline"
+              label="Duración"
+              value={`${process.duracion} ${
+                process.unidad_de_duracion || "días"
+              }`}
+            />
+          )}
           <InfoRow
             icon="calendar-outline"
             label="Fecha Publicación"
             value={formatDateTime(process.fecha_de_publicacion_del)}
-          />
-          <InfoRow
-            icon="time-outline"
-            label="Última Actualización"
-            value={formatDateTime(process.fecha_de_ultima_publicaci)}
             isLast
           />
         </Section>
+
+        {/* Estadísticas */}
+        {(process.respuestas_al_procedimiento ||
+          process.visualizaciones_del) && (
+          <Section title="Estadísticas" icon="stats-chart-outline">
+            {process.visualizaciones_del && (
+              <InfoRow
+                icon="eye-outline"
+                label="Visualizaciones"
+                value={String(process.visualizaciones_del)}
+              />
+            )}
+            {process.respuestas_al_procedimiento && (
+              <InfoRow
+                icon="document-attach-outline"
+                label="Propuestas recibidas"
+                value={String(process.respuestas_al_procedimiento)}
+                isLast
+              />
+            )}
+          </Section>
+        )}
 
         {/* Botón Ver en SECOP */}
         <TouchableOpacity style={styles.secopButton} onPress={handleOpenSecop}>
@@ -375,8 +467,6 @@ const createStyles = (colors: any) =>
       flex: 1,
       backgroundColor: colors.background,
     },
-
-    // Header
     header: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -401,16 +491,12 @@ const createStyles = (colors: any) =>
     headerButton: {
       padding: spacing.xs,
     },
-
-    // ScrollView
     scrollView: {
       flex: 1,
     },
     scrollContent: {
       paddingHorizontal: spacing.lg,
     },
-
-    // Hero Section
     heroSection: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -432,28 +518,29 @@ const createStyles = (colors: any) =>
       fontWeight: "700",
       color: colors.accent,
     },
+    badgesRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+    },
     phaseBadge: {
       flexDirection: "row",
       alignItems: "center",
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
       borderRadius: borderRadius.full,
-      gap: spacing.xs,
+      gap: 4,
     },
     phaseText: {
-      fontSize: 13,
+      fontSize: 11,
       fontWeight: "600",
     },
-
-    // Procedure Name
     procedureName: {
       fontSize: 15,
       fontWeight: "600",
       color: colors.accent,
       marginBottom: spacing.lg,
     },
-
-    // Description Card
     descriptionCard: {
       backgroundColor: colors.backgroundSecondary,
       borderRadius: borderRadius.md,
@@ -473,15 +560,11 @@ const createStyles = (colors: any) =>
       color: colors.textPrimary,
       lineHeight: 22,
     },
-
-    // Price Card
     priceCard: {
       backgroundColor: colors.backgroundSecondary,
       borderRadius: borderRadius.md,
       padding: spacing.lg,
       marginBottom: spacing.lg,
-      borderLeftWidth: 4,
-      borderLeftColor: colors.success,
     },
     priceHeader: {
       flexDirection: "row",
@@ -497,26 +580,27 @@ const createStyles = (colors: any) =>
     priceValue: {
       fontSize: 26,
       fontWeight: "700",
-      color: colors.success,
+      color: colors.accent,
     },
-
-    // Section
     section: {
       marginBottom: spacing.lg,
+    },
+    sectionTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      marginBottom: spacing.md,
     },
     sectionTitle: {
       fontSize: 18,
       fontWeight: "700",
       color: colors.textPrimary,
-      marginBottom: spacing.md,
     },
     sectionContent: {
       backgroundColor: colors.backgroundSecondary,
       borderRadius: borderRadius.md,
       overflow: "hidden",
     },
-
-    // Info Row
     infoRow: {
       flexDirection: "row",
       alignItems: "flex-start",
@@ -549,8 +633,6 @@ const createStyles = (colors: any) =>
       fontWeight: "500",
       color: colors.textPrimary,
     },
-
-    // SECOP Button
     secopButton: {
       flexDirection: "row",
       alignItems: "center",
