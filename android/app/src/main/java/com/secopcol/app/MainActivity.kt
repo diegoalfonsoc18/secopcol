@@ -1,4 +1,4 @@
-package com.anonymous.secopcol
+package com.secopcol.app
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

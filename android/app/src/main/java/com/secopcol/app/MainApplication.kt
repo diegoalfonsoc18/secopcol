@@ -1,4 +1,4 @@
-package com.anonymous.secopcol
+package com.secopcol.app
 
 import android.app.Application
 import android.content.res.Configuration
