@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import {
   Animated,
+  FlatList,
   RefreshControl,
   StyleSheet,
   Text,
@@ -11,11 +12,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  ProcessCard,
-  DashboardSkeleton,
-  TopEntidades,
-} from "../components/index";
+import { ProcessCard, DashboardSkeleton } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
 import { spacing, borderRadius } from "../theme";
@@ -48,29 +45,9 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { processes, loading, fetchRecentProcesses } = useProcessesStore();
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  // Filtrar procesos por tipos de contrato seleccionados
-  const filteredProcesses = useMemo(() => {
-    if (preferences.selectedContractTypes.length === 0) {
-      return processes;
-    }
-    return processes.filter((process) =>
-      preferences.selectedContractTypes.includes(process.tipo_de_contrato || "")
-    );
-  }, [processes, preferences.selectedContractTypes]);
+  const styles = createStyles(colors);
 
-  // Configuraciones que dependen del tema
-  const phaseConfig: Record<string, { color: string; icon: string }> = {
-    Borrador: { color: colors.textSecondary, icon: "document-outline" },
-    Planeación: { color: colors.warning, icon: "clipboard-outline" },
-    Selección: { color: colors.accent, icon: "search-outline" },
-    Contratación: { color: "#5856D6", icon: "document-text-outline" },
-    Ejecución: { color: colors.success, icon: "play-circle-outline" },
-    Liquidación: { color: "#FF9500", icon: "checkmark-done-outline" },
-    Terminado: { color: "#8E8E93", icon: "checkmark-circle-outline" },
-    Cancelado: { color: colors.danger, icon: "close-circle-outline" },
-    Publicado: { color: colors.accent, icon: "megaphone-outline" },
-  };
-
+  // Configuración de tipos de contrato
   const tipoContratoConfig: Record<string, { color: string; icon: string }> = {
     Obra: { color: "#FF9500", icon: "construct-outline" },
     Consultoría: { color: "#5856D6", icon: "bulb-outline" },
@@ -83,13 +60,21 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     Interventoría: { color: "#AF52DE", icon: "eye-outline" },
   };
 
-  const styles = createStyles(colors);
+  // Filtrar procesos por tipos de contrato seleccionados
+  const filteredProcesses = useMemo(() => {
+    if (preferences.selectedContractTypes.length === 0) {
+      return processes;
+    }
+    return processes.filter((process) =>
+      preferences.selectedContractTypes.includes(process.tipo_de_contrato || "")
+    );
+  }, [processes, preferences.selectedContractTypes]);
 
   useEffect(() => {
-    fetchRecentProcesses(100); // Cargar más para tener suficientes después del filtro
+    fetchRecentProcesses(100);
   }, []);
 
-  // Calcular estadísticas basadas en procesos filtrados
+  // Calcular estadísticas
   const stats = useMemo(() => {
     const totalProcesos = filteredProcesses.length;
 
@@ -101,25 +86,19 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       return sum + precio;
     }, 0);
 
-    const porFase: Record<string, number> = {};
-    filteredProcesses.forEach((p) => {
-      const fase = p.fase || p.estado_del_procedimiento || "Otro";
-      porFase[fase] = (porFase[fase] || 0) + 1;
-    });
-
     const porTipo: Record<string, number> = {};
     filteredProcesses.forEach((p) => {
       const tipo = p.tipo_de_contrato || "Otro";
       porTipo[tipo] = (porTipo[tipo] || 0) + 1;
     });
 
-    return { totalProcesos, valorTotal, porFase, porTipo };
+    return { totalProcesos, valorTotal, porTipo };
   }, [filteredProcesses]);
 
   // Animaciones del header
   const headerHeight = scrollY.interpolate({
     inputRange: [0, 80],
-    outputRange: [110, 60],
+    outputRange: [120, 70],
     extrapolate: "clamp",
   });
 
@@ -144,105 +123,64 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   );
 
   const handleRefresh = useCallback(async () => {
-    await fetchRecentProcesses(50);
+    await fetchRecentProcesses(100);
   }, [fetchRecentProcesses]);
 
   const handleViewAll = useCallback(() => {
     navigation.navigate("Search");
   }, [navigation]);
 
-  // Componentes de estadísticas
-  const StatCard: React.FC<{
-    title: string;
-    value: string;
-    subtitle?: string;
-    icon: string;
-    color: string;
-  }> = ({ title, value, subtitle, icon, color }) => (
-    <View style={[styles.statCard, { borderLeftColor: color }]}>
-      <View
-        style={[styles.statIconContainer, { backgroundColor: `${color}15` }]}>
-        <Ionicons name={icon as any} size={20} color={color} />
-      </View>
-      <View style={styles.statContent}>
-        <Text style={styles.statTitle}>{title}</Text>
-        <Text style={[styles.statValue, { color }]}>{value}</Text>
-        {subtitle && <Text style={styles.statSubtitle}>{subtitle}</Text>}
-      </View>
-    </View>
+  const renderProcess = useCallback(
+    ({ item }: { item: SecopProcess }) => (
+      <ProcessCard process={item} onPress={() => handleProcessPress(item)} />
+    ),
+    [handleProcessPress]
   );
 
-  const PhaseBar: React.FC<{
-    phase: string;
-    count: number;
-    total: number;
-    color: string;
-    icon: string;
-  }> = ({ phase, count, total, color, icon }) => {
-    const percentage = total > 0 ? (count / total) * 100 : 0;
+  const keyExtractor = useCallback(
+    (item: SecopProcess, index: number) => `${item.id_del_proceso}-${index}`,
+    []
+  );
 
-    return (
-      <View style={styles.barContainer}>
-        <View style={styles.barHeader}>
-          <View style={styles.barLabelContainer}>
-            <Ionicons name={icon as any} size={14} color={color} />
-            <Text style={styles.barLabel}>{phase}</Text>
-          </View>
-          <Text style={styles.barCount}>{count}</Text>
-        </View>
-        <View style={styles.barTrack}>
-          <View
-            style={[
-              styles.barFill,
-              { width: `${Math.max(percentage, 2)}%`, backgroundColor: color },
-            ]}
-          />
-        </View>
-      </View>
-    );
-  };
-
-  // Header del listado con estadísticas
+  // Header del listado
   const ListHeader = () => (
     <View style={styles.listHeader}>
       {/* Stats principales */}
       <View style={styles.mainStats}>
-        <StatCard
-          title="Total Procesos"
-          value={stats.totalProcesos.toString()}
-          subtitle="Cargados"
-          icon="documents-outline"
-          color={colors.accent}
-        />
-        <StatCard
-          title="Valor Total"
-          value={formatCurrency(stats.valorTotal)}
-          subtitle="Precio base"
-          icon="cash-outline"
-          color={colors.success}
-        />
-      </View>
-
-      {/* Distribución por fase */}
-      <View style={styles.sectionCard}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="pie-chart-outline" size={18} color={colors.accent} />
-          <Text style={styles.sectionTitle}>Por Estado</Text>
+        <View style={[styles.statCard, { borderLeftColor: colors.accent }]}>
+          <View
+            style={[
+              styles.statIconContainer,
+              { backgroundColor: `${colors.accent}15` },
+            ]}>
+            <Ionicons
+              name="documents-outline"
+              size={20}
+              color={colors.accent}
+            />
+          </View>
+          <View style={styles.statContent}>
+            <Text style={styles.statTitle}>Total Procesos</Text>
+            <Text style={[styles.statValue, { color: colors.accent }]}>
+              {stats.totalProcesos}
+            </Text>
+          </View>
         </View>
-        <View style={styles.phaseBars}>
-          {Object.entries(stats.porFase)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5)
-            .map(([fase, count]) => (
-              <PhaseBar
-                key={fase}
-                phase={fase}
-                count={count}
-                total={stats.totalProcesos}
-                color={phaseConfig[fase]?.color || colors.textSecondary}
-                icon={phaseConfig[fase]?.icon || "help-circle-outline"}
-              />
-            ))}
+
+        <View style={[styles.statCard, { borderLeftColor: colors.success }]}>
+          <View
+            style={[
+              styles.statIconContainer,
+              { backgroundColor: `${colors.success}15` },
+            ]}>
+            <Ionicons name="cash-outline" size={20} color={colors.success} />
+          </View>
+          <View style={styles.statContent}>
+            <Text style={styles.statTitle}>Valor Total</Text>
+            <Text style={[styles.statValue, { color: colors.success }]}>
+              {formatCurrency(stats.valorTotal)}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -289,9 +227,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         </ScrollView>
       </View>
 
-      {/* Top Entidades */}
-      <TopEntidades processes={filteredProcesses} limit={5} />
-
       {/* Header de procesos recientes */}
       <View style={styles.recentHeader}>
         <Text style={styles.recentTitle}>Procesos Recientes</Text>
@@ -315,31 +250,18 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       </View>
       <Text style={styles.emptyTitle}>Sin procesos</Text>
       <Text style={styles.emptyMessage}>
-        No hay procesos disponibles en este momento
+        No hay procesos disponibles con los filtros seleccionados
       </Text>
       <Pressable
         style={({ pressed }) => [
           styles.retryButton,
-          pressed && styles.retryButtonPressed,
+          pressed && { opacity: 0.8 },
         ]}
         onPress={handleRefresh}>
         <Ionicons name="refresh-outline" size={18} color={colors.accent} />
         <Text style={styles.retryButtonText}>Reintentar</Text>
       </Pressable>
     </View>
-  );
-
-  // Render item
-  const renderProcess = useCallback(
-    ({ item }: { item: SecopProcess }) => (
-      <ProcessCard process={item} onPress={() => handleProcessPress(item)} />
-    ),
-    [handleProcessPress]
-  );
-
-  const keyExtractor = useCallback(
-    (item: SecopProcess, index: number) => `${item.id_del_proceso}-${index}`,
-    []
   );
 
   return (
@@ -367,7 +289,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
           <View style={styles.headerButtons}>
             <TouchableOpacity
-              style={styles.settingsButton}
+              style={styles.headerButton}
               onPress={() => navigation.navigate("Settings")}>
               <Ionicons
                 name="notifications-outline"
@@ -376,7 +298,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.settingsButton}
+              style={styles.headerButton}
               onPress={() => navigation.navigate("AppSettings")}>
               <Ionicons
                 name="settings-outline"
@@ -449,7 +371,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 };
 
 // ============================================
-// ESTILOS DINÁMICOS
+// ESTILOS
 // ============================================
 const createStyles = (colors: any) =>
   StyleSheet.create({
@@ -473,23 +395,18 @@ const createStyles = (colors: any) =>
       flexDirection: "row",
       gap: spacing.sm,
     },
-    titleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.md,
-    },
-    settingsButton: {
+    headerButton: {
       width: 40,
       height: 40,
       borderRadius: 20,
       backgroundColor: colors.backgroundSecondary,
       justifyContent: "center",
       alignItems: "center",
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.08,
-      shadowRadius: 4,
-      elevation: 2,
+    },
+    titleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
     },
     title: {
       fontSize: 34,
@@ -540,31 +457,6 @@ const createStyles = (colors: any) =>
       fontWeight: "500",
     },
 
-    // Loading
-    loadingContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    loadingCard: {
-      backgroundColor: colors.backgroundSecondary,
-      paddingHorizontal: spacing.xxl,
-      paddingVertical: spacing.xl,
-      borderRadius: borderRadius.lg,
-      alignItems: "center",
-      gap: spacing.md,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 12,
-      elevation: 3,
-    },
-    loadingText: {
-      fontSize: 15,
-      color: colors.textSecondary,
-      fontWeight: "500",
-    },
-
     // List
     listContent: {
       paddingHorizontal: spacing.lg,
@@ -574,7 +466,7 @@ const createStyles = (colors: any) =>
       marginBottom: spacing.md,
     },
 
-    // Stat cards
+    // Stats
     mainStats: {
       flexDirection: "row",
       gap: spacing.md,
@@ -589,11 +481,6 @@ const createStyles = (colors: any) =>
       flexDirection: "row",
       alignItems: "center",
       gap: spacing.md,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 3,
-      elevation: 1,
     },
     statIconContainer: {
       width: 40,
@@ -609,31 +496,19 @@ const createStyles = (colors: any) =>
       fontSize: 12,
       color: colors.textSecondary,
       fontWeight: "500",
-      textTransform: "uppercase",
-      letterSpacing: 0.5,
     },
     statValue: {
       fontSize: 22,
       fontWeight: "700",
       marginTop: 2,
     },
-    statSubtitle: {
-      fontSize: 11,
-      color: colors.textTertiary,
-      marginTop: 2,
-    },
 
-    // Section cards
+    // Section
     sectionCard: {
       backgroundColor: colors.backgroundSecondary,
       borderRadius: borderRadius.md,
       padding: spacing.lg,
       marginBottom: spacing.lg,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 3,
-      elevation: 1,
     },
     sectionHeader: {
       flexDirection: "row",
@@ -645,45 +520,6 @@ const createStyles = (colors: any) =>
       fontSize: 15,
       fontWeight: "600",
       color: colors.textPrimary,
-    },
-    phaseBars: {
-      gap: spacing.sm,
-    },
-
-    // Phase bars
-    barContainer: {
-      marginBottom: spacing.md,
-    },
-    barHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: spacing.xs,
-    },
-    barLabelContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.xs,
-    },
-    barLabel: {
-      fontSize: 13,
-      color: colors.textPrimary,
-      fontWeight: "500",
-    },
-    barCount: {
-      fontSize: 13,
-      color: colors.textSecondary,
-      fontWeight: "600",
-    },
-    barTrack: {
-      height: 8,
-      backgroundColor: colors.backgroundTertiary,
-      borderRadius: 4,
-      overflow: "hidden",
-    },
-    barFill: {
-      height: "100%",
-      borderRadius: 4,
     },
 
     // Type chips
@@ -746,7 +582,7 @@ const createStyles = (colors: any) =>
     // Empty state
     emptyContainer: {
       alignItems: "center",
-      paddingVertical: spacing.xxl * 3,
+      paddingVertical: spacing.xxl * 2,
       paddingHorizontal: spacing.xl,
     },
     emptyIconContainer: {
@@ -779,9 +615,6 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.accentLight,
       borderRadius: borderRadius.full,
       gap: spacing.sm,
-    },
-    retryButtonPressed: {
-      opacity: 0.8,
     },
     retryButtonText: {
       fontSize: 15,

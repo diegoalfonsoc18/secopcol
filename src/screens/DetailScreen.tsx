@@ -7,7 +7,6 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Pressable,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -48,12 +47,10 @@ const formatDateTime = (dateString: string | undefined): string => {
   }
 };
 
-// Obtener el estado/fase del proceso
 const getProcessPhase = (process: SecopProcess): string => {
   return process.fase || process.estado_del_procedimiento || "Desconocido";
 };
 
-// Obtener la URL del proceso (puede ser string u objeto)
 const getProcessUrl = (
   urlproceso: string | { url: string } | undefined
 ): string | null => {
@@ -62,36 +59,6 @@ const getProcessUrl = (
   if (typeof urlproceso === "object" && urlproceso.url) return urlproceso.url;
   return null;
 };
-
-// ============================================
-// COMPONENTES AUXILIARES
-// ============================================
-const InfoRow: React.FC<{
-  icon: string;
-  label: string;
-  value: string | undefined;
-  isLast?: boolean;
-}> = ({ icon, label, value, isLast }) => (
-  <View style={[styles.infoRow, !isLast && styles.infoRowBorder]}>
-    <View style={styles.infoIconContainer}>
-      <Ionicons name={icon as any} size={18} color={colors.accent} />
-    </View>
-    <View style={styles.infoContent}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value || "No disponible"}</Text>
-    </View>
-  </View>
-);
-
-const Section: React.FC<{
-  title: string;
-  children: React.ReactNode;
-}> = ({ title, children }) => (
-  <View style={styles.section}>
-    <Text style={styles.sectionTitle}>{title}</Text>
-    <View style={styles.sectionContent}>{children}</View>
-  </View>
-);
 
 // ============================================
 // COMPONENTE PRINCIPAL
@@ -205,12 +172,47 @@ ${process.nombre_del_procedimiento || "Sin nombre"}
     if (url) {
       Linking.openURL(url);
     } else {
-      // URL genérica de SECOP II
       Linking.openURL(
         "https://community.secop.gov.co/Public/Tendering/ContractNoticeManagement/Index"
       );
     }
   };
+
+  // Componentes internos con acceso a styles y colors
+  const InfoRow = ({
+    icon,
+    label,
+    value,
+    isLast = false,
+  }: {
+    icon: string;
+    label: string;
+    value: string | undefined;
+    isLast?: boolean;
+  }) => (
+    <View style={[styles.infoRow, !isLast && styles.infoRowBorder]}>
+      <View style={styles.infoIconContainer}>
+        <Ionicons name={icon as any} size={18} color={colors.accent} />
+      </View>
+      <View style={styles.infoContent}>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <Text style={styles.infoValue}>{value || "No disponible"}</Text>
+      </View>
+    </View>
+  );
+
+  const Section = ({
+    title,
+    children,
+  }: {
+    title: string;
+    children: React.ReactNode;
+  }) => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.sectionContent}>{children}</View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -254,7 +256,6 @@ ${process.nombre_del_procedimiento || "Sin nombre"}
         showsVerticalScrollIndicator={false}>
         {/* Hero Section */}
         <View style={styles.heroSection}>
-          {/* ID y Fase */}
           <View style={styles.idContainer}>
             <Text style={styles.idLabel}>PROCESO</Text>
             <Text style={styles.idValue}>{process.id_del_proceso}</Text>
@@ -301,33 +302,20 @@ ${process.nombre_del_procedimiento || "Sin nombre"}
           </View>
         )}
 
-        {/* Valor Adjudicado (si existe) */}
-        {process.valor_total_adjudicacion && (
-          <View style={[styles.priceCard, { borderLeftColor: colors.accent }]}>
-            <View style={styles.priceHeader}>
-              <Ionicons
-                name="checkmark-circle-outline"
-                size={22}
-                color={colors.accent}
-              />
-              <Text style={styles.priceLabel}>Valor Adjudicado</Text>
-            </View>
-            <Text style={[styles.priceValue, { color: colors.accent }]}>
-              {formatCurrency(process.valor_total_adjudicacion)}
-            </Text>
-          </View>
-        )}
-
-        {/* Entidad Contratante */}
+        {/* Información de la Entidad */}
         <Section title="Entidad Contratante">
-          <InfoRow icon="business" label="Nombre" value={process.entidad} />
+          <InfoRow
+            icon="business-outline"
+            label="Entidad"
+            value={process.entidad}
+          />
           <InfoRow
             icon="card-outline"
             label="NIT"
             value={process.nit_entidad}
           />
           <InfoRow
-            icon="location"
+            icon="location-outline"
             label="Ciudad"
             value={process.ciudad_entidad}
           />
@@ -340,171 +328,39 @@ ${process.nombre_del_procedimiento || "Sin nombre"}
         </Section>
 
         {/* Información del Proceso */}
-        <Section title="Información del Proceso">
-          {process.modalidad_de_contratacion && (
-            <InfoRow
-              icon="layers-outline"
-              label="Modalidad"
-              value={process.modalidad_de_contratacion}
-            />
-          )}
-          {process.tipo_de_contrato && (
-            <InfoRow
-              icon="document-text-outline"
-              label="Tipo de Contrato"
-              value={process.tipo_de_contrato}
-            />
-          )}
-          {process.duracion && (
-            <InfoRow
-              icon="time-outline"
-              label="Duración"
-              value={`${process.duracion} ${process.unidad_de_duracion || ""}`}
-            />
-          )}
-          {process.estado_del_procedimiento && (
-            <InfoRow
-              icon="flag-outline"
-              label="Estado"
-              value={process.estado_del_procedimiento}
-              isLast
-            />
-          )}
-        </Section>
-
-        {/* Fechas */}
-        <Section title="Fechas">
+        <Section title="Detalles del Proceso">
+          <InfoRow
+            icon="document-text-outline"
+            label="Modalidad"
+            value={process.modalidad_de_contratacion}
+          />
+          <InfoRow
+            icon="briefcase-outline"
+            label="Tipo de Contrato"
+            value={process.tipo_de_contrato}
+          />
           <InfoRow
             icon="calendar-outline"
-            label="Publicación"
+            label="Fecha Publicación"
             value={formatDateTime(process.fecha_de_publicacion_del)}
           />
-          {process.fecha_de_ultima_publicaci && (
-            <InfoRow
-              icon="refresh-outline"
-              label="Última Actualización"
-              value={formatDateTime(process.fecha_de_ultima_publicaci)}
-            />
-          )}
-          {process.fecha_de_recepcion_de && (
-            <InfoRow
-              icon="download-outline"
-              label="Recepción de Ofertas"
-              value={formatDateTime(process.fecha_de_recepcion_de)}
-            />
-          )}
-          {process.fecha_adjudicacion && (
-            <InfoRow
-              icon="checkmark-done-outline"
-              label="Adjudicación"
-              value={formatDateTime(process.fecha_adjudicacion)}
-              isLast
-            />
-          )}
+          <InfoRow
+            icon="time-outline"
+            label="Última Actualización"
+            value={formatDateTime(process.fecha_de_ultima_publicaci)}
+            isLast
+          />
         </Section>
 
-        {/* Proveedor Adjudicado (si existe) */}
-        {process.nombre_del_proveedor && (
-          <Section title="Proveedor Adjudicado">
-            <InfoRow
-              icon="person"
-              label="Nombre"
-              value={process.nombre_del_proveedor}
-            />
-            {process.nit_del_proveedor_adjudicado && (
-              <InfoRow
-                icon="card-outline"
-                label="NIT"
-                value={process.nit_del_proveedor_adjudicado}
-              />
-            )}
-            {process.ciudad_proveedor && (
-              <InfoRow
-                icon="location"
-                label="Ciudad"
-                value={`${process.ciudad_proveedor}${
-                  process.departamento_proveedor
-                    ? `, ${process.departamento_proveedor}`
-                    : ""
-                }`}
-                isLast
-              />
-            )}
-          </Section>
-        )}
-
-        {/* Estadísticas (si existen) */}
-        {(process.proveedores_invitados || process.visualizaciones_del) && (
-          <View style={styles.statsContainer}>
-            {process.proveedores_invitados && (
-              <View style={styles.statItem}>
-                <Ionicons
-                  name="people-outline"
-                  size={20}
-                  color={colors.accent}
-                />
-                <Text style={styles.statValue}>
-                  {process.proveedores_invitados}
-                </Text>
-                <Text style={styles.statLabel}>Invitados</Text>
-              </View>
-            )}
-            {process.visualizaciones_del && (
-              <View style={styles.statItem}>
-                <Ionicons name="eye-outline" size={20} color={colors.accent} />
-                <Text style={styles.statValue}>
-                  {process.visualizaciones_del}
-                </Text>
-                <Text style={styles.statLabel}>Vistas</Text>
-              </View>
-            )}
-            {process.respuestas_al_procedimiento && (
-              <View style={styles.statItem}>
-                <Ionicons
-                  name="chatbubbles-outline"
-                  size={20}
-                  color={colors.accent}
-                />
-                <Text style={styles.statValue}>
-                  {process.respuestas_al_procedimiento}
-                </Text>
-                <Text style={styles.statLabel}>Respuestas</Text>
-              </View>
-            )}
-          </View>
-        )}
-
         {/* Botón Ver en SECOP */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.secopButton,
-            pressed && styles.secopButtonPressed,
-          ]}
-          onPress={handleOpenSecop}>
+        <TouchableOpacity style={styles.secopButton} onPress={handleOpenSecop}>
           <Ionicons
             name="open-outline"
             size={20}
             color={colors.backgroundSecondary}
           />
           <Text style={styles.secopButtonText}>Ver en SECOP II</Text>
-        </Pressable>
-
-        {/* Referencia */}
-        {process.referencia_del_proceso && (
-          <View style={styles.referenceContainer}>
-            <Text style={styles.referenceLabel}>Referencia del Proceso</Text>
-            <Text style={styles.referenceValue}>
-              {process.referencia_del_proceso}
-            </Text>
-          </View>
-        )}
-
-        {/* Disclaimer */}
-        <Text style={styles.disclaimer}>
-          La información presentada proviene del Sistema Electrónico de
-          Contratación Pública (SECOP II) y puede estar sujeta a
-          actualizaciones.
-        </Text>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -532,22 +388,21 @@ const createStyles = (colors: any) =>
     backButton: {
       flexDirection: "row",
       alignItems: "center",
+      gap: spacing.xs,
     },
     backText: {
       fontSize: 17,
       color: colors.accent,
-      marginLeft: spacing.xs,
     },
     headerActions: {
       flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.lg,
+      gap: spacing.md,
     },
     headerButton: {
       padding: spacing.xs,
     },
 
-    // Scroll
+    // ScrollView
     scrollView: {
       flex: 1,
     },
@@ -555,7 +410,7 @@ const createStyles = (colors: any) =>
       paddingHorizontal: spacing.lg,
     },
 
-    // Hero
+    // Hero Section
     heroSection: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -570,11 +425,11 @@ const createStyles = (colors: any) =>
       fontWeight: "600",
       color: colors.textTertiary,
       letterSpacing: 1,
-      marginBottom: spacing.xs,
+      marginBottom: 4,
     },
     idValue: {
-      fontSize: 15,
-      fontWeight: "600",
+      fontSize: 16,
+      fontWeight: "700",
       color: colors.accent,
     },
     phaseBadge: {
@@ -592,52 +447,41 @@ const createStyles = (colors: any) =>
 
     // Procedure Name
     procedureName: {
-      fontSize: 22,
-      fontWeight: "700",
-      color: colors.textPrimary,
-      lineHeight: 28,
+      fontSize: 15,
+      fontWeight: "600",
+      color: colors.accent,
       marginBottom: spacing.lg,
     },
 
     // Description Card
     descriptionCard: {
       backgroundColor: colors.backgroundSecondary,
-      borderRadius: borderRadius.lg,
+      borderRadius: borderRadius.md,
       padding: spacing.lg,
       marginBottom: spacing.lg,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.06,
-      shadowRadius: 8,
-      elevation: 2,
     },
     descriptionLabel: {
-      fontSize: 11,
+      fontSize: 12,
       fontWeight: "600",
       color: colors.textTertiary,
-      letterSpacing: 0.5,
       textTransform: "uppercase",
+      letterSpacing: 0.5,
       marginBottom: spacing.sm,
     },
     descriptionText: {
       fontSize: 15,
       color: colors.textPrimary,
-      lineHeight: 23,
+      lineHeight: 22,
     },
 
     // Price Card
     priceCard: {
       backgroundColor: colors.backgroundSecondary,
-      borderRadius: borderRadius.lg,
+      borderRadius: borderRadius.md,
       padding: spacing.lg,
       marginBottom: spacing.lg,
       borderLeftWidth: 4,
       borderLeftColor: colors.success,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.06,
-      shadowRadius: 8,
-      elevation: 2,
     },
     priceHeader: {
       flexDirection: "row",
@@ -646,45 +490,37 @@ const createStyles = (colors: any) =>
       marginBottom: spacing.sm,
     },
     priceLabel: {
-      fontSize: 13,
+      fontSize: 14,
+      fontWeight: "600",
       color: colors.textSecondary,
-      fontWeight: "500",
     },
     priceValue: {
-      fontSize: 28,
+      fontSize: 26,
       fontWeight: "700",
       color: colors.success,
     },
 
-    // Sections
+    // Section
     section: {
-      marginBottom: spacing.xl,
+      marginBottom: spacing.lg,
     },
     sectionTitle: {
-      fontSize: 13,
-      fontWeight: "600",
-      color: colors.textSecondary,
-      textTransform: "uppercase",
-      letterSpacing: 0.5,
+      fontSize: 18,
+      fontWeight: "700",
+      color: colors.textPrimary,
       marginBottom: spacing.md,
-      marginLeft: spacing.xs,
     },
     sectionContent: {
       backgroundColor: colors.backgroundSecondary,
-      borderRadius: borderRadius.lg,
+      borderRadius: borderRadius.md,
       overflow: "hidden",
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.04,
-      shadowRadius: 4,
-      elevation: 1,
     },
 
     // Info Row
     infoRow: {
       flexDirection: "row",
-      alignItems: "center",
-      padding: spacing.lg,
+      alignItems: "flex-start",
+      padding: spacing.md,
     },
     infoRowBorder: {
       borderBottomWidth: 1,
@@ -693,7 +529,7 @@ const createStyles = (colors: any) =>
     infoIconContainer: {
       width: 36,
       height: 36,
-      borderRadius: borderRadius.sm,
+      borderRadius: 18,
       backgroundColor: colors.accentLight,
       justifyContent: "center",
       alignItems: "center",
@@ -703,42 +539,15 @@ const createStyles = (colors: any) =>
       flex: 1,
     },
     infoLabel: {
-      fontSize: 11,
+      fontSize: 12,
+      fontWeight: "500",
       color: colors.textTertiary,
       marginBottom: 2,
     },
     infoValue: {
       fontSize: 15,
-      color: colors.textPrimary,
       fontWeight: "500",
-    },
-
-    // Stats
-    statsContainer: {
-      flexDirection: "row",
-      justifyContent: "space-around",
-      backgroundColor: colors.backgroundSecondary,
-      borderRadius: borderRadius.lg,
-      padding: spacing.lg,
-      marginBottom: spacing.xl,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.04,
-      shadowRadius: 4,
-      elevation: 1,
-    },
-    statItem: {
-      alignItems: "center",
-      gap: spacing.xs,
-    },
-    statValue: {
-      fontSize: 20,
-      fontWeight: "700",
       color: colors.textPrimary,
-    },
-    statLabel: {
-      fontSize: 11,
-      color: colors.textSecondary,
     },
 
     // SECOP Button
@@ -748,50 +557,14 @@ const createStyles = (colors: any) =>
       justifyContent: "center",
       backgroundColor: colors.accent,
       borderRadius: borderRadius.md,
-      padding: spacing.lg,
-      marginBottom: spacing.xl,
+      paddingVertical: spacing.lg,
       gap: spacing.sm,
-      shadowColor: colors.accent,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 4,
-    },
-    secopButtonPressed: {
-      opacity: 0.9,
-      transform: [{ scale: 0.98 }],
+      marginTop: spacing.md,
     },
     secopButtonText: {
-      fontSize: 17,
+      fontSize: 16,
       fontWeight: "600",
       color: colors.backgroundSecondary,
-    },
-
-    // Reference
-    referenceContainer: {
-      backgroundColor: colors.backgroundTertiary,
-      borderRadius: borderRadius.md,
-      padding: spacing.lg,
-      marginBottom: spacing.lg,
-    },
-    referenceLabel: {
-      fontSize: 11,
-      color: colors.textTertiary,
-      marginBottom: spacing.xs,
-    },
-    referenceValue: {
-      fontSize: 13,
-      color: colors.textSecondary,
-      fontFamily: "monospace",
-    },
-
-    // Disclaimer
-    disclaimer: {
-      fontSize: 12,
-      color: colors.textTertiary,
-      textAlign: "center",
-      lineHeight: 18,
-      paddingHorizontal: spacing.lg,
     },
   });
 

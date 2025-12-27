@@ -6,4 +6,3 @@ export {
   DashboardSkeleton,
   SearchResultsSkeleton,
 } from "./SkeletonLoader";
-export { TopEntidades } from "./TopEntidades";
