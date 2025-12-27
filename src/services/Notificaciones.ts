@@ -54,31 +54,60 @@ export const MODALIDADES_CONTRATACION = [
     id: "licitacion",
     label: "Licitación pública",
     value: "Licitación pública",
+    icon: "megaphone-outline",
   },
   {
     id: "directa",
     label: "Contratación directa",
     value: "Contratación directa",
+    icon: "arrow-forward-outline",
   },
-  { id: "minima", label: "Mínima cuantía", value: "Mínima cuantía" },
+  {
+    id: "minima",
+    label: "Mínima cuantía",
+    value: "Mínima cuantía",
+    icon: "cash-outline",
+  },
   {
     id: "abreviada",
     label: "Selección abreviada",
     value: "Selección abreviada menor cuantía",
+    icon: "time-outline",
   },
   {
     id: "concurso",
     label: "Concurso de méritos",
     value: "Concurso de méritos abierto",
+    icon: "trophy-outline",
   },
 ];
 
 export const TIPOS_CONTRATO = [
-  { id: "obra", label: "Obra", value: "Obra" },
-  { id: "servicios", label: "Servicios", value: "Prestación de servicios" },
-  { id: "suministro", label: "Suministro", value: "Suministro" },
-  { id: "consultoria", label: "Consultoría", value: "Consultoría" },
-  { id: "interventoria", label: "Interventoría", value: "Interventoría" },
+  { id: "obra", label: "Obra", value: "Obra", icon: "construct-outline" },
+  {
+    id: "servicios",
+    label: "Servicios",
+    value: "Prestación de servicios",
+    icon: "people-outline",
+  },
+  {
+    id: "suministro",
+    label: "Suministro",
+    value: "Suministro",
+    icon: "cube-outline",
+  },
+  {
+    id: "consultoria",
+    label: "Consultoría",
+    value: "Consultoría",
+    icon: "bulb-outline",
+  },
+  {
+    id: "interventoria",
+    label: "Interventoría",
+    value: "Interventoría",
+    icon: "eye-outline",
+  },
 ];
 
 // ============================================

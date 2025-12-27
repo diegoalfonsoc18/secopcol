@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Keyboard,
   ScrollView,
@@ -19,11 +19,8 @@ import { SecopProcess, advancedSearch } from "../api/secop";
 import { spacing, borderRadius } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { exportSearchResults } from "../services/exportService";
-import {
-  COLOMBIAN_DEPARTMENTS,
-  MUNICIPALITIES_BY_DEPARTMENT,
-} from "../types/index";
 import { useFiltersStore, SavedFilter } from "../store/filtersStore";
+import { getDepartments, getMunicipalities } from "../services/divipola";
 
 // ============================================
 // FILTROS
@@ -66,6 +63,12 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const styles = createStyles(colors);
 
+  // Estados DIVIPOLA
+  const [departments, setDepartments] = useState<string[]>([]);
+  const [municipalities, setMunicipalities] = useState<string[]>([]);
+  const [loadingDepts, setLoadingDepts] = useState(true);
+  const [loadingMunis, setLoadingMunis] = useState(false);
+
   // Estados de filtros
   const [keyword, setKeyword] = useState("");
   const [selectedDepartamento, setSelectedDepartamento] = useState("");
@@ -77,6 +80,8 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [showDeptModal, setShowDeptModal] = useState(false);
   const [showMuniModal, setShowMuniModal] = useState(false);
   const [showSavedFilters, setShowSavedFilters] = useState(false);
+  const [deptSearchText, setDeptSearchText] = useState("");
+  const [muniSearchText, setMuniSearchText] = useState("");
 
   // Estados de resultados
   const [processes, setProcesses] = useState<SecopProcess[]>([]);
@@ -85,11 +90,47 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
-  // Municipios filtrados
-  const municipios = useMemo(() => {
-    if (!selectedDepartamento) return [];
-    return MUNICIPALITIES_BY_DEPARTMENT[selectedDepartamento] || [];
+  // Cargar departamentos al iniciar
+  useEffect(() => {
+    const loadDepartments = async () => {
+      setLoadingDepts(true);
+      const data = await getDepartments();
+      setDepartments(data);
+      setLoadingDepts(false);
+    };
+    loadDepartments();
+  }, []);
+
+  // Cargar municipios cuando cambia el departamento
+  useEffect(() => {
+    if (!selectedDepartamento) {
+      setMunicipalities([]);
+      return;
+    }
+
+    const loadMunicipalities = async () => {
+      setLoadingMunis(true);
+      setSelectedMunicipio("");
+      const data = await getMunicipalities(selectedDepartamento);
+      setMunicipalities(data);
+      setLoadingMunis(false);
+    };
+    loadMunicipalities();
   }, [selectedDepartamento]);
+
+  // Filtrar departamentos por búsqueda
+  const filteredDepartments = deptSearchText
+    ? departments.filter((d) =>
+        d.toLowerCase().includes(deptSearchText.toLowerCase())
+      )
+    : departments;
+
+  // Filtrar municipios por búsqueda
+  const filteredMunicipalities = muniSearchText
+    ? municipalities.filter((m) =>
+        m.toLowerCase().includes(muniSearchText.toLowerCase())
+      )
+    : municipalities;
 
   // Contar filtros activos
   const activeFilters = [
@@ -236,12 +277,14 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setSelectedDepartamento(dept);
     setSelectedMunicipio("");
     setShowDeptModal(false);
+    setDeptSearchText("");
   };
 
   // Seleccionar municipio
   const handleSelectMuni = (muni: string) => {
     setSelectedMunicipio(muni);
     setShowMuniModal(false);
+    setMuniSearchText("");
   };
 
   return (
@@ -294,27 +337,34 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               styles.locationButton,
               selectedDepartamento && styles.locationButtonActive,
             ]}
-            onPress={() => setShowDeptModal(true)}>
-            <Ionicons
-              name="location-outline"
-              size={16}
-              color={
-                selectedDepartamento ? colors.accent : colors.textSecondary
-              }
-            />
-            <Text
-              style={[
-                styles.locationText,
-                selectedDepartamento && styles.locationTextActive,
-              ]}
-              numberOfLines={1}>
-              {selectedDepartamento || "Departamento"}
-            </Text>
-            <Ionicons
-              name="chevron-down"
-              size={16}
-              color={colors.textTertiary}
-            />
+            onPress={() => setShowDeptModal(true)}
+            disabled={loadingDepts}>
+            {loadingDepts ? (
+              <ActivityIndicator size="small" color={colors.textTertiary} />
+            ) : (
+              <>
+                <Ionicons
+                  name="location-outline"
+                  size={16}
+                  color={
+                    selectedDepartamento ? colors.accent : colors.textSecondary
+                  }
+                />
+                <Text
+                  style={[
+                    styles.locationText,
+                    selectedDepartamento && styles.locationTextActive,
+                  ]}
+                  numberOfLines={1}>
+                  {selectedDepartamento || "Departamento"}
+                </Text>
+                <Ionicons
+                  name="chevron-down"
+                  size={16}
+                  color={colors.textTertiary}
+                />
+              </>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -324,25 +374,33 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               !selectedDepartamento && styles.locationButtonDisabled,
             ]}
             onPress={() => selectedDepartamento && setShowMuniModal(true)}
-            disabled={!selectedDepartamento}>
-            <Ionicons
-              name="business-outline"
-              size={16}
-              color={selectedMunicipio ? colors.accent : colors.textSecondary}
-            />
-            <Text
-              style={[
-                styles.locationText,
-                selectedMunicipio && styles.locationTextActive,
-              ]}
-              numberOfLines={1}>
-              {selectedMunicipio || "Municipio"}
-            </Text>
-            <Ionicons
-              name="chevron-down"
-              size={16}
-              color={colors.textTertiary}
-            />
+            disabled={!selectedDepartamento || loadingMunis}>
+            {loadingMunis ? (
+              <ActivityIndicator size="small" color={colors.textTertiary} />
+            ) : (
+              <>
+                <Ionicons
+                  name="business-outline"
+                  size={16}
+                  color={
+                    selectedMunicipio ? colors.accent : colors.textSecondary
+                  }
+                />
+                <Text
+                  style={[
+                    styles.locationText,
+                    selectedMunicipio && styles.locationTextActive,
+                  ]}
+                  numberOfLines={1}>
+                  {selectedMunicipio || "Municipio"}
+                </Text>
+                <Ionicons
+                  name="chevron-down"
+                  size={16}
+                  color={colors.textTertiary}
+                />
+              </>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -517,12 +575,39 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           <View style={[styles.modalContent, { paddingBottom: insets.bottom }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Departamento</Text>
-              <TouchableOpacity onPress={() => setShowDeptModal(false)}>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowDeptModal(false);
+                  setDeptSearchText("");
+                }}>
                 <Ionicons name="close" size={24} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
+
+            {/* Búsqueda */}
+            <View style={styles.modalSearchBar}>
+              <Ionicons name="search" size={18} color={colors.textTertiary} />
+              <TextInput
+                style={styles.modalSearchInput}
+                placeholder="Buscar departamento..."
+                placeholderTextColor={colors.textTertiary}
+                value={deptSearchText}
+                onChangeText={setDeptSearchText}
+                autoFocus
+              />
+              {deptSearchText.length > 0 && (
+                <TouchableOpacity onPress={() => setDeptSearchText("")}>
+                  <Ionicons
+                    name="close-circle"
+                    size={18}
+                    color={colors.textTertiary}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+
             <FlatList
-              data={COLOMBIAN_DEPARTMENTS}
+              data={filteredDepartments}
               keyExtractor={(item) => item}
               renderItem={({ item }) => (
                 <TouchableOpacity
@@ -538,6 +623,11 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                   )}
                 </TouchableOpacity>
               )}
+              ListEmptyComponent={
+                <Text style={styles.emptyModalText}>
+                  No se encontraron departamentos
+                </Text>
+              }
             />
           </View>
         </View>
@@ -549,12 +639,39 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           <View style={[styles.modalContent, { paddingBottom: insets.bottom }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Municipio</Text>
-              <TouchableOpacity onPress={() => setShowMuniModal(false)}>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowMuniModal(false);
+                  setMuniSearchText("");
+                }}>
                 <Ionicons name="close" size={24} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
+
+            {/* Búsqueda */}
+            <View style={styles.modalSearchBar}>
+              <Ionicons name="search" size={18} color={colors.textTertiary} />
+              <TextInput
+                style={styles.modalSearchInput}
+                placeholder="Buscar municipio..."
+                placeholderTextColor={colors.textTertiary}
+                value={muniSearchText}
+                onChangeText={setMuniSearchText}
+                autoFocus
+              />
+              {muniSearchText.length > 0 && (
+                <TouchableOpacity onPress={() => setMuniSearchText("")}>
+                  <Ionicons
+                    name="close-circle"
+                    size={18}
+                    color={colors.textTertiary}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+
             <FlatList
-              data={municipios}
+              data={filteredMunicipalities}
               keyExtractor={(item) => item}
               renderItem={({ item }) => (
                 <TouchableOpacity
@@ -572,7 +689,9 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               )}
               ListEmptyComponent={
                 <Text style={styles.emptyModalText}>
-                  Selecciona un departamento primero
+                  {loadingMunis
+                    ? "Cargando municipios..."
+                    : "No se encontraron municipios"}
                 </Text>
               }
             />
@@ -719,11 +838,13 @@ const createStyles = (colors: any) =>
       flex: 1,
       flexDirection: "row",
       alignItems: "center",
+      justifyContent: "center",
       backgroundColor: colors.backgroundSecondary,
       borderRadius: borderRadius.md,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       gap: spacing.xs,
+      minHeight: 40,
     },
     locationButtonActive: {
       backgroundColor: colors.accentLight,
@@ -873,7 +994,7 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.background,
       borderTopLeftRadius: borderRadius.xl,
       borderTopRightRadius: borderRadius.xl,
-      maxHeight: "70%",
+      maxHeight: "80%",
     },
     modalHeader: {
       flexDirection: "row",
@@ -886,6 +1007,22 @@ const createStyles = (colors: any) =>
     modalTitle: {
       fontSize: 18,
       fontWeight: "700",
+      color: colors.textPrimary,
+    },
+    modalSearchBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: borderRadius.md,
+      marginHorizontal: spacing.lg,
+      marginVertical: spacing.md,
+      paddingHorizontal: spacing.md,
+      height: 40,
+      gap: spacing.sm,
+    },
+    modalSearchInput: {
+      flex: 1,
+      fontSize: 16,
       color: colors.textPrimary,
     },
     modalItem: {

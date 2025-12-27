@@ -16,10 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { spacing, borderRadius } from "../theme";
 import { useTheme } from "../context/ThemeContext";
-import {
-  COLOMBIAN_DEPARTMENTS,
-  MUNICIPALITIES_BY_DEPARTMENT,
-} from "../types/index";
+import { getDepartments, getMunicipalities } from "../services/divipola";
 import {
   requestNotificationPermissions,
   getNotificationSettings,
@@ -54,36 +51,56 @@ const MunicipalitySelector: React.FC<MunicipalitySelectorProps> = ({
   const { colors } = useTheme();
   const [searchText, setSearchText] = useState("");
   const [selectedDept, setSelectedDept] = useState<string | null>(null);
+  const [departments, setDepartments] = useState<string[]>([]);
+  const [municipalities, setMunicipalities] = useState<string[]>([]);
+  const [loadingDepts, setLoadingDepts] = useState(true);
+  const [loadingMunis, setLoadingMunis] = useState(false);
 
   const selectorStyles = createSelectorStyles(colors);
 
-  const allMunicipalities = React.useMemo(() => {
-    const result: { municipality: string; department: string }[] = [];
-    const departments = selectedDept
-      ? [selectedDept]
-      : Object.keys(MUNICIPALITIES_BY_DEPARTMENT);
+  // Cargar departamentos al abrir
+  useEffect(() => {
+    if (visible) {
+      const loadDepts = async () => {
+        setLoadingDepts(true);
+        const data = await getDepartments();
+        setDepartments(data);
+        setLoadingDepts(false);
+      };
+      loadDepts();
+    }
+  }, [visible]);
 
-    departments.forEach((dept) => {
-      const municipalities = MUNICIPALITIES_BY_DEPARTMENT[dept] || [];
-      municipalities.forEach((mun) => {
-        if (!selectedMunicipalities.includes(mun)) {
-          result.push({ municipality: mun, department: dept });
-        }
-      });
-    });
+  // Cargar municipios cuando cambia el departamento
+  useEffect(() => {
+    if (!selectedDept) {
+      setMunicipalities([]);
+      return;
+    }
+    const loadMunis = async () => {
+      setLoadingMunis(true);
+      const data = await getMunicipalities(selectedDept);
+      setMunicipalities(data);
+      setLoadingMunis(false);
+    };
+    loadMunis();
+  }, [selectedDept]);
 
-    return result;
-  }, [selectedDept, selectedMunicipalities]);
-
+  // Filtrar municipios por búsqueda y excluir ya seleccionados
   const filteredMunicipalities = React.useMemo(() => {
-    if (!searchText) return allMunicipalities;
-    const search = searchText.toLowerCase();
-    return allMunicipalities.filter(
-      (item) =>
-        item.municipality.toLowerCase().includes(search) ||
-        item.department.toLowerCase().includes(search)
+    const available = municipalities.filter(
+      (m) => !selectedMunicipalities.includes(m)
     );
-  }, [allMunicipalities, searchText]);
+    if (!searchText)
+      return available.map((m) => ({
+        municipality: m,
+        department: selectedDept || "",
+      }));
+    const search = searchText.toLowerCase();
+    return available
+      .filter((m) => m.toLowerCase().includes(search))
+      .map((m) => ({ municipality: m, department: selectedDept || "" }));
+  }, [municipalities, searchText, selectedMunicipalities, selectedDept]);
 
   return (
     <Modal
@@ -119,83 +136,99 @@ const MunicipalitySelector: React.FC<MunicipalitySelectorProps> = ({
           )}
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={selectorStyles.deptScroll}
-          contentContainerStyle={selectorStyles.deptContainer}>
-          <TouchableOpacity
-            style={[
-              selectorStyles.deptChip,
-              !selectedDept && selectorStyles.deptChipSelected,
-            ]}
-            onPress={() => setSelectedDept(null)}>
-            <Text
-              style={[
-                selectorStyles.deptChipText,
-                !selectedDept && selectorStyles.deptChipTextSelected,
-              ]}>
-              Todos
+        {loadingDepts ? (
+          <View style={selectorStyles.loadingContainer}>
+            <ActivityIndicator size="small" color={colors.accent} />
+            <Text style={selectorStyles.loadingText}>
+              Cargando departamentos...
             </Text>
-          </TouchableOpacity>
-          {COLOMBIAN_DEPARTMENTS.map((dept) => (
-            <TouchableOpacity
-              key={dept}
-              style={[
-                selectorStyles.deptChip,
-                selectedDept === dept && selectorStyles.deptChipSelected,
-              ]}
-              onPress={() => setSelectedDept(dept)}>
-              <Text
+          </View>
+        ) : (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={selectorStyles.deptScroll}
+            contentContainerStyle={selectorStyles.deptContainer}>
+            {departments.map((dept) => (
+              <TouchableOpacity
+                key={dept}
                 style={[
-                  selectorStyles.deptChipText,
-                  selectedDept === dept && selectorStyles.deptChipTextSelected,
+                  selectorStyles.deptChip,
+                  selectedDept === dept && selectorStyles.deptChipSelected,
                 ]}
-                numberOfLines={1}>
-                {dept}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        <FlatList
-          data={filteredMunicipalities}
-          keyExtractor={(item) => `${item.department}-${item.municipality}`}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={selectorStyles.municipalityItem}
-              onPress={() => {
-                onSelect(item.municipality);
-                onClose();
-              }}>
-              <View>
-                <Text style={selectorStyles.municipalityName}>
-                  {item.municipality}
+                onPress={() => setSelectedDept(dept)}>
+                <Text
+                  style={[
+                    selectorStyles.deptChipText,
+                    selectedDept === dept &&
+                      selectorStyles.deptChipTextSelected,
+                  ]}
+                  numberOfLines={1}>
+                  {dept}
                 </Text>
-                <Text style={selectorStyles.municipalityDept}>
-                  {item.department}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+
+        {loadingMunis ? (
+          <View style={selectorStyles.loadingContainer}>
+            <ActivityIndicator size="small" color={colors.accent} />
+            <Text style={selectorStyles.loadingText}>
+              Cargando municipios...
+            </Text>
+          </View>
+        ) : !selectedDept ? (
+          <View style={selectorStyles.emptyContainer}>
+            <Ionicons
+              name="location-outline"
+              size={48}
+              color={colors.textTertiary}
+            />
+            <Text style={selectorStyles.emptyText}>
+              Selecciona un departamento
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredMunicipalities}
+            keyExtractor={(item) => `${item.department}-${item.municipality}`}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={selectorStyles.municipalityItem}
+                onPress={() => {
+                  onSelect(item.municipality);
+                  onClose();
+                }}>
+                <View>
+                  <Text style={selectorStyles.municipalityName}>
+                    {item.municipality}
+                  </Text>
+                  <Text style={selectorStyles.municipalityDept}>
+                    {item.department}
+                  </Text>
+                </View>
+                <Ionicons name="add-circle" size={24} color={colors.accent} />
+              </TouchableOpacity>
+            )}
+            ItemSeparatorComponent={() => (
+              <View style={selectorStyles.separator} />
+            )}
+            contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+            ListEmptyComponent={() => (
+              <View style={selectorStyles.emptyContainer}>
+                <Ionicons
+                  name="location-outline"
+                  size={48}
+                  color={colors.textTertiary}
+                />
+                <Text style={selectorStyles.emptyText}>
+                  No se encontraron municipios
                 </Text>
               </View>
-              <Ionicons name="add-circle" size={24} color={colors.accent} />
-            </TouchableOpacity>
-          )}
-          ItemSeparatorComponent={() => (
-            <View style={selectorStyles.separator} />
-          )}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
-          ListEmptyComponent={() => (
-            <View style={selectorStyles.emptyContainer}>
-              <Ionicons
-                name="location-outline"
-                size={48}
-                color={colors.textTertiary}
-              />
-              <Text style={selectorStyles.emptyText}>
-                No se encontraron municipios
-              </Text>
-            </View>
-          )}
-        />
+            )}
+          />
+        )}
       </View>
     </Modal>
   );
@@ -528,7 +561,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
                   onPress={() => handleToggleModality(modalidad.id)}
                   activeOpacity={0.7}>
                   <Ionicons
-                    name={modalidad.icon as any}
+                    name={modalidad.icon as keyof typeof Ionicons.glyphMap}
                     size={16}
                     color={
                       isSelected ? colors.backgroundSecondary : colors.accent
@@ -588,7 +621,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
                   onPress={() => handleToggleContractType(tipo.id)}
                   activeOpacity={0.7}>
                   <Ionicons
-                    name={tipo.icon as any}
+                    name={tipo.icon as keyof typeof Ionicons.glyphMap}
                     size={16}
                     color={
                       isSelected ? colors.backgroundSecondary : colors.success
@@ -742,6 +775,17 @@ const createSelectorStyles = (colors: any) =>
     emptyText: {
       fontSize: 15,
       color: colors.textTertiary,
+    },
+    loadingContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: spacing.xl,
+      gap: spacing.sm,
+    },
+    loadingText: {
+      fontSize: 14,
+      color: colors.textSecondary,
     },
   });
 
