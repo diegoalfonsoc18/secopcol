@@ -20,6 +20,7 @@ import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
 import { spacing, borderRadius } from "../theme";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
 
 // ============================================
 // UTILIDADES
@@ -43,8 +44,19 @@ const formatCurrency = (value: number): string => {
 export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { user, preferences } = useAuth();
   const { processes, loading, fetchRecentProcesses } = useProcessesStore();
   const scrollY = useRef(new Animated.Value(0)).current;
+
+  // Filtrar procesos por tipos de contrato seleccionados
+  const filteredProcesses = useMemo(() => {
+    if (preferences.selectedContractTypes.length === 0) {
+      return processes;
+    }
+    return processes.filter((process) =>
+      preferences.selectedContractTypes.includes(process.tipo_de_contrato || "")
+    );
+  }, [processes, preferences.selectedContractTypes]);
 
   // Configuraciones que dependen del tema
   const phaseConfig: Record<string, { color: string; icon: string }> = {
@@ -74,14 +86,14 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const styles = createStyles(colors);
 
   useEffect(() => {
-    fetchRecentProcesses(50);
+    fetchRecentProcesses(100); // Cargar más para tener suficientes después del filtro
   }, []);
 
-  // Calcular estadísticas
+  // Calcular estadísticas basadas en procesos filtrados
   const stats = useMemo(() => {
-    const totalProcesos = processes.length;
+    const totalProcesos = filteredProcesses.length;
 
-    const valorTotal = processes.reduce((sum, p) => {
+    const valorTotal = filteredProcesses.reduce((sum, p) => {
       const precio =
         typeof p.precio_base === "string"
           ? parseFloat(p.precio_base) || 0
@@ -90,19 +102,19 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     }, 0);
 
     const porFase: Record<string, number> = {};
-    processes.forEach((p) => {
+    filteredProcesses.forEach((p) => {
       const fase = p.fase || p.estado_del_procedimiento || "Otro";
       porFase[fase] = (porFase[fase] || 0) + 1;
     });
 
     const porTipo: Record<string, number> = {};
-    processes.forEach((p) => {
+    filteredProcesses.forEach((p) => {
       const tipo = p.tipo_de_contrato || "Otro";
       porTipo[tipo] = (porTipo[tipo] || 0) + 1;
     });
 
     return { totalProcesos, valorTotal, porFase, porTipo };
-  }, [processes]);
+  }, [filteredProcesses]);
 
   // Animaciones del header
   const headerHeight = scrollY.interpolate({
@@ -278,7 +290,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       </View>
 
       {/* Top Entidades */}
-      <TopEntidades processes={processes} limit={5} />
+      <TopEntidades processes={filteredProcesses} limit={5} />
 
       {/* Header de procesos recientes */}
       <View style={styles.recentHeader}>
@@ -375,13 +387,27 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </View>
         </View>
 
-        <Animated.Text style={[styles.subtitle, { opacity: subtitleOpacity }]}>
-          Contratación pública en Colombia
-        </Animated.Text>
+        <Animated.View style={{ opacity: subtitleOpacity }}>
+          <Text style={styles.subtitle}>
+            {user?.name
+              ? `Hola, ${user.name.split(" ")[0]}`
+              : "Contratación pública"}
+          </Text>
+          {preferences.selectedContractTypes.length > 0 && (
+            <View style={styles.filterBadge}>
+              <Ionicons name="filter" size={12} color={colors.accent} />
+              <Text style={styles.filterBadgeText}>
+                {preferences.selectedContractTypes.length} tipo
+                {preferences.selectedContractTypes.length > 1 ? "s" : ""} de
+                contrato
+              </Text>
+            </View>
+          )}
+        </Animated.View>
       </Animated.View>
 
       {/* Contenido */}
-      {loading && processes.length === 0 ? (
+      {loading && filteredProcesses.length === 0 ? (
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}>
@@ -389,14 +415,14 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         </ScrollView>
       ) : (
         <Animated.FlatList
-          data={processes.slice(0, 10)}
+          data={filteredProcesses.slice(0, 10)}
           keyExtractor={keyExtractor}
           renderItem={renderProcess}
           contentContainerStyle={[
             styles.listContent,
             { paddingBottom: insets.bottom + 100 },
           ]}
-          ListHeaderComponent={processes.length > 0 ? ListHeader : null}
+          ListHeaderComponent={filteredProcesses.length > 0 ? ListHeader : null}
           ListEmptyComponent={ListEmpty}
           showsVerticalScrollIndicator={false}
           onScroll={Animated.event(
@@ -496,6 +522,22 @@ const createStyles = (colors: any) =>
       fontSize: 15,
       color: colors.textSecondary,
       marginTop: spacing.xs,
+    },
+    filterBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.accentLight,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.full,
+      alignSelf: "flex-start",
+      marginTop: spacing.xs,
+      gap: spacing.xs,
+    },
+    filterBadgeText: {
+      fontSize: 12,
+      color: colors.accent,
+      fontWeight: "500",
     },
 
     // Loading

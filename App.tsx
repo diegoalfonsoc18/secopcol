@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Platform } from "react-native";
+import { StyleSheet, Platform, ActivityIndicator, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -12,13 +12,18 @@ import {
   DetailScreen,
   SettingsScreen,
   AppSettingsScreen,
+  LoginScreen,
+  OnboardingScreen,
 } from "./src/screens/index";
 import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
+import { AuthProvider, useAuth } from "./src/context/AuthContext";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Stack Navigators para cada tab
+// ============================================
+// STACK NAVIGATORS
+// ============================================
 function HomeStackNavigator() {
   const { colors } = useTheme();
 
@@ -77,7 +82,9 @@ function FavoritesStackNavigator() {
   );
 }
 
-// Tab Navigator con estilo Apple
+// ============================================
+// TAB NAVIGATOR
+// ============================================
 function TabNavigator() {
   const { colors } = useTheme();
 
@@ -161,7 +168,77 @@ function TabNavigator() {
   );
 }
 
-// Contenedor principal de navegación
+// ============================================
+// AUTH NAVIGATOR
+// ============================================
+function AuthNavigator() {
+  const { colors } = useTheme();
+
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.background },
+      }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+    </Stack.Navigator>
+  );
+}
+
+// ============================================
+// ONBOARDING NAVIGATOR
+// ============================================
+function OnboardingNavigator() {
+  const { colors } = useTheme();
+
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.background },
+      }}>
+      <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+    </Stack.Navigator>
+  );
+}
+
+// ============================================
+// ROOT NAVIGATOR
+// ============================================
+function RootNavigator() {
+  const { isAuthenticated, isLoading, preferences } = useAuth();
+  const { colors } = useTheme();
+
+  // Pantalla de carga
+  if (isLoading) {
+    return (
+      <View
+        style={[
+          styles.loadingContainer,
+          { backgroundColor: colors.background },
+        ]}>
+        <ActivityIndicator size="large" color={colors.accent} />
+      </View>
+    );
+  }
+
+  // No autenticado -> Login
+  if (!isAuthenticated) {
+    return <AuthNavigator />;
+  }
+
+  // Autenticado pero sin completar onboarding -> Onboarding
+  if (!preferences.onboardingCompleted) {
+    return <OnboardingNavigator />;
+  }
+
+  // Autenticado y onboarding completo -> App principal
+  return <TabNavigator />;
+}
+
+// ============================================
+// APP CONTENT
+// ============================================
 function AppContent() {
   const { colors, isDark } = useTheme();
 
@@ -196,16 +273,21 @@ function AppContent() {
           },
         },
       }}>
-      <TabNavigator />
+      <RootNavigator />
     </NavigationContainer>
   );
 }
 
+// ============================================
+// APP PRINCIPAL
+// ============================================
 export default function App() {
   return (
     <GestureHandlerRootView style={styles.container}>
       <ThemeProvider>
-        <AppContent />
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );
@@ -214,5 +296,10 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
