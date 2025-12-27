@@ -1,7 +1,6 @@
 import React, { useRef, useCallback, useState } from "react";
 import {
   Animated,
-  FlatList,
   StyleSheet,
   Text,
   View,
@@ -12,6 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { Swipeable } from "react-native-gesture-handler";
 import { ProcessCard } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
@@ -30,6 +30,7 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
   const { favorites, removeFavorite } = useProcessesStore();
   const scrollY = useRef(new Animated.Value(0)).current;
   const [exporting, setExporting] = useState(false);
+  const swipeableRefs = useRef<Map<string, Swipeable>>(new Map());
 
   const styles = createStyles(colors);
 
@@ -66,12 +67,6 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
     extrapolate: "clamp",
   });
 
-  const titleTranslateY = scrollY.interpolate({
-    inputRange: [0, 80],
-    outputRange: [0, -8],
-    extrapolate: "clamp",
-  });
-
   const subtitleOpacity = scrollY.interpolate({
     inputRange: [0, 40],
     outputRange: [1, 0],
@@ -88,62 +83,84 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
 
   const handleRemoveFavorite = useCallback(
     (process: SecopProcess) => {
-      Alert.alert(
-        "Eliminar favorito",
-        `¿Deseas eliminar "${process.descripci_n_del_procedimiento?.substring(
-          0,
-          50
-        )}..." de tus favoritos?`,
-        [
-          {
-            text: "Cancelar",
-            style: "cancel",
-          },
-          {
-            text: "Eliminar",
-            style: "destructive",
-            onPress: () => removeFavorite(process.id_del_proceso),
-          },
-        ]
-      );
+      // Cerrar el swipeable
+      const swipeable = swipeableRefs.current.get(process.id_del_proceso);
+      if (swipeable) {
+        swipeable.close();
+      }
+
+      // Eliminar después de un pequeño delay para la animación
+      setTimeout(() => {
+        removeFavorite(process.id_del_proceso);
+      }, 200);
     },
     [removeFavorite]
   );
 
-  // Render item con swipe action
+  // Render del botón de eliminar (swipe right)
+  const createRightActions = useCallback(
+    (process: SecopProcess) => {
+      const RightActions = (
+        _progress: Animated.AnimatedInterpolation<number>,
+        dragX: Animated.AnimatedInterpolation<number>
+      ) => {
+        const scale = dragX.interpolate({
+          inputRange: [-100, 0],
+          outputRange: [1, 0.8],
+          extrapolate: "clamp",
+        });
+
+        const opacity = dragX.interpolate({
+          inputRange: [-100, -50, 0],
+          outputRange: [1, 0.8, 0],
+          extrapolate: "clamp",
+        });
+
+        return (
+          <Animated.View
+            style={[
+              styles.deleteAction,
+              {
+                transform: [{ scale }],
+                opacity,
+              },
+            ]}>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => handleRemoveFavorite(process)}>
+              <Ionicons name="trash-outline" size={24} color="#FFFFFF" />
+              <Text style={styles.deleteText}>Eliminar</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        );
+      };
+      return RightActions;
+    },
+    [handleRemoveFavorite, styles]
+  );
+
+  // Render item con swipe
   const renderFavorite = useCallback(
     ({ item }: { item: SecopProcess }) => (
-      <Animated.View
-        style={[
-          styles.favoriteItem,
-          {
-            opacity: scrollY.interpolate({
-              inputRange: [-50, 0],
-              outputRange: [0.5, 1],
-              extrapolate: "clamp",
-            }),
-          },
-        ]}>
-        <ProcessCard process={item} onPress={() => handleProcessPress(item)} />
-
-        {/* Botón de eliminar */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.removeButton,
-            pressed && styles.removeButtonPressed,
-          ]}
-          onPress={() => handleRemoveFavorite(item)}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons
-            name="heart-dislike-outline"
-            size={14}
-            color={colors.danger}
+      <Swipeable
+        ref={(ref) => {
+          if (ref) {
+            swipeableRefs.current.set(item.id_del_proceso, ref);
+          }
+        }}
+        renderRightActions={createRightActions(item)}
+        rightThreshold={40}
+        overshootRight={false}
+        friction={2}>
+        <View style={styles.favoriteItem}>
+          <ProcessCard
+            process={item}
+            onPress={() => handleProcessPress(item)}
           />
-          <Text style={styles.removeButtonText}>Quitar de favoritos</Text>
-        </Pressable>
-      </Animated.View>
+        </View>
+      </Swipeable>
     ),
-    [handleProcessPress, handleRemoveFavorite, scrollY, colors, styles]
+    [handleProcessPress, createRightActions, styles]
   );
 
   const keyExtractor = useCallback(
@@ -164,7 +181,7 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
             {favorites.length === 1 ? "proceso guardado" : "procesos guardados"}
           </Text>
           <Text style={styles.infoSubtitle}>
-            Accede rápidamente a los procesos que te interesan
+            Desliza hacia la izquierda para eliminar
           </Text>
         </View>
       </View>
@@ -220,11 +237,7 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
           <Animated.View
             style={{
               flex: 1,
-              transform: [
-                { scale: titleScale },
-                { translateY: titleTranslateY },
-              ],
-              transformOrigin: "left center",
+              transform: [{ scale: titleScale }],
             }}>
             <View style={styles.titleRow}>
               <Text style={styles.title}>Favoritos</Text>
@@ -267,7 +280,7 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
         renderItem={renderFavorite}
         contentContainerStyle={[
           styles.listContent,
-          { paddingBottom: insets.bottom + spacing.xxl },
+          { paddingBottom: insets.bottom + 100 },
           favorites.length === 0 && styles.listContentEmpty,
         ]}
         ListHeaderComponent={favorites.length > 0 ? ListHeader : null}
@@ -278,7 +291,7 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
           { useNativeDriver: false }
         )}
         scrollEventThrottle={16}
-        removeClippedSubviews={true}
+        removeClippedSubviews={false}
         maxToRenderPerBatch={10}
         windowSize={10}
         initialNumToRender={8}
@@ -288,7 +301,7 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
 };
 
 // ============================================
-// ESTILOS DINÁMICOS
+// ESTILOS
 // ============================================
 const createStyles = (colors: any) =>
   StyleSheet.create({
@@ -326,11 +339,6 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.backgroundSecondary,
       justifyContent: "center",
       alignItems: "center",
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.08,
-      shadowRadius: 4,
-      elevation: 2,
     },
     countBadge: {
       backgroundColor: colors.accent,
@@ -394,23 +402,29 @@ const createStyles = (colors: any) =>
 
     // Favorite item
     favoriteItem: {
-      marginBottom: spacing.lg,
+      backgroundColor: colors.background,
+      marginBottom: spacing.md,
     },
-    removeButton: {
-      flexDirection: "row",
+
+    // Delete action
+    deleteAction: {
+      justifyContent: "center",
+      alignItems: "flex-end",
+      marginBottom: spacing.md,
+    },
+    deleteButton: {
+      backgroundColor: colors.danger,
+      justifyContent: "center",
       alignItems: "center",
-      justifyContent: "flex-end",
-      paddingVertical: spacing.sm,
-      paddingHorizontal: spacing.md,
-      gap: spacing.xs,
+      width: 90,
+      height: "100%",
+      borderRadius: borderRadius.md,
     },
-    removeButtonPressed: {
-      opacity: 0.6,
-    },
-    removeButtonText: {
-      fontSize: 13,
-      fontWeight: "500",
-      color: colors.danger,
+    deleteText: {
+      color: "#FFFFFF",
+      fontSize: 12,
+      fontWeight: "600",
+      marginTop: 4,
     },
 
     // Empty state

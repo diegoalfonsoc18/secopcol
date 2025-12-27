@@ -1,6 +1,5 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
-  Animated,
   Keyboard,
   ScrollView,
   StyleSheet,
@@ -24,6 +23,7 @@ import {
   COLOMBIAN_DEPARTMENTS,
   MUNICIPALITIES_BY_DEPARTMENT,
 } from "../types/index";
+import { useFiltersStore, SavedFilter } from "../store/filtersStore";
 
 // ============================================
 // FILTROS
@@ -62,7 +62,7 @@ const TIPOS = [
 export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const scrollY = useRef(new Animated.Value(0)).current;
+  const { savedFilters, addFilter, removeFilter } = useFiltersStore();
 
   const styles = createStyles(colors);
 
@@ -76,6 +76,7 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   // Estados de modales
   const [showDeptModal, setShowDeptModal] = useState(false);
   const [showMuniModal, setShowMuniModal] = useState(false);
+  const [showSavedFilters, setShowSavedFilters] = useState(false);
 
   // Estados de resultados
   const [processes, setProcesses] = useState<SecopProcess[]>([]);
@@ -135,6 +136,69 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     }
   };
 
+  // Guardar filtro actual
+  const handleSaveFilter = () => {
+    if (
+      !keyword &&
+      !selectedDepartamento &&
+      !selectedModalidad &&
+      !selectedTipo
+    ) {
+      Alert.alert("Sin filtros", "Agrega al menos un filtro para guardar");
+      return;
+    }
+
+    Alert.prompt(
+      "Guardar Búsqueda",
+      "Dale un nombre a esta búsqueda:",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Guardar",
+          onPress: (name: string | undefined) => {
+            if (name && name.trim()) {
+              addFilter({
+                name: name.trim(),
+                filters: {
+                  keyword: keyword || undefined,
+                  departamento: selectedDepartamento || undefined,
+                  municipio: selectedMunicipio || undefined,
+                  modalidades: selectedModalidad ? [selectedModalidad] : [],
+                  tiposContrato: selectedTipo ? [selectedTipo] : [],
+                },
+              });
+              Alert.alert("Guardado", "Búsqueda guardada correctamente");
+            }
+          },
+        },
+      ],
+      "plain-text",
+      keyword || selectedDepartamento || "Mi búsqueda"
+    );
+  };
+
+  // Cargar filtro guardado
+  const handleLoadFilter = (filter: SavedFilter) => {
+    setKeyword(filter.filters.keyword || "");
+    setSelectedDepartamento(filter.filters.departamento || "");
+    setSelectedMunicipio(filter.filters.municipio || "");
+    setSelectedModalidad(filter.filters.modalidades[0] || "");
+    setSelectedTipo(filter.filters.tiposContrato[0] || "");
+    setShowSavedFilters(false);
+  };
+
+  // Eliminar filtro guardado
+  const handleDeleteFilter = (filter: SavedFilter) => {
+    Alert.alert("Eliminar búsqueda", `¿Eliminar "${filter.name}"?`, [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Eliminar",
+        style: "destructive",
+        onPress: () => removeFilter(filter.id),
+      },
+    ]);
+  };
+
   // Exportar
   const handleExport = async () => {
     if (processes.length === 0) {
@@ -184,7 +248,21 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-        <Text style={styles.title}>Buscar</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>Buscar</Text>
+
+          {/* Botón filtros guardados */}
+          <TouchableOpacity
+            style={styles.savedButton}
+            onPress={() => setShowSavedFilters(true)}>
+            <Ionicons name="bookmark-outline" size={22} color={colors.accent} />
+            {savedFilters.length > 0 && (
+              <View style={styles.savedBadge}>
+                <Text style={styles.savedBadgeText}>{savedFilters.length}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
 
         {/* Barra de búsqueda */}
         <View style={styles.searchBar}>
@@ -268,89 +346,78 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Modalidad */}
+        {/* Modalidades */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.chipScroll}>
-          <View style={styles.chipRow}>
-            {MODALIDADES.map((item) => (
-              <TouchableOpacity
-                key={item.id}
+          style={styles.chipsScroll}>
+          {MODALIDADES.map((mod) => (
+            <TouchableOpacity
+              key={mod.id}
+              style={[
+                styles.chip,
+                selectedModalidad === mod.id && styles.chipActive,
+              ]}
+              onPress={() =>
+                setSelectedModalidad(selectedModalidad === mod.id ? "" : mod.id)
+              }>
+              <Text
                 style={[
-                  styles.chip,
-                  selectedModalidad === item.id && styles.chipActive,
-                ]}
-                onPress={() =>
-                  setSelectedModalidad((prev) =>
-                    prev === item.id ? "" : item.id
-                  )
-                }>
-                <Text
-                  style={[
-                    styles.chipText,
-                    selectedModalidad === item.id && styles.chipTextActive,
-                  ]}>
-                  {item.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+                  styles.chipText,
+                  selectedModalidad === mod.id && styles.chipTextActive,
+                ]}>
+                {mod.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </ScrollView>
 
-        {/* Tipo */}
+        {/* Tipos */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.chipScroll}>
-          <View style={styles.chipRow}>
-            {TIPOS.map((item) => (
-              <TouchableOpacity
-                key={item.id}
+          style={styles.chipsScroll}>
+          {TIPOS.map((tipo) => (
+            <TouchableOpacity
+              key={tipo.id}
+              style={[
+                styles.chip,
+                selectedTipo === tipo.id && styles.chipActive,
+              ]}
+              onPress={() =>
+                setSelectedTipo(selectedTipo === tipo.id ? "" : tipo.id)
+              }>
+              <Text
                 style={[
-                  styles.chip,
-                  selectedTipo === item.id && styles.chipActive,
-                ]}
-                onPress={() =>
-                  setSelectedTipo((prev) => (prev === item.id ? "" : item.id))
-                }>
-                <Text
-                  style={[
-                    styles.chipText,
-                    selectedTipo === item.id && styles.chipTextActive,
-                  ]}>
-                  {item.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+                  styles.chipText,
+                  selectedTipo === tipo.id && styles.chipTextActive,
+                ]}>
+                {tipo.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </ScrollView>
 
         {/* Botones */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity
-            style={styles.searchButton}
-            onPress={handleSearch}
-            disabled={loading}>
-            {loading ? (
-              <ActivityIndicator
-                size="small"
-                color={colors.backgroundSecondary}
-              />
-            ) : (
-              <>
-                <Ionicons
-                  name="search"
-                  size={18}
-                  color={colors.backgroundSecondary}
-                />
-                <Text style={styles.searchButtonText}>Buscar</Text>
-              </>
-            )}
+        <View style={styles.buttonsRow}>
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+            <Ionicons
+              name="search"
+              size={18}
+              color={colors.backgroundSecondary}
+            />
+            <Text style={styles.searchButtonText}>Buscar</Text>
           </TouchableOpacity>
 
-          {(activeFilters > 0 || keyword) && (
+          <TouchableOpacity
+            style={styles.saveFilterButton}
+            onPress={handleSaveFilter}>
+            <Ionicons name="bookmark-outline" size={18} color={colors.accent} />
+          </TouchableOpacity>
+
+          {(keyword || activeFilters > 0) && (
             <TouchableOpacity style={styles.clearButton} onPress={handleClear}>
+              <Ionicons name="close" size={18} color={colors.textSecondary} />
               <Text style={styles.clearButtonText}>Limpiar</Text>
             </TouchableOpacity>
           )}
@@ -360,24 +427,30 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       {/* Resultados */}
       <ScrollView
         style={styles.results}
-        contentContainerStyle={[
-          styles.resultsContent,
-          { paddingBottom: insets.bottom + 100 },
-        ]}
-        showsVerticalScrollIndicator={false}>
+        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}>
+        {/* Error */}
         {error && (
           <View style={styles.errorCard}>
-            <Ionicons name="alert-circle" size={20} color={colors.danger} />
+            <Ionicons
+              name="alert-circle-outline"
+              size={24}
+              color={colors.danger}
+            />
             <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity onPress={handleSearch}>
+              <Text style={styles.retryText}>Reintentar</Text>
+            </TouchableOpacity>
           </View>
         )}
 
-        {loading && <SearchResultsSkeleton count={5} />}
+        {/* Loading */}
+        {loading && <SearchResultsSkeleton />}
 
+        {/* Resultados */}
         {!loading && processes.length > 0 && (
           <>
             <View style={styles.resultsHeader}>
-              <Text style={styles.resultsTitle}>
+              <Text style={styles.resultsCount}>
                 {processes.length} resultados
               </Text>
               <TouchableOpacity
@@ -393,15 +466,15 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                       size={16}
                       color={colors.accent}
                     />
-                    <Text style={styles.exportButtonText}>CSV</Text>
+                    <Text style={styles.exportText}>CSV</Text>
                   </>
                 )}
               </TouchableOpacity>
             </View>
 
-            {processes.map((process, index) => (
+            {processes.map((process) => (
               <ProcessCard
-                key={`${process.id_del_proceso}-${index}`}
+                key={process.id_del_proceso}
                 process={process}
                 onPress={() => navigation.navigate("Detail", { process })}
               />
@@ -409,111 +482,166 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </>
         )}
 
+        {/* Empty */}
         {!loading && hasSearched && processes.length === 0 && !error && (
-          <View style={styles.emptyState}>
+          <View style={styles.emptyContainer}>
             <Ionicons
               name="search-outline"
               size={48}
               color={colors.textTertiary}
             />
             <Text style={styles.emptyTitle}>Sin resultados</Text>
-            <Text style={styles.emptyText}>Intenta con otros filtros</Text>
+            <Text style={styles.emptyMessage}>Prueba con otros filtros</Text>
           </View>
         )}
 
-        {!loading && !hasSearched && (
-          <View style={styles.emptyState}>
+        {/* Estado inicial */}
+        {!hasSearched && !loading && (
+          <View style={styles.emptyContainer}>
             <Ionicons
               name="filter-outline"
               size={48}
               color={colors.textTertiary}
             />
-            <Text style={styles.emptyTitle}>Configura tu búsqueda</Text>
-            <Text style={styles.emptyText}>
-              Usa los filtros y presiona buscar
+            <Text style={styles.emptyTitle}>Buscar procesos</Text>
+            <Text style={styles.emptyMessage}>
+              Usa los filtros y presiona Buscar
             </Text>
           </View>
         )}
       </ScrollView>
 
-      {/* Modal Departamento */}
-      <Modal
-        visible={showDeptModal}
-        animationType="slide"
-        presentationStyle="pageSheet">
-        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Departamento</Text>
-            <TouchableOpacity onPress={() => setShowDeptModal(false)}>
-              <Ionicons name="close" size={24} color={colors.textPrimary} />
-            </TouchableOpacity>
-          </View>
-          <FlatList
-            data={COLOMBIAN_DEPARTMENTS}
-            keyExtractor={(item) => item}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[
-                  styles.modalItem,
-                  selectedDepartamento === item && styles.modalItemActive,
-                ]}
-                onPress={() => handleSelectDept(item)}>
-                <Text
-                  style={[
-                    styles.modalItemText,
-                    selectedDepartamento === item && styles.modalItemTextActive,
-                  ]}>
-                  {item}
-                </Text>
-                {selectedDepartamento === item && (
-                  <Ionicons name="checkmark" size={20} color={colors.accent} />
-                )}
+      {/* Modal Departamentos */}
+      <Modal visible={showDeptModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { paddingBottom: insets.bottom }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Departamento</Text>
+              <TouchableOpacity onPress={() => setShowDeptModal(false)}>
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
               </TouchableOpacity>
-            )}
-          />
+            </View>
+            <FlatList
+              data={COLOMBIAN_DEPARTMENTS}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.modalItem}
+                  onPress={() => handleSelectDept(item)}>
+                  <Text style={styles.modalItemText}>{item}</Text>
+                  {selectedDepartamento === item && (
+                    <Ionicons
+                      name="checkmark"
+                      size={20}
+                      color={colors.accent}
+                    />
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
         </View>
       </Modal>
 
-      {/* Modal Municipio */}
-      <Modal
-        visible={showMuniModal}
-        animationType="slide"
-        presentationStyle="pageSheet">
-        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Municipio</Text>
-            <TouchableOpacity onPress={() => setShowMuniModal(false)}>
-              <Ionicons name="close" size={24} color={colors.textPrimary} />
-            </TouchableOpacity>
-          </View>
-          <FlatList
-            data={municipios}
-            keyExtractor={(item) => item}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[
-                  styles.modalItem,
-                  selectedMunicipio === item && styles.modalItemActive,
-                ]}
-                onPress={() => handleSelectMuni(item)}>
-                <Text
-                  style={[
-                    styles.modalItemText,
-                    selectedMunicipio === item && styles.modalItemTextActive,
-                  ]}>
-                  {item}
-                </Text>
-                {selectedMunicipio === item && (
-                  <Ionicons name="checkmark" size={20} color={colors.accent} />
-                )}
+      {/* Modal Municipios */}
+      <Modal visible={showMuniModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { paddingBottom: insets.bottom }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Municipio</Text>
+              <TouchableOpacity onPress={() => setShowMuniModal(false)}>
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
               </TouchableOpacity>
+            </View>
+            <FlatList
+              data={municipios}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.modalItem}
+                  onPress={() => handleSelectMuni(item)}>
+                  <Text style={styles.modalItemText}>{item}</Text>
+                  {selectedMunicipio === item && (
+                    <Ionicons
+                      name="checkmark"
+                      size={20}
+                      color={colors.accent}
+                    />
+                  )}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <Text style={styles.emptyModalText}>
+                  Selecciona un departamento primero
+                </Text>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal Filtros Guardados */}
+      <Modal visible={showSavedFilters} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { paddingBottom: insets.bottom }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Búsquedas Guardadas</Text>
+              <TouchableOpacity onPress={() => setShowSavedFilters(false)}>
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            {savedFilters.length === 0 ? (
+              <View style={styles.emptyFilters}>
+                <Ionicons
+                  name="bookmark-outline"
+                  size={48}
+                  color={colors.textTertiary}
+                />
+                <Text style={styles.emptyFiltersTitle}>
+                  Sin búsquedas guardadas
+                </Text>
+                <Text style={styles.emptyFiltersText}>
+                  Usa el botón de guardar para guardar tus búsquedas frecuentes
+                </Text>
+              </View>
+            ) : (
+              <FlatList
+                data={savedFilters}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.savedFilterItem}
+                    onPress={() => handleLoadFilter(item)}>
+                    <View style={styles.savedFilterInfo}>
+                      <Text style={styles.savedFilterName}>{item.name}</Text>
+                      <Text style={styles.savedFilterDetails}>
+                        {[
+                          item.filters.keyword,
+                          item.filters.departamento,
+                          item.filters.modalidades[0] &&
+                            MODALIDADES.find(
+                              (m) => m.id === item.filters.modalidades[0]
+                            )?.label,
+                        ]
+                          .filter(Boolean)
+                          .join(" • ") || "Sin filtros"}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.deleteFilterButton}
+                      onPress={() => handleDeleteFilter(item)}>
+                      <Ionicons
+                        name="trash-outline"
+                        size={18}
+                        color={colors.danger}
+                      />
+                    </TouchableOpacity>
+                  </TouchableOpacity>
+                )}
+              />
             )}
-            ListEmptyComponent={
-              <Text style={styles.emptyList}>
-                Selecciona un departamento primero
-              </Text>
-            }
-          />
+          </View>
         </View>
       </Modal>
     </View>
@@ -529,8 +657,6 @@ const createStyles = (colors: any) =>
       flex: 1,
       backgroundColor: colors.background,
     },
-
-    // Header
     header: {
       backgroundColor: colors.background,
       paddingHorizontal: spacing.lg,
@@ -538,14 +664,37 @@ const createStyles = (colors: any) =>
       borderBottomWidth: 1,
       borderBottomColor: colors.separatorLight,
     },
+    headerRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: spacing.md,
+    },
     title: {
       fontSize: 34,
       fontWeight: "700",
       color: colors.textPrimary,
-      marginBottom: spacing.md,
     },
-
-    // Search bar
+    savedButton: {
+      position: "relative",
+      padding: spacing.sm,
+    },
+    savedBadge: {
+      position: "absolute",
+      top: 2,
+      right: 2,
+      backgroundColor: colors.danger,
+      borderRadius: 10,
+      minWidth: 18,
+      height: 18,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    savedBadgeText: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: "#FFFFFF",
+    },
     searchBar: {
       flexDirection: "row",
       alignItems: "center",
@@ -561,8 +710,6 @@ const createStyles = (colors: any) =>
       fontSize: 16,
       color: colors.textPrimary,
     },
-
-    // Location
     locationRow: {
       flexDirection: "row",
       gap: spacing.sm,
@@ -575,7 +722,7 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.backgroundSecondary,
       borderRadius: borderRadius.md,
       paddingHorizontal: spacing.md,
-      height: 40,
+      paddingVertical: spacing.sm,
       gap: spacing.xs,
     },
     locationButtonActive: {
@@ -595,38 +742,31 @@ const createStyles = (colors: any) =>
       color: colors.accent,
       fontWeight: "500",
     },
-
-    // Chips
-    chipScroll: {
+    chipsScroll: {
       marginBottom: spacing.sm,
-    },
-    chipRow: {
-      flexDirection: "row",
-      gap: spacing.sm,
     },
     chip: {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
-      borderRadius: borderRadius.full,
       backgroundColor: colors.backgroundSecondary,
+      borderRadius: borderRadius.full,
+      marginRight: spacing.sm,
     },
     chipActive: {
       backgroundColor: colors.accent,
     },
     chipText: {
-      fontSize: 14,
-      fontWeight: "500",
+      fontSize: 13,
       color: colors.textSecondary,
+      fontWeight: "500",
     },
     chipTextActive: {
       color: colors.backgroundSecondary,
     },
-
-    // Actions
-    actionRow: {
+    buttonsRow: {
       flexDirection: "row",
       gap: spacing.sm,
-      marginTop: spacing.xs,
+      marginTop: spacing.sm,
     },
     searchButton: {
       flex: 1,
@@ -635,7 +775,7 @@ const createStyles = (colors: any) =>
       justifyContent: "center",
       backgroundColor: colors.accent,
       borderRadius: borderRadius.md,
-      height: 44,
+      paddingVertical: spacing.md,
       gap: spacing.sm,
     },
     searchButtonText: {
@@ -643,61 +783,38 @@ const createStyles = (colors: any) =>
       fontWeight: "600",
       color: colors.backgroundSecondary,
     },
+    saveFilterButton: {
+      width: 48,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.accentLight,
+      borderRadius: borderRadius.md,
+    },
     clearButton: {
+      flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: colors.backgroundSecondary,
       borderRadius: borderRadius.md,
-      paddingHorizontal: spacing.lg,
-      height: 44,
+      paddingHorizontal: spacing.md,
+      gap: spacing.xs,
     },
     clearButtonText: {
       fontSize: 14,
-      fontWeight: "500",
       color: colors.textSecondary,
     },
-
-    // Results
     results: {
       flex: 1,
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
     },
-    resultsContent: {
-      padding: spacing.lg,
-    },
-    resultsHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: spacing.md,
-    },
-    resultsTitle: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: colors.textPrimary,
-    },
-    exportButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: colors.accentLight,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      borderRadius: borderRadius.full,
-      gap: spacing.xs,
-    },
-    exportButtonText: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: colors.accent,
-    },
-
-    // Error & Empty
     errorCard: {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.dangerLight,
       borderRadius: borderRadius.md,
-      padding: spacing.md,
-      gap: spacing.sm,
+      padding: spacing.lg,
+      gap: spacing.md,
       marginBottom: spacing.md,
     },
     errorText: {
@@ -705,66 +822,128 @@ const createStyles = (colors: any) =>
       fontSize: 14,
       color: colors.danger,
     },
-    emptyState: {
+    retryText: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.accent,
+    },
+    resultsHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: spacing.md,
+    },
+    resultsCount: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: colors.textPrimary,
+    },
+    exportButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      padding: spacing.sm,
+    },
+    exportText: {
+      fontSize: 14,
+      color: colors.accent,
+      fontWeight: "500",
+    },
+    emptyContainer: {
       alignItems: "center",
       paddingVertical: spacing.xxl * 2,
     },
     emptyTitle: {
-      fontSize: 20,
+      fontSize: 18,
       fontWeight: "600",
       color: colors.textPrimary,
       marginTop: spacing.md,
-      marginBottom: spacing.sm,
     },
-    emptyText: {
-      fontSize: 15,
+    emptyMessage: {
+      fontSize: 14,
       color: colors.textSecondary,
-      textAlign: "center",
+      marginTop: spacing.xs,
     },
-
-    // Modal
-    modalContainer: {
+    modalOverlay: {
       flex: 1,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      justifyContent: "flex-end",
+    },
+    modalContent: {
       backgroundColor: colors.background,
+      borderTopLeftRadius: borderRadius.xl,
+      borderTopRightRadius: borderRadius.xl,
+      maxHeight: "70%",
     },
     modalHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.md,
+      padding: spacing.lg,
       borderBottomWidth: 1,
       borderBottomColor: colors.separatorLight,
     },
     modalTitle: {
-      fontSize: 20,
+      fontSize: 18,
       fontWeight: "700",
       color: colors.textPrimary,
     },
     modalItem: {
       flexDirection: "row",
-      alignItems: "center",
       justifyContent: "space-between",
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.md,
+      alignItems: "center",
+      padding: spacing.lg,
       borderBottomWidth: 1,
       borderBottomColor: colors.separatorLight,
-    },
-    modalItemActive: {
-      backgroundColor: colors.accentLight,
     },
     modalItemText: {
       fontSize: 16,
       color: colors.textPrimary,
     },
-    modalItemTextActive: {
-      color: colors.accent,
-      fontWeight: "600",
-    },
-    emptyList: {
+    emptyModalText: {
+      fontSize: 14,
+      color: colors.textSecondary,
       textAlign: "center",
-      color: colors.textTertiary,
       padding: spacing.xl,
+    },
+    emptyFilters: {
+      alignItems: "center",
+      padding: spacing.xxl,
+    },
+    emptyFiltersTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: colors.textPrimary,
+      marginTop: spacing.md,
+    },
+    emptyFiltersText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginTop: spacing.sm,
+    },
+    savedFilterItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: spacing.lg,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.separatorLight,
+    },
+    savedFilterInfo: {
+      flex: 1,
+    },
+    savedFilterName: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.textPrimary,
+    },
+    savedFilterDetails: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    deleteFilterButton: {
+      padding: spacing.sm,
     },
   });
 

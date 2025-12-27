@@ -20,22 +20,6 @@ import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 
 // ============================================
-// UTILIDADES
-// ============================================
-const formatCurrency = (value: number): string => {
-  if (value >= 1000000000) {
-    return `$${(value / 1000000000).toFixed(1)}B`;
-  }
-  if (value >= 1000000) {
-    return `$${(value / 1000000).toFixed(1)}M`;
-  }
-  if (value >= 1000) {
-    return `$${(value / 1000).toFixed(0)}K`;
-  }
-  return `$${value.toFixed(0)}`;
-};
-
-// ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
 export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
@@ -74,25 +58,14 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     fetchRecentProcesses(100);
   }, []);
 
-  // Calcular estadísticas
-  const stats = useMemo(() => {
-    const totalProcesos = filteredProcesses.length;
-
-    const valorTotal = filteredProcesses.reduce((sum, p) => {
-      const precio =
-        typeof p.precio_base === "string"
-          ? parseFloat(p.precio_base) || 0
-          : p.precio_base || 0;
-      return sum + precio;
-    }, 0);
-
-    const porTipo: Record<string, number> = {};
+  // Contar por tipo de contrato
+  const porTipo = useMemo(() => {
+    const counts: Record<string, number> = {};
     filteredProcesses.forEach((p) => {
       const tipo = p.tipo_de_contrato || "Otro";
-      porTipo[tipo] = (porTipo[tipo] || 0) + 1;
+      counts[tipo] = (counts[tipo] || 0) + 1;
     });
-
-    return { totalProcesos, valorTotal, porTipo };
+    return counts;
   }, [filteredProcesses]);
 
   // Animaciones del header
@@ -145,45 +118,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   // Header del listado
   const ListHeader = () => (
     <View style={styles.listHeader}>
-      {/* Stats principales */}
-      <View style={styles.mainStats}>
-        <View style={[styles.statCard, { borderLeftColor: colors.accent }]}>
-          <View
-            style={[
-              styles.statIconContainer,
-              { backgroundColor: `${colors.accent}15` },
-            ]}>
-            <Ionicons
-              name="documents-outline"
-              size={20}
-              color={colors.accent}
-            />
-          </View>
-          <View style={styles.statContent}>
-            <Text style={styles.statTitle}>Total Procesos</Text>
-            <Text style={[styles.statValue, { color: colors.accent }]}>
-              {stats.totalProcesos}
-            </Text>
-          </View>
-        </View>
-
-        <View style={[styles.statCard, { borderLeftColor: colors.success }]}>
-          <View
-            style={[
-              styles.statIconContainer,
-              { backgroundColor: `${colors.success}15` },
-            ]}>
-            <Ionicons name="cash-outline" size={20} color={colors.success} />
-          </View>
-          <View style={styles.statContent}>
-            <Text style={styles.statTitle}>Valor Total</Text>
-            <Text style={[styles.statValue, { color: colors.success }]}>
-              {formatCurrency(stats.valorTotal)}
-            </Text>
-          </View>
-        </View>
-      </View>
-
       {/* Distribución por tipo */}
       <View style={styles.sectionCard}>
         <View style={styles.sectionHeader}>
@@ -194,7 +128,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.typeChips}>
-          {Object.entries(stats.porTipo)
+          {Object.entries(porTipo)
             .sort((a, b) => b[1] - a[1])
             .slice(0, 6)
             .map(([tipo, count]) => {
@@ -279,7 +213,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           <Animated.View
             style={{ transform: [{ scale: titleScale }], flex: 1 }}>
             <View style={styles.titleRow}>
-              <Text style={styles.title}>Dashboard</Text>
+              <Text style={styles.title}>Inicio</Text>
               <View style={styles.liveBadge}>
                 <View style={styles.liveDot} />
                 <Text style={styles.liveText}>SECOP II</Text>
@@ -464,43 +398,6 @@ const createStyles = (colors: any) =>
     },
     listHeader: {
       marginBottom: spacing.md,
-    },
-
-    // Stats
-    mainStats: {
-      flexDirection: "row",
-      gap: spacing.md,
-      marginBottom: spacing.lg,
-    },
-    statCard: {
-      flex: 1,
-      backgroundColor: colors.backgroundSecondary,
-      borderRadius: borderRadius.md,
-      padding: spacing.md,
-      borderLeftWidth: 4,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.md,
-    },
-    statIconContainer: {
-      width: 40,
-      height: 40,
-      borderRadius: borderRadius.sm,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    statContent: {
-      flex: 1,
-    },
-    statTitle: {
-      fontSize: 12,
-      color: colors.textSecondary,
-      fontWeight: "500",
-    },
-    statValue: {
-      fontSize: 22,
-      fontWeight: "700",
-      marginTop: 2,
     },
 
     // Section
