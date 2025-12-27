@@ -4,7 +4,7 @@
     "slug": "secopcol",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "/src/",
     "scheme": "secopcol",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
