@@ -17,7 +17,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { spacing, borderRadius } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
-import { getDepartments, getMunicipalities } from "../services/divipola";
+import {
+  getDepartments,
+  getMunicipalities,
+  searchMunicipalities,
+} from "../services/divipola";
 import {
   requestNotificationPermissions,
   getNotificationSettings,
@@ -38,7 +42,7 @@ import {
 interface MunicipalitySelectorProps {
   visible: boolean;
   onClose: () => void;
-  onSelect: (municipality: string) => void;
+  onSelect: (municipality: string, department: string) => void;
   selectedMunicipalities: string[];
 }
 
@@ -54,8 +58,12 @@ const MunicipalitySelector: React.FC<MunicipalitySelectorProps> = ({
   const [selectedDept, setSelectedDept] = useState<string | null>(null);
   const [departments, setDepartments] = useState<string[]>([]);
   const [municipalities, setMunicipalities] = useState<string[]>([]);
+  const [searchResults, setSearchResults] = useState<
+    { nom_mpio: string; dpto: string }[]
+  >([]);
   const [loadingDepts, setLoadingDepts] = useState(true);
   const [loadingMunis, setLoadingMunis] = useState(false);
+  const [searching, setSearching] = useState(false);
 
   const selectorStyles = createSelectorStyles(colors);
 
@@ -69,6 +77,10 @@ const MunicipalitySelector: React.FC<MunicipalitySelectorProps> = ({
         setLoadingDepts(false);
       };
       loadDepts();
+      // Reset estados al abrir
+      setSearchText("");
+      setSelectedDept(null);
+      setSearchResults([]);
     }
   }, [visible]);
 
@@ -87,21 +99,69 @@ const MunicipalitySelector: React.FC<MunicipalitySelectorProps> = ({
     loadMunis();
   }, [selectedDept]);
 
+  // Buscar municipios en toda Colombia cuando escribe (sin departamento seleccionado)
+  useEffect(() => {
+    if (searchText.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    // Solo buscar en toda Colombia si no hay departamento seleccionado
+    if (selectedDept) return;
+
+    const searchTimeout = setTimeout(async () => {
+      setSearching(true);
+      const results = await searchMunicipalities(searchText);
+      setSearchResults(
+        results.map((r) => ({ nom_mpio: r.nom_mpio, dpto: r.dpto }))
+      );
+      setSearching(false);
+    }, 300);
+
+    return () => clearTimeout(searchTimeout);
+  }, [searchText, selectedDept]);
+
   // Filtrar municipios por búsqueda y excluir ya seleccionados
   const filteredMunicipalities = React.useMemo(() => {
-    const available = municipalities.filter(
-      (m) => !selectedMunicipalities.includes(m)
-    );
-    if (!searchText)
-      return available.map((m) => ({
-        municipality: m,
-        department: selectedDept || "",
-      }));
-    const search = searchText.toLowerCase();
-    return available
-      .filter((m) => m.toLowerCase().includes(search))
-      .map((m) => ({ municipality: m, department: selectedDept || "" }));
-  }, [municipalities, searchText, selectedMunicipalities, selectedDept]);
+    // Si hay búsqueda global (sin departamento), mostrar resultados de búsqueda
+    if (!selectedDept && searchText.length >= 2) {
+      return searchResults
+        .filter(
+          (m) => !selectedMunicipalities.includes(`${m.nom_mpio} (${m.dpto})`)
+        )
+        .map((m) => ({ municipality: m.nom_mpio, department: m.dpto }));
+    }
+
+    // Si hay departamento seleccionado, filtrar sus municipios
+    if (selectedDept) {
+      const available = municipalities.filter(
+        (m) => !selectedMunicipalities.includes(`${m} (${selectedDept})`)
+      );
+      if (!searchText)
+        return available.map((m) => ({
+          municipality: m,
+          department: selectedDept,
+        }));
+      const search = searchText.toLowerCase();
+      return available
+        .filter((m) => m.toLowerCase().includes(search))
+        .map((m) => ({ municipality: m, department: selectedDept }));
+    }
+
+    return [];
+  }, [
+    municipalities,
+    searchText,
+    selectedMunicipalities,
+    selectedDept,
+    searchResults,
+  ]);
+
+  // Limpiar departamento seleccionado
+  const handleClearDept = () => {
+    setSelectedDept(null);
+    setMunicipalities([]);
+  };
 
   return (
     <Modal
@@ -121,10 +181,15 @@ const MunicipalitySelector: React.FC<MunicipalitySelectorProps> = ({
           <Ionicons name="search" size={18} color={colors.textTertiary} />
           <TextInput
             style={selectorStyles.searchInput}
-            placeholder="Buscar municipio..."
+            placeholder={
+              selectedDept
+                ? "Buscar en este departamento..."
+                : "Buscar municipio en Colombia..."
+            }
             placeholderTextColor={colors.textTertiary}
             value={searchText}
             onChangeText={setSearchText}
+            autoFocus
           />
           {searchText.length > 0 && (
             <TouchableOpacity onPress={() => setSearchText("")}>
@@ -137,6 +202,13 @@ const MunicipalitySelector: React.FC<MunicipalitySelectorProps> = ({
           )}
         </View>
 
+        {/* Hint de búsqueda */}
+        {!selectedDept && searchText.length === 0 && (
+          <Text style={selectorStyles.searchHint}>
+            Escribe para buscar en toda Colombia o selecciona un departamento
+          </Text>
+        )}
+
         {loadingDepts ? (
           <View style={selectorStyles.loadingContainer}>
             <ActivityIndicator size="small" color={colors.accent} />
@@ -145,41 +217,60 @@ const MunicipalitySelector: React.FC<MunicipalitySelectorProps> = ({
             </Text>
           </View>
         ) : (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={selectorStyles.deptScroll}
-            contentContainerStyle={selectorStyles.deptContainer}>
-            {departments.map((dept) => (
-              <TouchableOpacity
-                key={dept}
-                style={[
-                  selectorStyles.deptChip,
-                  selectedDept === dept && selectorStyles.deptChipSelected,
-                ]}
-                onPress={() => setSelectedDept(dept)}>
-                <Text
-                  style={[
-                    selectorStyles.deptChipText,
-                    selectedDept === dept &&
-                      selectorStyles.deptChipTextSelected,
-                  ]}
-                  numberOfLines={1}>
-                  {dept}
+          <View>
+            {/* Departamento seleccionado */}
+            {selectedDept && (
+              <View style={selectorStyles.selectedDeptBanner}>
+                <Ionicons name="location" size={16} color={colors.accent} />
+                <Text style={selectorStyles.selectedDeptText}>
+                  {selectedDept}
                 </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+                <TouchableOpacity
+                  onPress={handleClearDept}
+                  style={selectorStyles.clearDeptButton}>
+                  <Ionicons
+                    name="close-circle"
+                    size={20}
+                    color={colors.textTertiary}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Lista de departamentos */}
+            {!selectedDept && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={selectorStyles.deptScroll}
+                contentContainerStyle={selectorStyles.deptContainer}>
+                {departments.map((dept) => (
+                  <TouchableOpacity
+                    key={dept}
+                    style={selectorStyles.deptChip}
+                    onPress={() => {
+                      setSelectedDept(dept);
+                      setSearchText("");
+                    }}>
+                    <Text style={selectorStyles.deptChipText} numberOfLines={1}>
+                      {dept}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
         )}
 
-        {loadingMunis ? (
+        {/* Loading búsqueda o municipios */}
+        {loadingMunis || searching ? (
           <View style={selectorStyles.loadingContainer}>
             <ActivityIndicator size="small" color={colors.accent} />
             <Text style={selectorStyles.loadingText}>
-              Cargando municipios...
+              {searching ? "Buscando municipios..." : "Cargando municipios..."}
             </Text>
           </View>
-        ) : !selectedDept ? (
+        ) : !selectedDept && searchText.length < 2 ? (
           <View style={selectorStyles.emptyContainer}>
             <Ionicons
               name="location-outline"
@@ -187,21 +278,22 @@ const MunicipalitySelector: React.FC<MunicipalitySelectorProps> = ({
               color={colors.textTertiary}
             />
             <Text style={selectorStyles.emptyText}>
-              Selecciona un departamento
+              Busca un municipio o selecciona un departamento
             </Text>
           </View>
         ) : (
           <FlatList
             data={filteredMunicipalities}
             keyExtractor={(item) => `${item.department}-${item.municipality}`}
+            keyboardShouldPersistTaps="handled"
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={selectorStyles.municipalityItem}
                 onPress={() => {
-                  onSelect(item.municipality);
+                  onSelect(item.municipality, item.department);
                   onClose();
                 }}>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={selectorStyles.municipalityName}>
                     {item.municipality}
                   </Text>
@@ -345,8 +437,12 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
     setSettings((prev) => ({ ...prev, enabled: value }));
   };
 
-  const handleAddMunicipality = async (municipality: string) => {
-    const updated = await addWatchedMunicipality(municipality);
+  const handleAddMunicipality = async (
+    municipality: string,
+    department: string
+  ) => {
+    const fullName = `${municipality} (${department})`;
+    const updated = await addWatchedMunicipality(fullName);
     setSettings((prev) => ({ ...prev, watchedMunicipalities: updated }));
   };
 
@@ -546,11 +642,11 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
                 value={settings.enabled}
                 onValueChange={handleToggleNotifications}
                 trackColor={{
-                  false: colors.accentLight,
+                  false: colors.backgroundTertiary,
                   true: colors.accentLight,
                 }}
                 thumbColor={
-                  settings.enabled ? colors.accent : colors.buttonBackground
+                  settings.enabled ? colors.accent : colors.textTertiary
                 }
               />
             </View>
@@ -676,10 +772,6 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
             )}
           </View>
 
-          <Text style={styles.sectionDesc}>
-            Filtra por modalidad. Sin selección = todas las modalidades.
-          </Text>
-
           <View style={styles.chipsGrid}>
             {MODALIDADES_CONTRATACION.map((modalidad) => {
               const isSelected = settings.watchedModalities.includes(
@@ -735,10 +827,6 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
               </View>
             )}
           </View>
-
-          <Text style={styles.sectionDesc}>
-            Filtra por tipo. Sin selección = todos los tipos.
-          </Text>
 
           <View style={styles.chipsGrid}>
             {TIPOS_CONTRATO.map((tipo) => {
@@ -917,6 +1005,33 @@ const createSelectorStyles = (colors: any) =>
     loadingText: {
       fontSize: 14,
       color: colors.textSecondary,
+    },
+    searchHint: {
+      fontSize: 13,
+      color: colors.textTertiary,
+      textAlign: "center",
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    selectedDeptBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.accentLight,
+      marginHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.md,
+      gap: spacing.sm,
+    },
+    selectedDeptText: {
+      flex: 1,
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.accent,
+    },
+    clearDeptButton: {
+      padding: 2,
     },
   });
 
