@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Keyboard,
   ScrollView,
@@ -13,7 +13,9 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Animated,
 } from "react-native";
+import { Swipeable } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ProcessCard, SearchResultsSkeleton } from "../components/index";
@@ -430,11 +432,6 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 filteredSuggestions.items.length > 0 && (
                   <View style={styles.suggestionsContainer}>
                     <View style={styles.suggestionsHeader}>
-                      <Ionicons
-                        name="bookmark"
-                        size={14}
-                        color={colors.textTertiary}
-                      />
                       <Text style={styles.suggestionsTitle}>
                         Búsquedas guardadas
                       </Text>
@@ -448,34 +445,51 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                       </TouchableOpacity>
                     </View>
                     {filteredSuggestions.items.map((filter) => (
-                      <TouchableOpacity
+                      <Swipeable
                         key={filter.id}
-                        style={styles.suggestionItem}
-                        onPress={() => handleLoadSuggestion(filter)}>
-                        <Ionicons
-                          name="time-outline"
-                          size={16}
-                          color={colors.textSecondary}
-                        />
-                        <View style={styles.suggestionContent}>
-                          <Text style={styles.suggestionName}>
-                            {filter.name}
-                          </Text>
-                          <Text
-                            style={styles.suggestionDetails}
-                            numberOfLines={1}>
-                            {[
-                              filter.filters.keyword,
-                              filter.filters.departamento,
-                              MODALIDADES.find(
-                                (m) => m.id === filter.filters.modalidades[0]
-                              )?.label,
-                            ]
-                              .filter(Boolean)
-                              .join(" • ") || "Sin filtros"}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
+                        renderRightActions={(progress, dragX) => {
+                          const scale = dragX.interpolate({
+                            inputRange: [-80, 0],
+                            outputRange: [1, 0],
+                            extrapolate: "clamp",
+                          });
+                          return (
+                            <TouchableOpacity
+                              style={styles.swipeDeleteButton}
+                              onPress={() => removeFilter(filter.id)}>
+                              <Animated.Text
+                                style={[
+                                  styles.swipeDeleteText,
+                                  { transform: [{ scale }] },
+                                ]}>
+                                Eliminar
+                              </Animated.Text>
+                            </TouchableOpacity>
+                          );
+                        }}>
+                        <TouchableOpacity
+                          style={styles.suggestionItem}
+                          onPress={() => handleLoadSuggestion(filter)}>
+                          <View style={styles.suggestionContent}>
+                            <Text style={styles.suggestionName}>
+                              {filter.name}
+                            </Text>
+                            <Text
+                              style={styles.suggestionDetails}
+                              numberOfLines={1}>
+                              {[
+                                filter.filters.keyword,
+                                filter.filters.departamento,
+                                MODALIDADES.find(
+                                  (m) => m.id === filter.filters.modalidades[0]
+                                )?.label,
+                              ]
+                                .filter(Boolean)
+                                .join(" • ") || "Sin filtros"}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      </Swipeable>
                     ))}
                   </View>
                 )
@@ -487,27 +501,39 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                     {filteredSuggestions.filters.length > 0 && (
                       <>
                         <View style={styles.suggestionsHeader}>
-                          <Ionicons
-                            name="time-outline"
-                            size={14}
-                            color={colors.textTertiary}
-                          />
                           <Text style={styles.suggestionsTitle}>Historial</Text>
                         </View>
                         {filteredSuggestions.filters.map((filter) => (
-                          <TouchableOpacity
+                          <Swipeable
                             key={filter.id}
-                            style={styles.suggestionItem}
-                            onPress={() => handleLoadSuggestion(filter)}>
-                            <Ionicons
-                              name="bookmark-outline"
-                              size={16}
-                              color={colors.accent}
-                            />
-                            <Text style={styles.suggestionText}>
-                              {filter.name}
-                            </Text>
-                          </TouchableOpacity>
+                            renderRightActions={(progress, dragX) => {
+                              const scale = dragX.interpolate({
+                                inputRange: [-80, 0],
+                                outputRange: [1, 0],
+                                extrapolate: "clamp",
+                              });
+                              return (
+                                <TouchableOpacity
+                                  style={styles.swipeDeleteButton}
+                                  onPress={() => removeFilter(filter.id)}>
+                                  <Animated.Text
+                                    style={[
+                                      styles.swipeDeleteText,
+                                      { transform: [{ scale }] },
+                                    ]}>
+                                    Eliminar
+                                  </Animated.Text>
+                                </TouchableOpacity>
+                              );
+                            }}>
+                            <TouchableOpacity
+                              style={styles.suggestionItem}
+                              onPress={() => handleLoadSuggestion(filter)}>
+                              <Text style={styles.suggestionText}>
+                                {filter.name}
+                              </Text>
+                            </TouchableOpacity>
+                          </Swipeable>
                         ))}
                       </>
                     )}
@@ -516,11 +542,6 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                     {filteredSuggestions.suggestions.length > 0 && (
                       <>
                         <View style={styles.suggestionsHeader}>
-                          <Ionicons
-                            name="bulb-outline"
-                            size={14}
-                            color={colors.textTertiary}
-                          />
                           <Text style={styles.suggestionsTitle}>
                             Sugerencias
                           </Text>
@@ -531,11 +552,6 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                               key={index}
                               style={styles.suggestionItem}
                               onPress={() => handleUseSuggestion(suggestion)}>
-                              <Ionicons
-                                name="search-outline"
-                                size={16}
-                                color={colors.textSecondary}
-                              />
                               <Text style={styles.suggestionText}>
                                 {suggestion}
                               </Text>
@@ -1071,8 +1087,8 @@ const createStyles = (colors: any) =>
       flexDirection: "row",
       alignItems: "center",
       paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      gap: spacing.sm,
+      paddingVertical: spacing.md,
+      backgroundColor: colors.backgroundSecondary,
       borderBottomWidth: 1,
       borderBottomColor: colors.separatorLight,
     },
@@ -1093,6 +1109,17 @@ const createStyles = (colors: any) =>
       flex: 1,
       fontSize: 15,
       color: colors.textPrimary,
+    },
+    swipeDeleteButton: {
+      backgroundColor: colors.danger,
+      justifyContent: "center",
+      alignItems: "center",
+      width: 80,
+    },
+    swipeDeleteText: {
+      color: colors.backgroundSecondary,
+      fontSize: 13,
+      fontWeight: "600",
     },
     locationRow: {
       flexDirection: "row",
