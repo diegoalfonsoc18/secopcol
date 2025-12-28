@@ -289,47 +289,263 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setMuniSearchText("");
   };
 
+  // Estado para mostrar sugerencias
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Palabras comunes para autocompletado
+  const COMMON_SUGGESTIONS = [
+    "Construcción",
+    "Obra",
+    "Consultoría",
+    "Servicios",
+    "Suministro",
+    "Mantenimiento",
+    "Infraestructura",
+    "Transporte",
+    "Salud",
+    "Educación",
+    "Tecnología",
+    "Software",
+    "Interventoría",
+    "Estudios",
+    "Diseño",
+    "Alcaldía",
+    "Gobernación",
+    "Ministerio",
+    "Instituto",
+    "Universidad",
+    "Hospital",
+    "Secretaría",
+    "INVIAS",
+    "ANI",
+    "IDU",
+    "EAAB",
+  ];
+
+  // Filtrar sugerencias basadas en el texto ingresado
+  const getFilteredSuggestions = () => {
+    if (keyword.length === 0) {
+      // Sin texto: mostrar búsquedas guardadas
+      return {
+        type: "saved" as const,
+        items: savedFilters.slice(0, 5),
+      };
+    }
+
+    const searchTerm = keyword.toLowerCase();
+
+    // Buscar en historial guardado
+    const matchingFilters = savedFilters
+      .filter(
+        (f) =>
+          f.name.toLowerCase().includes(searchTerm) ||
+          f.filters.keyword?.toLowerCase().includes(searchTerm) ||
+          f.filters.departamento?.toLowerCase().includes(searchTerm)
+      )
+      .slice(0, 3);
+
+    // Buscar en palabras comunes
+    const matchingCommon = COMMON_SUGGESTIONS.filter(
+      (s) =>
+        s.toLowerCase().includes(searchTerm) && s.toLowerCase() !== searchTerm
+    ).slice(0, 4);
+
+    return {
+      type: "mixed" as const,
+      filters: matchingFilters,
+      suggestions: matchingCommon,
+    };
+  };
+
+  const filteredSuggestions = getFilteredSuggestions();
+
+  // Cargar filtro guardado desde sugerencias
+  const handleLoadSuggestion = (filter: SavedFilter) => {
+    setKeyword(filter.filters.keyword || "");
+    setSelectedDepartamento(filter.filters.departamento || "");
+    setSelectedMunicipio(filter.filters.municipio || "");
+    setSelectedModalidad(filter.filters.modalidades[0] || "");
+    setSelectedTipo(filter.filters.tiposContrato[0] || "");
+    setShowSuggestions(false);
+  };
+
+  // Usar sugerencia de palabra común
+  const handleUseSuggestion = (text: string) => {
+    setKeyword(text);
+    setShowSuggestions(false);
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-        <View style={styles.headerRow}>
-          <Text style={styles.title}>Buscar</Text>
-
-          {/* Botón filtros guardados */}
-          <TouchableOpacity
-            style={styles.savedButton}
-            onPress={() => setShowSavedFilters(true)}>
-            <Ionicons name="bookmark-outline" size={22} color={colors.accent} />
-            {savedFilters.length > 0 && (
-              <View style={styles.savedBadge}>
-                <Text style={styles.savedBadgeText}>{savedFilters.length}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.title}>Buscar</Text>
 
         {/* Barra de búsqueda */}
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color={colors.textTertiary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Palabra clave, entidad..."
-            placeholderTextColor={colors.textTertiary}
-            value={keyword}
-            onChangeText={setKeyword}
-            returnKeyType="search"
-            onSubmitEditing={handleSearch}
-          />
-          {keyword.length > 0 && (
-            <TouchableOpacity onPress={() => setKeyword("")}>
-              <Ionicons
-                name="close-circle"
-                size={20}
-                color={colors.textTertiary}
-              />
-            </TouchableOpacity>
-          )}
+        <View style={styles.searchBarContainer}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={20} color={colors.textTertiary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Palabra clave, entidad..."
+              placeholderTextColor={colors.textTertiary}
+              value={keyword}
+              onChangeText={(text) => {
+                setKeyword(text);
+                // Mostrar sugerencias mientras escribe
+                setShowSuggestions(true);
+              }}
+              onFocus={() => {
+                setShowSuggestions(true);
+              }}
+              onBlur={() => {
+                // Pequeño delay para permitir tocar sugerencias
+                setTimeout(() => setShowSuggestions(false), 200);
+              }}
+              returnKeyType="search"
+              onSubmitEditing={() => {
+                setShowSuggestions(false);
+                handleSearch();
+              }}
+            />
+            {keyword.length > 0 && (
+              <TouchableOpacity
+                onPress={() => {
+                  setKeyword("");
+                  setShowSuggestions(true);
+                }}>
+                <Ionicons
+                  name="close-circle"
+                  size={20}
+                  color={colors.textTertiary}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Sugerencias dinámicas */}
+          {showSuggestions &&
+            (filteredSuggestions.type === "saved"
+              ? // Búsquedas guardadas (input vacío)
+                filteredSuggestions.items.length > 0 && (
+                  <View style={styles.suggestionsContainer}>
+                    <View style={styles.suggestionsHeader}>
+                      <Ionicons
+                        name="bookmark"
+                        size={14}
+                        color={colors.textTertiary}
+                      />
+                      <Text style={styles.suggestionsTitle}>
+                        Búsquedas guardadas
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => setShowSuggestions(false)}>
+                        <Ionicons
+                          name="close"
+                          size={18}
+                          color={colors.textTertiary}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                    {filteredSuggestions.items.map((filter) => (
+                      <TouchableOpacity
+                        key={filter.id}
+                        style={styles.suggestionItem}
+                        onPress={() => handleLoadSuggestion(filter)}>
+                        <Ionicons
+                          name="time-outline"
+                          size={16}
+                          color={colors.textSecondary}
+                        />
+                        <View style={styles.suggestionContent}>
+                          <Text style={styles.suggestionName}>
+                            {filter.name}
+                          </Text>
+                          <Text
+                            style={styles.suggestionDetails}
+                            numberOfLines={1}>
+                            {[
+                              filter.filters.keyword,
+                              filter.filters.departamento,
+                              MODALIDADES.find(
+                                (m) => m.id === filter.filters.modalidades[0]
+                              )?.label,
+                            ]
+                              .filter(Boolean)
+                              .join(" • ") || "Sin filtros"}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )
+              : // Sugerencias mixtas (mientras escribe)
+                (filteredSuggestions.filters.length > 0 ||
+                  filteredSuggestions.suggestions.length > 0) && (
+                  <View style={styles.suggestionsContainer}>
+                    {/* Historial que coincide */}
+                    {filteredSuggestions.filters.length > 0 && (
+                      <>
+                        <View style={styles.suggestionsHeader}>
+                          <Ionicons
+                            name="time-outline"
+                            size={14}
+                            color={colors.textTertiary}
+                          />
+                          <Text style={styles.suggestionsTitle}>Historial</Text>
+                        </View>
+                        {filteredSuggestions.filters.map((filter) => (
+                          <TouchableOpacity
+                            key={filter.id}
+                            style={styles.suggestionItem}
+                            onPress={() => handleLoadSuggestion(filter)}>
+                            <Ionicons
+                              name="bookmark-outline"
+                              size={16}
+                              color={colors.accent}
+                            />
+                            <Text style={styles.suggestionText}>
+                              {filter.name}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </>
+                    )}
+
+                    {/* Sugerencias de palabras */}
+                    {filteredSuggestions.suggestions.length > 0 && (
+                      <>
+                        <View style={styles.suggestionsHeader}>
+                          <Ionicons
+                            name="bulb-outline"
+                            size={14}
+                            color={colors.textTertiary}
+                          />
+                          <Text style={styles.suggestionsTitle}>
+                            Sugerencias
+                          </Text>
+                        </View>
+                        {filteredSuggestions.suggestions.map(
+                          (suggestion, index) => (
+                            <TouchableOpacity
+                              key={index}
+                              style={styles.suggestionItem}
+                              onPress={() => handleUseSuggestion(suggestion)}>
+                              <Ionicons
+                                name="search-outline"
+                                size={16}
+                                color={colors.textSecondary}
+                              />
+                              <Text style={styles.suggestionText}>
+                                {suggestion}
+                              </Text>
+                            </TouchableOpacity>
+                          )
+                        )}
+                      </>
+                    )}
+                  </View>
+                ))}
         </View>
 
         {/* Ubicación */}
@@ -460,7 +676,12 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
         {/* Botones */}
         <View style={styles.buttonsRow}>
-          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+          <TouchableOpacity
+            style={styles.searchButton}
+            onPress={() => {
+              setShowSuggestions(false);
+              handleSearch();
+            }}>
             <Ionicons
               name="search"
               size={18}
@@ -472,15 +693,8 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           <TouchableOpacity
             style={styles.saveFilterButton}
             onPress={handleSaveFilter}>
-            <Ionicons name="bookmark-outline" size={18} color={colors.accent} />
+            <Ionicons name="bookmark-outline" size={20} color={colors.accent} />
           </TouchableOpacity>
-
-          {(keyword || activeFilters > 0) && (
-            <TouchableOpacity style={styles.clearButton} onPress={handleClear}>
-              <Ionicons name="close" size={18} color={colors.textSecondary} />
-              <Text style={styles.clearButtonText}>Limpiar</Text>
-            </TouchableOpacity>
-          )}
         </View>
       </View>
 
@@ -509,28 +723,9 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         {/* Resultados */}
         {!loading && processes.length > 0 && (
           <>
-            <View style={styles.resultsHeader}>
-              <Text style={styles.resultsCount}>
-                {processes.length} resultados
-              </Text>
-              <TouchableOpacity
-                style={styles.exportButton}
-                onPress={handleExport}
-                disabled={exporting}>
-                {exporting ? (
-                  <ActivityIndicator size="small" color={colors.accent} />
-                ) : (
-                  <>
-                    <Ionicons
-                      name="download-outline"
-                      size={16}
-                      color={colors.accent}
-                    />
-                    <Text style={styles.exportText}>CSV</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.resultsCount}>
+              {processes.length} resultados
+            </Text>
 
             {processes.map((process) => (
               <ProcessCard
@@ -822,6 +1017,11 @@ const createStyles = (colors: any) =>
       fontWeight: "700",
       color: colors.backgroundSecondary,
     },
+    searchBarContainer: {
+      position: "relative",
+      zIndex: 10,
+      marginBottom: spacing.md,
+    },
     searchBar: {
       flexDirection: "row",
       alignItems: "center",
@@ -830,11 +1030,68 @@ const createStyles = (colors: any) =>
       paddingHorizontal: spacing.md,
       height: 44,
       gap: spacing.sm,
-      marginBottom: spacing.md,
     },
     searchInput: {
       flex: 1,
       fontSize: 16,
+      color: colors.textPrimary,
+    },
+    suggestionsContainer: {
+      position: "absolute",
+      top: 48,
+      left: 0,
+      right: 0,
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: borderRadius.md,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 12,
+      elevation: 8,
+      zIndex: 100,
+    },
+    suggestionsHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.separatorLight,
+      gap: spacing.xs,
+    },
+    suggestionsTitle: {
+      flex: 1,
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.textTertiary,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    suggestionItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      gap: spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.separatorLight,
+    },
+    suggestionContent: {
+      flex: 1,
+    },
+    suggestionName: {
+      fontSize: 15,
+      fontWeight: "500",
+      color: colors.textPrimary,
+    },
+    suggestionDetails: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    suggestionText: {
+      flex: 1,
+      fontSize: 15,
       color: colors.textPrimary,
     },
     locationRow: {
