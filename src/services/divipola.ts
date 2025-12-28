@@ -35,15 +35,13 @@ export async function getDepartments(): Promise<string[]> {
     );
 
     if (!response.ok) {
-      console.log("DIVIPOLA API error, usando fallback");
+      // console.log("DIVIPOLA API error, usando fallback");
       return FALLBACK_DEPARTMENTS;
     }
 
     const data: { dpto: string }[] = await response.json();
     departmentsCache = data.map((d) => d.dpto);
-    console.log(
-      `✅ ${departmentsCache.length} departamentos cargados de DIVIPOLA`
-    );
+    // console.log(`✅ ${departmentsCache.length} departamentos cargados de DIVIPOLA`);
     return departmentsCache;
   } catch (error) {
     console.error("Error loading departments:", error);
@@ -75,7 +73,7 @@ export async function getMunicipalities(
     );
 
     if (!response.ok) {
-      console.log(`DIVIPOLA API error para ${departamento}, usando fallback`);
+      // console.log(`DIVIPOLA API error para ${departamento}, usando fallback`);
       return FALLBACK_MUNICIPALITIES[departamento] || [];
     }
 
@@ -84,9 +82,7 @@ export async function getMunicipalities(
 
     // Cache result
     municipalitiesCache.set(departamento, municipalities);
-    console.log(
-      `✅ ${municipalities.length} municipios cargados para ${departamento}`
-    );
+    // console.log(`✅ ${municipalities.length} municipios cargados para ${departamento}`);
     return municipalities;
   } catch (error) {
     console.error(`Error loading municipalities for ${departamento}:`, error);
