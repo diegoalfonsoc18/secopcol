@@ -23,7 +23,7 @@ import { useTheme } from "../context/ThemeContext";
 import { exportSearchResults } from "../services/exportService";
 import { useFiltersStore, SavedFilter } from "../store/filtersStore";
 import { getDepartments, getMunicipalities } from "../services/divipola";
-import type { ThemeColors } from "../theme/index";
+
 // ============================================
 // FILTROS
 // ============================================
@@ -778,7 +778,7 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 // ============================================
 // ESTILOS
 // ============================================
-const createStyles = (colors: ThemeColors) =>
+const createStyles = (colors: any) =>
   StyleSheet.create({
     container: {
       flex: 1,

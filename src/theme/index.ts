@@ -1,42 +1,9 @@
 // Theme estilo Apple para SECOP App
-// Diseño minimalista, limpio y elegante
+// Los COLORES se manejan en ThemeContext (soporta dark/light mode)
+// Aquí solo van: spacing, borderRadius, typography, shadows
 
-export const colors = {
-  // Backgrounds
-  background: "#F2F2F7",
-  backgroundSecondary: "#FFFFFF",
-  backgroundTertiary: "#E5E5EA",
-
-  // Text
-  textPrimary: "#1C1C1E",
-  textSecondary: "#8E8E93",
-  textTertiary: "#AEAEB2",
-
-  // Accent - Azul Apple
-  accent: "#ff0000ff",
-  accentLight: "#E3F2FF",
-
-  // Status colors
-  success: "#34C759",
-  successLight: "#E8F9ED",
-  warning: "#FF9500",
-  warningLight: "#FFF4E5",
-  danger: "#FF3B30",
-  dangerLight: "#FFEBE9",
-
-  // Estados de contrato SECOP
-  contractActive: "#34C759",
-  contractPending: "#FF9500",
-  contractClosed: "#8E8E93",
-  contractCancelled: "#FF3B30",
-
-  // Separadores
-  separator: "#C6C6C8",
-  separatorLight: "#E5E5EA",
-
-  // Overlay
-  overlay: "rgba(0, 0, 0, 0.4)",
-};
+// Re-exportar colores desde ThemeContext para compatibilidad
+export { lightColors as colors, darkColors } from "../context/ThemeContext";
 
 export const spacing = {
   xs: 4,
@@ -175,36 +142,9 @@ export const shadows = {
   },
 };
 
-// Estados de contratos para badges
-export const contractStatusConfig = {
-  activo: {
-    label: "Activo",
-    color: colors.contractActive,
-    backgroundColor: colors.successLight,
-  },
-  pendiente: {
-    label: "Pendiente",
-    color: colors.contractPending,
-    backgroundColor: colors.warningLight,
-  },
-  cerrado: {
-    label: "Cerrado",
-    color: colors.contractClosed,
-    backgroundColor: colors.backgroundTertiary,
-  },
-  cancelado: {
-    label: "Cancelado",
-    color: colors.contractCancelled,
-    backgroundColor: colors.dangerLight,
-  },
-};
-
 export default {
-  colors,
   spacing,
   borderRadius,
   typography,
   shadows,
-  contractStatusConfig,
 };
-export type ThemeColors = typeof colors;
