@@ -56,7 +56,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   useEffect(() => {
     fetchRecentProcesses(100);
-  }, []);
+  }, [fetchRecentProcesses]);
 
   // Contar por tipo de contrato
   const porTipo = useMemo(() => {

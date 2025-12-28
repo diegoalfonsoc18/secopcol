@@ -254,7 +254,7 @@ export const DetailScreen = ({ route, navigation }: any) => {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + spacing.xxl },
+          { paddingBottom: insets.bottom + 120 },
         ]}
         showsVerticalScrollIndicator={false}>
         {/* Hero Section */}

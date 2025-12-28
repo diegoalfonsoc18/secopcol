@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { spacing, borderRadius } from "../theme";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
 import { getDepartments, getMunicipalities } from "../services/divipola";
 import {
   requestNotificationPermissions,
@@ -29,7 +30,7 @@ import {
   NotificationSettings,
   MODALIDADES_CONTRATACION,
   TIPOS_CONTRATO,
-} from "../services/Notificaciones";
+} from "../services/notifications";
 
 // ============================================
 // COMPONENTE DE SELECTOR DE MUNICIPIO
@@ -242,6 +243,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { preferences, updatePreferences } = useAuth();
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
   const [settings, setSettings] = useState<NotificationSettings>({
@@ -254,6 +256,31 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
   const [showSelector, setShowSelector] = useState(false);
 
   const styles = createStyles(colors);
+
+  // Tipos de contrato disponibles para favoritos
+  const TIPOS_FAVORITOS = [
+    { id: "Obra", label: "Obra", icon: "construct-outline" },
+    {
+      id: "Prestación de servicios",
+      label: "Servicios",
+      icon: "people-outline",
+    },
+    { id: "Suministro", label: "Suministro", icon: "cube-outline" },
+    { id: "Consultoría", label: "Consultoría", icon: "bulb-outline" },
+    { id: "Interventoría", label: "Interventoría", icon: "eye-outline" },
+    { id: "Compraventa", label: "Compraventa", icon: "cart-outline" },
+    { id: "Arrendamiento", label: "Arrendamiento", icon: "home-outline" },
+    { id: "Concesión", label: "Concesión", icon: "key-outline" },
+  ];
+
+  // Toggle tipo de contrato favorito
+  const handleToggleFavoriteType = async (tipoId: string) => {
+    const current = preferences.selectedContractTypes || [];
+    const updated = current.includes(tipoId)
+      ? current.filter((t) => t !== tipoId)
+      : [...current, tipoId];
+    await updatePreferences({ selectedContractTypes: updated });
+  };
 
   useEffect(() => {
     loadSettings();
@@ -392,6 +419,70 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
           styles.scrollContent,
           { paddingBottom: insets.bottom + 40 },
         ]}>
+        {/* Sección: Tipos de Contrato Favoritos */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="heart-outline" size={20} color={colors.danger} />
+            <Text style={styles.sectionTitle}>Tipos de Contrato Favoritos</Text>
+            {(preferences.selectedContractTypes?.length || 0) > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {preferences.selectedContractTypes.length}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <Text style={styles.sectionDesc}>
+            Selecciona los tipos de contrato que te interesan. Solo verás
+            procesos de estos tipos en tu inicio.
+          </Text>
+
+          <View style={styles.chipsGrid}>
+            {TIPOS_FAVORITOS.map((tipo) => {
+              const isSelected = (
+                preferences.selectedContractTypes || []
+              ).includes(tipo.id);
+              return (
+                <TouchableOpacity
+                  key={tipo.id}
+                  style={[
+                    styles.chip,
+                    isSelected && styles.chipSelectedFavorite,
+                  ]}
+                  onPress={() => handleToggleFavoriteType(tipo.id)}
+                  activeOpacity={0.7}>
+                  <Ionicons
+                    name={tipo.icon as keyof typeof Ionicons.glyphMap}
+                    size={16}
+                    color={isSelected ? "#FFFFFF" : colors.danger}
+                  />
+                  <Text
+                    style={[
+                      styles.chipText,
+                      isSelected && styles.chipTextSelectedFavorite,
+                    ]}>
+                    {tipo.label}
+                  </Text>
+                  {isSelected && (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={14}
+                      color="#FFFFFF"
+                    />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {(preferences.selectedContractTypes?.length || 0) === 0 && (
+            <Text style={styles.emptyHint}>
+              Sin selección, verás todos los tipos de contrato
+            </Text>
+          )}
+        </View>
+
         {/* Sección: Activar notificaciones */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -995,6 +1086,10 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.accent,
       borderColor: colors.accent,
     },
+    chipSelectedFavorite: {
+      backgroundColor: colors.danger,
+      borderColor: colors.danger,
+    },
     chipText: {
       fontSize: 13,
       color: colors.textPrimary,
@@ -1002,6 +1097,16 @@ const createStyles = (colors: any) =>
     },
     chipTextSelected: {
       color: colors.backgroundSecondary,
+    },
+    chipTextSelectedFavorite: {
+      color: "#FFFFFF",
+    },
+    emptyHint: {
+      fontSize: 13,
+      color: colors.textTertiary,
+      fontStyle: "italic",
+      textAlign: "center",
+      marginTop: spacing.sm,
     },
 
     // Info

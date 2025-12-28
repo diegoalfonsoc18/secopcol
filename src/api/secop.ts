@@ -6,10 +6,9 @@ import { SecopProcess } from "../types/index";
 const SECOP_API_URL = "https://www.datos.gov.co/resource/p6dx-8zbt.json";
 
 // App Token (opcional, aumenta límite de requests)
-// Obtener en: https://www.datos.gov.co/profile/edit/developer_settings
 const APP_TOKEN = "";
 
-// Re-exportar SecopProcess para que otros archivos puedan importarlo desde aquí
+// Re-exportar SecopProcess
 export type { SecopProcess };
 
 // Headers para la petición
@@ -45,18 +44,29 @@ const buildQuery = (params: {
   }
 
   if (params.municipio) {
-    conditions.push(`ciudad_entidad='${params.municipio}'`);
+    // Limpiar el nombre: quitar ", D.C.", comas, y normalizar espacios
+    const cleanMunicipio = params.municipio
+      .replace(/,?\s*D\.?C\.?/gi, "") // Quitar D.C. o DC
+      .replace(/,/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    conditions.push(`upper(ciudad_entidad) LIKE upper('%${cleanMunicipio}%')`);
   }
 
   if (params.departamento) {
-    conditions.push(`departamento_entidad='${params.departamento}'`);
+    // Limpiar el nombre: quitar ", D.C.", comas, y normalizar espacios
+    const cleanDepartamento = params.departamento
+      .replace(/,?\s*D\.?C\.?/gi, "") // Quitar D.C. o DC
+      .replace(/,/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    conditions.push(
+      `upper(departamento_entidad) LIKE upper('%${cleanDepartamento}%')`
+    );
   }
 
   if (params.fase) {
-    // Buscar en fase O en estado_del_procedimiento
-    conditions.push(
-      `(fase='${params.fase}' OR estado_del_procedimiento='${params.fase}')`
-    );
+    conditions.push(`fase='${params.fase}'`);
   }
 
   if (params.modalidad) {
@@ -68,53 +78,50 @@ const buildQuery = (params: {
   }
 
   if (params.keyword) {
-    // Buscar en nombre o descripción (case insensitive)
-    const keyword = params.keyword.toLowerCase();
+    const keyword = params.keyword.replace(/'/g, "''");
     conditions.push(
-      `(lower(nombre_del_procedimiento) like '%${keyword}%' OR lower(descripci_n_del_procedimiento) like '%${keyword}%' OR lower(entidad) like '%${keyword}%')`
+      `(upper(descripci_n_del_procedimiento) LIKE upper('%${keyword}%') OR upper(entidad) LIKE upper('%${keyword}%') OR upper(nombre_del_procedimiento) LIKE upper('%${keyword}%'))`
     );
   }
 
-  const queryParams = new URLSearchParams();
+  let query = "";
 
   if (conditions.length > 0) {
-    queryParams.append("$where", conditions.join(" AND "));
+    query += `$where=${encodeURIComponent(conditions.join(" AND "))}`;
   }
 
-  queryParams.append("$limit", String(params.limit || 20));
+  const limit = params.limit || 50;
+  query += `${query ? "&" : ""}$limit=${limit}`;
 
   if (params.offset) {
-    queryParams.append("$offset", String(params.offset));
+    query += `&$offset=${params.offset}`;
   }
 
-  queryParams.append(
-    "$order",
-    params.orderBy || "fecha_de_publicacion_del DESC"
-  );
+  const orderBy = params.orderBy || "fecha_de_publicacion_del DESC";
+  query += `&$order=${encodeURIComponent(orderBy)}`;
 
-  return queryParams.toString();
+  return query;
 };
 
-// Petición genérica
-const fetchFromSecop = async (queryString: string): Promise<SecopProcess[]> => {
-  const url = `${SECOP_API_URL}?${queryString}`;
-  console.log("🌐 SECOP API:", url);
-
+// Hacer petición a la API
+const fetchSecop = async (query: string): Promise<SecopProcess[]> => {
   try {
+    const url = `${SECOP_API_URL}?${query}`;
+    console.log("SECOP API URL:", url);
+
     const response = await fetch(url, {
       method: "GET",
       headers: getHeaders(),
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log(`✅ ${data.length} procesos obtenidos`);
-    return data;
+    return data as SecopProcess[];
   } catch (error) {
-    console.error("❌ Error SECOP API:", error);
+    console.error("Error fetching SECOP data:", error);
     throw error;
   }
 };
@@ -123,135 +130,119 @@ const fetchFromSecop = async (queryString: string): Promise<SecopProcess[]> => {
 // FUNCIONES PÚBLICAS
 // ============================================
 
-/**
- * Obtener procesos recientes
- */
 export const getRecentProcesses = async (
-  limit: number = 20
+  limit: number = 50
 ): Promise<SecopProcess[]> => {
-  console.log("📅 Cargando procesos recientes...");
   const query = buildQuery({
     limit,
     orderBy: "fecha_de_publicacion_del DESC",
   });
-  return fetchFromSecop(query);
+  return fetchSecop(query);
 };
 
-/**
- * Buscar procesos con filtros
- */
 export const searchProcesses = async (
-  municipio?: string,
-  status?: string, // Este parámetro ahora se usa como "fase"
-  keyword?: string,
-  limit: number = 20
+  keyword: string,
+  limit: number = 50
 ): Promise<SecopProcess[]> => {
-  console.log("🔍 Buscando:", { municipio, status, keyword });
   const query = buildQuery({
-    municipio,
-    fase: status,
     keyword,
     limit,
+    orderBy: "fecha_de_publicacion_del DESC",
   });
-  return fetchFromSecop(query);
+  return fetchSecop(query);
 };
 
-/**
- * Buscar por municipio
- */
 export const getProcessesByMunicipality = async (
   municipio: string,
-  limit: number = 20
+  limit: number = 50
 ): Promise<SecopProcess[]> => {
-  console.log("📍 Buscando en:", municipio);
-  const query = buildQuery({ municipio, limit });
-  return fetchFromSecop(query);
+  const query = buildQuery({
+    municipio,
+    limit,
+    orderBy: "fecha_de_publicacion_del DESC",
+  });
+  return fetchSecop(query);
 };
 
-/**
- * Buscar por departamento
- */
 export const getProcessesByDepartment = async (
   departamento: string,
-  limit: number = 20
+  limit: number = 50
 ): Promise<SecopProcess[]> => {
-  console.log("🗺️ Buscando en departamento:", departamento);
-  const query = buildQuery({ departamento, limit });
-  return fetchFromSecop(query);
+  const query = buildQuery({
+    departamento,
+    limit,
+    orderBy: "fecha_de_publicacion_del DESC",
+  });
+  return fetchSecop(query);
 };
 
-/**
- * Buscar por fase/estado
- */
 export const getProcessesByPhase = async (
   fase: string,
-  limit: number = 20
+  limit: number = 50
 ): Promise<SecopProcess[]> => {
-  console.log("📊 Buscando fase:", fase);
-  const query = buildQuery({ fase, limit });
-  return fetchFromSecop(query);
+  const query = buildQuery({
+    fase,
+    limit,
+    orderBy: "fecha_de_publicacion_del DESC",
+  });
+  return fetchSecop(query);
 };
 
-/**
- * Buscar por modalidad de contratación
- */
 export const getProcessesByModality = async (
   modalidad: string,
-  limit: number = 20
+  limit: number = 50
 ): Promise<SecopProcess[]> => {
-  console.log("📋 Buscando modalidad:", modalidad);
-  const query = buildQuery({ modalidad, limit });
-  return fetchFromSecop(query);
+  const query = buildQuery({
+    modalidad,
+    limit,
+    orderBy: "fecha_de_publicacion_del DESC",
+  });
+  return fetchSecop(query);
 };
 
-/**
- * Búsqueda avanzada con múltiples filtros
- */
 export const advancedSearch = async (params: {
-  municipio?: string;
+  keyword?: string;
   departamento?: string;
+  municipio?: string;
   fase?: string;
   modalidad?: string;
   tipoContrato?: string;
-  keyword?: string;
   limit?: number;
   offset?: number;
 }): Promise<SecopProcess[]> => {
-  console.log("🔎 Búsqueda avanzada:", params);
-  const query = buildQuery(params);
-  return fetchFromSecop(query);
+  const query = buildQuery({
+    ...params,
+    orderBy: "fecha_de_publicacion_del DESC",
+  });
+  return fetchSecop(query);
 };
 
-/**
- * Obtener un proceso por ID
- */
 export const getProcessById = async (
   id: string
 ): Promise<SecopProcess | null> => {
-  console.log("🔍 Buscando proceso:", id);
-  const query = `$where=id_del_proceso='${id}'&$limit=1`;
-  const results = await fetchFromSecop(query);
+  const query = `$where=${encodeURIComponent(
+    `id_del_proceso='${id}'`
+  )}&$limit=1`;
+  const results = await fetchSecop(query);
   return results.length > 0 ? results[0] : null;
 };
 
-/**
- * Obtener estadísticas (count) por municipio
- */
 export const getCountByMunicipality = async (
   municipio: string
 ): Promise<number> => {
-  const url = `${SECOP_API_URL}?$select=count(*)&$where=ciudad_entidad='${municipio}'`;
   try {
+    const url = `${SECOP_API_URL}?$select=count(*)&$where=${encodeURIComponent(
+      `ciudad_entidad='${municipio}'`
+    )}`;
     const response = await fetch(url, { headers: getHeaders() });
     const data = await response.json();
     return parseInt(data[0]?.count || "0", 10);
-  } catch (error) {
-    console.error("Error getting count:", error);
+  } catch {
     return 0;
   }
 };
 
-// Fases disponibles en SECOP II
+// Constantes útiles
 export const SECOP_PHASES = [
   "Borrador",
   "Planeación",
@@ -263,19 +254,16 @@ export const SECOP_PHASES = [
   "Cancelado",
   "Suspendido",
   "Desierto",
-] as const;
+];
 
-// Modalidades de contratación
 export const SECOP_MODALITIES = [
-  "Licitación Pública",
-  "Selección Abreviada",
-  "Contratación Directa",
-  "Concurso de Méritos",
-  "Mínima Cuantía",
+  "Licitación pública",
+  "Contratación directa",
+  "Mínima cuantía",
+  "Selección abreviada menor cuantía",
+  "Concurso de méritos abierto",
   "Contratación régimen especial",
-  "Contratación Régimen Especial (con ofertas)",
-  "Asociación Público Privada",
-] as const;
+];
 
 export default {
   getRecentProcesses,

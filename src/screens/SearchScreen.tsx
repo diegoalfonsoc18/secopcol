@@ -11,6 +11,8 @@ import {
   Alert,
   Modal,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -571,7 +573,9 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
       {/* Modal Departamentos */}
       <Modal visible={showDeptModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalOverlay}>
           <View style={[styles.modalContent, { paddingBottom: insets.bottom }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Departamento</Text>
@@ -609,6 +613,7 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             <FlatList
               data={filteredDepartments}
               keyExtractor={(item) => item}
+              keyboardShouldPersistTaps="handled"
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.modalItem}
@@ -630,12 +635,14 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               }
             />
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Modal Municipios */}
       <Modal visible={showMuniModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalOverlay}>
           <View style={[styles.modalContent, { paddingBottom: insets.bottom }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Municipio</Text>
@@ -673,6 +680,7 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             <FlatList
               data={filteredMunicipalities}
               keyExtractor={(item) => item}
+              keyboardShouldPersistTaps="handled"
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.modalItem}
@@ -696,7 +704,7 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               }
             />
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Modal Filtros Guardados */}
