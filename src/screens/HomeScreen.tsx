@@ -31,16 +31,16 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const styles = createStyles(colors);
 
-  // Configuración de tipos de contrato
+  // Configuración de tipos de contrato (usando colores del theme)
   const tipoContratoConfig: Record<string, { color: string; icon: string }> = {
-    Obra: { color: "#FF9500", icon: "construct-outline" },
+    Obra: { color: colors.warning, icon: "construct-outline" },
     Consultoría: { color: "#5856D6", icon: "bulb-outline" },
     "Prestación de servicios": {
       color: colors.accent,
       icon: "briefcase-outline",
     },
     Suministro: { color: colors.success, icon: "cube-outline" },
-    Compraventa: { color: "#FF2D55", icon: "cart-outline" },
+    Compraventa: { color: colors.danger, icon: "cart-outline" },
     Interventoría: { color: "#AF52DE", icon: "eye-outline" },
   };
 

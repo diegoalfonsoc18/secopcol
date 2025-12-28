@@ -107,7 +107,6 @@ const buildQuery = (params: {
 const fetchSecop = async (query: string): Promise<SecopProcess[]> => {
   try {
     const url = `${SECOP_API_URL}?${query}`;
-    console.log("SECOP API URL:", url);
 
     const response = await fetch(url, {
       method: "GET",

@@ -17,6 +17,7 @@ import {
 } from "./src/screens/index";
 import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
+import { useProcessesStore } from "./src/store/processesStore";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -87,6 +88,8 @@ function FavoritesStackNavigator() {
 // ============================================
 function TabNavigator() {
   const { colors } = useTheme();
+  const { favorites } = useProcessesStore();
+  const favoritesCount = favorites.length;
 
   return (
     <Tab.Navigator
@@ -96,17 +99,27 @@ function TabNavigator() {
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
           backgroundColor: colors.tabBarBackground,
-          borderTopWidth: 0.5,
+          borderTopWidth: 0,
           borderTopColor: colors.tabBarBorder,
           paddingTop: 8,
           paddingBottom: Platform.OS === "ios" ? 24 : 12,
           height: Platform.OS === "ios" ? 88 : 70,
+          borderTopLeftRadius: 28,
+          borderTopRightRadius: 28,
+          overflow: "hidden",
           ...Platform.select({
             ios: {
               position: "absolute",
               bottom: 0,
               left: 0,
               right: 0,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: -4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 12,
+            },
+            android: {
+              elevation: 15,
             },
           }),
         },
@@ -155,6 +168,15 @@ function TabNavigator() {
         component={FavoritesStackNavigator}
         options={{
           tabBarLabel: "Favoritos",
+          tabBarBadge: favoritesCount > 0 ? favoritesCount : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: colors.danger,
+            fontSize: 10,
+            fontWeight: "700",
+            minWidth: 18,
+            height: 18,
+            lineHeight: 18,
+          },
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name={focused ? "heart" : "heart-outline"}

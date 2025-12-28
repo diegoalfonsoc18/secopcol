@@ -1,13 +1,8 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-} from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SecopProcess } from "../types/index";
-import { spacing, borderRadius } from "../theme";
+import { spacing, borderRadius, shadows, typography } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 
 // ============================================
@@ -20,19 +15,19 @@ const getRelativeTime = (dateString: string | undefined): string => {
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return "";
-    
+
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
-    
+
     if (diffMins < 1) return "ahora";
     if (diffMins < 60) return `hace ${diffMins}m`;
     if (diffHours < 24) return `hace ${diffHours}h`;
     if (diffDays === 1) return "ayer";
     if (diffDays < 7) return `hace ${diffDays}d`;
-    
+
     return "";
   } catch {
     return "";
@@ -61,11 +56,11 @@ const isNewProcess = (dateString: string | undefined): boolean => {
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return false;
-    
+
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffHours = diffMs / 3600000;
-    
+
     return diffHours < 48; // Menos de 48 horas
   } catch {
     return false;
@@ -101,20 +96,67 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
   const styles = createStyles(colors);
 
   // Configuración de fases
-  const phaseConfig: Record<string, { color: string; bg: string; icon: string }> = {
-    "Borrador": { color: colors.textSecondary, bg: colors.backgroundTertiary, icon: "document-outline" },
-    "Planeación": { color: colors.warning, bg: colors.warningLight, icon: "clipboard-outline" },
-    "Selección": { color: colors.accent, bg: colors.accentLight, icon: "search-outline" },
-    "Contratación": { color: colors.accent, bg: colors.accentLight, icon: "document-text-outline" },
-    "Ejecución": { color: colors.success, bg: colors.successLight, icon: "play-circle-outline" },
-    "Liquidación": { color: colors.warning, bg: colors.warningLight, icon: "checkmark-done-outline" },
-    "Terminado": { color: colors.textSecondary, bg: colors.backgroundTertiary, icon: "checkmark-circle-outline" },
-    "Cancelado": { color: colors.danger, bg: colors.dangerLight, icon: "close-circle-outline" },
-    "Suspendido": { color: colors.warning, bg: colors.warningLight, icon: "pause-circle-outline" },
-    "Desierto": { color: colors.textSecondary, bg: colors.backgroundTertiary, icon: "remove-circle-outline" },
+  const phaseConfig: Record<
+    string,
+    { color: string; bg: string; icon: string }
+  > = {
+    Borrador: {
+      color: colors.textSecondary,
+      bg: colors.backgroundTertiary,
+      icon: "document-outline",
+    },
+    Planeación: {
+      color: colors.warning,
+      bg: colors.warningLight,
+      icon: "clipboard-outline",
+    },
+    Selección: {
+      color: colors.accent,
+      bg: colors.accentLight,
+      icon: "search-outline",
+    },
+    Contratación: {
+      color: colors.accent,
+      bg: colors.accentLight,
+      icon: "document-text-outline",
+    },
+    Ejecución: {
+      color: colors.success,
+      bg: colors.successLight,
+      icon: "play-circle-outline",
+    },
+    Liquidación: {
+      color: colors.warning,
+      bg: colors.warningLight,
+      icon: "checkmark-done-outline",
+    },
+    Terminado: {
+      color: colors.textSecondary,
+      bg: colors.backgroundTertiary,
+      icon: "checkmark-circle-outline",
+    },
+    Cancelado: {
+      color: colors.danger,
+      bg: colors.dangerLight,
+      icon: "close-circle-outline",
+    },
+    Suspendido: {
+      color: colors.warning,
+      bg: colors.warningLight,
+      icon: "pause-circle-outline",
+    },
+    Desierto: {
+      color: colors.textSecondary,
+      bg: colors.backgroundTertiary,
+      icon: "remove-circle-outline",
+    },
   };
 
-  const defaultPhase = { color: colors.textSecondary, bg: colors.backgroundTertiary, icon: "help-circle-outline" };
+  const defaultPhase = {
+    color: colors.textSecondary,
+    bg: colors.backgroundTertiary,
+    icon: "help-circle-outline",
+  };
 
   const fase = getProcessPhase(process);
   const phaseStyle = phaseConfig[fase] || defaultPhase;
@@ -126,8 +168,7 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
       style={({ pressed }) => [
         styles.container,
         pressed && styles.containerPressed,
-      ]}
-    >
+      ]}>
       {/* Header: ID y Badges */}
       <View style={styles.header}>
         <View style={styles.idContainer}>
@@ -141,13 +182,18 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
           {/* Badge NUEVO */}
           {isNew && (
             <View style={styles.newBadge}>
-              <Ionicons name="sparkles" size={10} color="#FFFFFF" />
+              <Ionicons
+                name="sparkles"
+                size={10}
+                color={colors.backgroundSecondary}
+              />
               <Text style={styles.newBadgeText}>NUEVO</Text>
             </View>
           )}
 
           {/* Badge Fase */}
-          <View style={[styles.statusBadge, { backgroundColor: phaseStyle.bg }]}>
+          <View
+            style={[styles.statusBadge, { backgroundColor: phaseStyle.bg }]}>
             <Ionicons
               name={phaseStyle.icon as any}
               size={12}
@@ -174,7 +220,11 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
 
       {/* Entidad */}
       <View style={styles.infoRow}>
-        <Ionicons name="business-outline" size={14} color={colors.textSecondary} />
+        <Ionicons
+          name="business-outline"
+          size={14}
+          color={colors.textSecondary}
+        />
         <Text style={styles.infoText} numberOfLines={1}>
           {truncateText(process.entidad, 50)}
         </Text>
@@ -183,10 +233,16 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
       {/* Ciudad / Departamento */}
       {process.ciudad_entidad && (
         <View style={styles.infoRow}>
-          <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
+          <Ionicons
+            name="location-outline"
+            size={14}
+            color={colors.textSecondary}
+          />
           <Text style={styles.infoText} numberOfLines={1}>
             {process.ciudad_entidad}
-            {process.departamento_entidad ? `, ${process.departamento_entidad}` : ""}
+            {process.departamento_entidad
+              ? `, ${process.departamento_entidad}`
+              : ""}
           </Text>
         </View>
       )}
@@ -229,11 +285,7 @@ const createStyles = (colors: any) =>
       borderRadius: borderRadius.lg,
       padding: spacing.lg,
       marginBottom: spacing.md,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.06,
-      shadowRadius: 8,
-      elevation: 2,
+      ...shadows.card,
     },
     containerPressed: {
       opacity: 0.95,
@@ -270,7 +322,7 @@ const createStyles = (colors: any) =>
     newBadge: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "#FF9500",
+      backgroundColor: colors.warning,
       paddingHorizontal: spacing.sm,
       paddingVertical: 4,
       borderRadius: borderRadius.full,
@@ -279,7 +331,7 @@ const createStyles = (colors: any) =>
     newBadgeText: {
       fontSize: 10,
       fontWeight: "700",
-      color: "#FFFFFF",
+      color: colors.backgroundSecondary,
       letterSpacing: 0.5,
     },
     statusBadge: {

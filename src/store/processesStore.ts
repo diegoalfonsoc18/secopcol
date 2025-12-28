@@ -1,11 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  SecopProcess,
-  getRecentProcesses,
-  searchProcesses,
-} from "../api/secop";
+import { SecopProcess, getRecentProcesses, advancedSearch } from "../api/secop";
 
 // ============================================
 // TIPOS DEL STORE
@@ -69,11 +65,11 @@ export const useProcessesStore = create<ProcessesState>()(
       // Cargar procesos recientes
       fetchRecentProcesses: async (limit = 20) => {
         set({ loading: true, error: null });
-        console.log("📅 Cargando procesos recientes...");
+        // console.log("📅 Cargando procesos recientes...");
         try {
           const data = await getRecentProcesses(limit);
           set({ processes: data, loading: false });
-          console.log(`✅ Procesos recientes cargados: ${data.length}`);
+          // console.log(`✅ Procesos recientes cargados: ${data.length}`);
         } catch (error) {
           const message =
             error instanceof Error ? error.message : "Error de conexión";
@@ -89,15 +85,16 @@ export const useProcessesStore = create<ProcessesState>()(
         keyword?: string
       ) => {
         set({ loading: true, error: null });
-        console.log("🔍 Buscando procesos...", {
-          municipality,
-          status,
-          keyword,
-        });
+        // console.log("🔍 Buscando procesos...", { municipality, status, keyword });
         try {
-          const data = await searchProcesses(municipality, status, keyword, 50);
+          const data = await advancedSearch({
+            municipio: municipality,
+            fase: status,
+            keyword: keyword,
+            limit: 50,
+          });
           set({ processes: data, loading: false });
-          console.log(`✅ Procesos encontrados: ${data.length}`);
+          // console.log(`✅ Procesos encontrados: ${data.length}`);
         } catch (error) {
           const message =
             error instanceof Error ? error.message : "Error de conexión";
@@ -118,7 +115,7 @@ export const useProcessesStore = create<ProcessesState>()(
         ) {
           const newFavorites = [process, ...favorites];
           set({ favorites: newFavorites });
-          console.log(`❤️ Agregado a favoritos: ${process.id_del_proceso}`);
+          // console.log(`❤️ Agregado a favoritos: ${process.id_del_proceso}`);
         }
       },
 
@@ -128,7 +125,7 @@ export const useProcessesStore = create<ProcessesState>()(
           (f) => f.id_del_proceso !== processId
         );
         set({ favorites: newFavorites });
-        console.log(`💔 Eliminado de favoritos: ${processId}`);
+        // console.log(`💔 Eliminado de favoritos: ${processId}`);
       },
 
       isFavorite: (processId: string) => {
@@ -138,7 +135,7 @@ export const useProcessesStore = create<ProcessesState>()(
 
       clearFavorites: () => {
         set({ favorites: [] });
-        console.log("🗑️ Favoritos limpiados");
+        // console.log("🗑️ Favoritos limpiados");
       },
 
       // Acciones de filtros
@@ -173,7 +170,7 @@ export const useProcessesStore = create<ProcessesState>()(
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
-        console.log("💾 Favoritos cargados desde almacenamiento");
+        // console.log("💾 Favoritos cargados desde almacenamiento");
       },
     }
   )

@@ -483,7 +483,7 @@ const createStyles = (colors: any) =>
     avatarText: {
       fontSize: 20,
       fontWeight: "700",
-      color: "#FFFFFF",
+      color: colors.backgroundSecondary,
     },
     profileInfo: {
       flex: 1,

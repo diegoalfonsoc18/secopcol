@@ -13,7 +13,7 @@ export const colors = {
   textTertiary: "#AEAEB2",
 
   // Accent - Azul Apple
-  accent: "#007AFF",
+  accent: "#ff0000ff",
   accentLight: "#E3F2FF",
 
   // Status colors
@@ -207,3 +207,4 @@ export default {
   shadows,
   contractStatusConfig,
 };
+export type ThemeColors = typeof colors;

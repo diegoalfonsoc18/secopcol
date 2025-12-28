@@ -257,9 +257,14 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
 
   const styles = createStyles(colors);
 
-  // Tipos de contrato disponibles para favoritos (colores iguales a HomeScreen)
+  // Tipos de contrato disponibles para favoritos (colores del theme)
   const TIPOS_FAVORITOS = [
-    { id: "Obra", label: "Obra", icon: "construct-outline", color: "#FF9500" },
+    {
+      id: "Obra",
+      label: "Obra",
+      icon: "construct-outline",
+      color: colors.warning,
+    },
     {
       id: "Prestación de servicios",
       label: "Servicios",
@@ -288,19 +293,19 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
       id: "Compraventa",
       label: "Compraventa",
       icon: "cart-outline",
-      color: "#FF2D55",
+      color: colors.danger,
     },
     {
       id: "Arrendamiento",
       label: "Arrendamiento",
       icon: "home-outline",
-      color: "#34C759",
+      color: colors.success,
     },
     {
       id: "Concesión",
       label: "Concesión",
       icon: "key-outline",
-      color: "#007AFF",
+      color: colors.accent,
     },
   ];
 
@@ -490,7 +495,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
                   <Ionicons
                     name={tipo.icon as keyof typeof Ionicons.glyphMap}
                     size={16}
-                    color={isSelected ? "#FFFFFF" : tipo.color}
+                    color={isSelected ? colors.backgroundSecondary : tipo.color}
                   />
                   <Text
                     style={[
@@ -503,7 +508,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
                     <Ionicons
                       name="checkmark-circle"
                       size={14}
-                      color="#FFFFFF"
+                      color={colors.backgroundSecondary}
                     />
                   )}
                 </TouchableOpacity>
@@ -1134,7 +1139,7 @@ const createStyles = (colors: any) =>
       color: colors.backgroundSecondary,
     },
     chipTextSelectedFavorite: {
-      color: "#FFFFFF",
+      color: colors.backgroundSecondary,
     },
     emptyHint: {
       fontSize: 13,

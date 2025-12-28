@@ -1,6 +1,7 @@
 import React, { useRef, useCallback, useState } from "react";
 import {
   Animated,
+  FlatList,
   StyleSheet,
   Text,
   View,
@@ -128,7 +129,11 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
             <TouchableOpacity
               style={styles.deleteButton}
               onPress={() => handleRemoveFavorite(process)}>
-              <Ionicons name="trash-outline" size={24} color="#FFFFFF" />
+              <Ionicons
+                name="trash-outline"
+                size={24}
+                color={colors.backgroundSecondary}
+              />
               <Text style={styles.deleteText}>Eliminar</Text>
             </TouchableOpacity>
           </Animated.View>
@@ -421,7 +426,7 @@ const createStyles = (colors: any) =>
       borderRadius: borderRadius.md,
     },
     deleteText: {
-      color: "#FFFFFF",
+      color: colors.backgroundSecondary,
       fontSize: 12,
       fontWeight: "600",
       marginTop: 4,

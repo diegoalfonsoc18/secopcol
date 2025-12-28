@@ -1,6 +1,6 @@
 // Hook para usar DIVIPOLA en componentes React
 import { useState, useEffect, useCallback } from "react";
-import { getDepartments, getMunicipalities } from "../../services/divipola";
+import { getDepartments, getMunicipalities } from "../services/divipola";
 
 interface UseDivipolaReturn {
   departments: string[];

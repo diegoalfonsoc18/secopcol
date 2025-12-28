@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
-import { spacing, borderRadius } from "../theme";
+import { spacing, borderRadius, colors as themeColors } from "../theme";
 
 // ============================================
 // TIPOS DE CONTRATO DISPONIBLES
@@ -22,7 +22,7 @@ const CONTRACT_TYPES = [
     label: "Obra",
     description: "Construcción, infraestructura, obras civiles",
     icon: "construct-outline",
-    color: "#FF9500",
+    color: themeColors.warning,
   },
   {
     id: "Consultoría",
@@ -36,21 +36,21 @@ const CONTRACT_TYPES = [
     label: "Prestación de Servicios",
     description: "Servicios profesionales y técnicos",
     icon: "briefcase-outline",
-    color: "#007AFF",
+    color: themeColors.accent,
   },
   {
     id: "Suministro",
     label: "Suministro",
     description: "Entrega periódica de bienes",
     icon: "cube-outline",
-    color: "#34C759",
+    color: themeColors.success,
   },
   {
     id: "Compraventa",
     label: "Compraventa",
     description: "Adquisición de bienes muebles",
     icon: "cart-outline",
-    color: "#FF2D55",
+    color: themeColors.danger,
   },
   {
     id: "Interventoría",
@@ -64,14 +64,14 @@ const CONTRACT_TYPES = [
     label: "Arrendamiento",
     description: "Alquiler de bienes muebles e inmuebles",
     icon: "home-outline",
-    color: "#00C7BE",
+    color: themeColors.success,
   },
   {
     id: "Concesión",
     label: "Concesión",
     description: "Explotación de bienes o servicios públicos",
     icon: "key-outline",
-    color: "#FF9F0A",
+    color: themeColors.warning,
   },
 ];
 

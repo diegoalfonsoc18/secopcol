@@ -35,7 +35,7 @@ export const lightColors = {
   textTertiary: "#8E8E93",
 
   // Accent
-  accent: "#007AFF",
+  accent: "#ff0000",
   accentLight: "rgba(0, 122, 255, 0.12)",
 
   // Status
@@ -67,7 +67,7 @@ export const darkColors = {
   textTertiary: "#636366",
 
   // Accent
-  accent: "#0A84FF",
+  accent: "#e1ff00",
   accentLight: "rgba(10, 132, 255, 0.2)",
 
   // Status
