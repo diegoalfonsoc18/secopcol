@@ -257,20 +257,51 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
 
   const styles = createStyles(colors);
 
-  // Tipos de contrato disponibles para favoritos
+  // Tipos de contrato disponibles para favoritos (colores iguales a HomeScreen)
   const TIPOS_FAVORITOS = [
-    { id: "Obra", label: "Obra", icon: "construct-outline" },
+    { id: "Obra", label: "Obra", icon: "construct-outline", color: "#FF9500" },
     {
       id: "Prestación de servicios",
       label: "Servicios",
-      icon: "people-outline",
+      icon: "briefcase-outline",
+      color: colors.accent,
     },
-    { id: "Suministro", label: "Suministro", icon: "cube-outline" },
-    { id: "Consultoría", label: "Consultoría", icon: "bulb-outline" },
-    { id: "Interventoría", label: "Interventoría", icon: "eye-outline" },
-    { id: "Compraventa", label: "Compraventa", icon: "cart-outline" },
-    { id: "Arrendamiento", label: "Arrendamiento", icon: "home-outline" },
-    { id: "Concesión", label: "Concesión", icon: "key-outline" },
+    {
+      id: "Suministro",
+      label: "Suministro",
+      icon: "cube-outline",
+      color: colors.success,
+    },
+    {
+      id: "Consultoría",
+      label: "Consultoría",
+      icon: "bulb-outline",
+      color: "#5856D6",
+    },
+    {
+      id: "Interventoría",
+      label: "Interventoría",
+      icon: "eye-outline",
+      color: "#AF52DE",
+    },
+    {
+      id: "Compraventa",
+      label: "Compraventa",
+      icon: "cart-outline",
+      color: "#FF2D55",
+    },
+    {
+      id: "Arrendamiento",
+      label: "Arrendamiento",
+      icon: "home-outline",
+      color: "#34C759",
+    },
+    {
+      id: "Concesión",
+      label: "Concesión",
+      icon: "key-outline",
+      color: "#007AFF",
+    },
   ];
 
   // Toggle tipo de contrato favorito
@@ -417,7 +448,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + 40 },
+          { paddingBottom: insets.bottom + 120 },
         ]}>
         {/* Sección: Tipos de Contrato Favoritos */}
         <View style={styles.section}>
@@ -448,14 +479,18 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
                   key={tipo.id}
                   style={[
                     styles.chip,
-                    isSelected && styles.chipSelectedFavorite,
+                    { borderColor: tipo.color },
+                    isSelected && {
+                      backgroundColor: tipo.color,
+                      borderColor: tipo.color,
+                    },
                   ]}
                   onPress={() => handleToggleFavoriteType(tipo.id)}
                   activeOpacity={0.7}>
                   <Ionicons
                     name={tipo.icon as keyof typeof Ionicons.glyphMap}
                     size={16}
-                    color={isSelected ? "#FFFFFF" : colors.danger}
+                    color={isSelected ? "#FFFFFF" : tipo.color}
                   />
                   <Text
                     style={[

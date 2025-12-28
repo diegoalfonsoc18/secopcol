@@ -90,7 +90,7 @@ export const AppSettingsScreen: React.FC<{ navigation: any }> = ({
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + 40 },
+          { paddingBottom: insets.bottom + 120 },
         ]}>
         {/* Sección: Cuenta */}
         <View style={styles.section}>
