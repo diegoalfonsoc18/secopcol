@@ -1,4 +1,3 @@
-export * from "./Notificaciones";
-export { default as NotificationService } from "./Notificaciones";
+export * from "./notifications";
 export * from "./exportService";
-export { default as ExportService } from "./exportService";
+export * from "./divipola";

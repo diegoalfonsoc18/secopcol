@@ -1,13 +1,17 @@
 // Servicio DIVIPOLA - División Político Administrativa de Colombia
-// API: https://www.datos.gov.co/resource/xdk5-pm3f.json
+// API: https://www.datos.gov.co/resource/gdxc-w37w.json (1,122 municipios)
+// Campos: cod_dpto, dpto, cod_mpio, nom_mpio, tipo_municipio, longitud, latitud
 
-const DIVIPOLA_API = "https://www.datos.gov.co/resource/xdk5-pm3f.json";
+const DIVIPOLA_API = "https://www.datos.gov.co/resource/gdxc-w37w.json";
 
 export interface DivipolaMunicipality {
-  c_digo_dane_del_departamento: string;
-  departamento: string;
-  c_digo_dane_del_municipio: string;
-  municipio: string;
+  cod_dpto: string;
+  dpto: string;
+  cod_mpio: string;
+  nom_mpio: string;
+  tipo_municipio: string;
+  longitud: string;
+  latitud: string;
 }
 
 // Cache en memoria
@@ -22,14 +26,23 @@ export async function getDepartments(): Promise<string[]> {
 
   try {
     const response = await fetch(
-      `${DIVIPOLA_API}?$select=departamento&$group=departamento&$order=departamento`
+      `${DIVIPOLA_API}?$select=dpto&$group=dpto&$order=dpto`,
+      {
+        headers: {
+          Accept: "application/json",
+        },
+      }
     );
 
-    if (!response.ok) throw new Error("Error fetching departments");
+    if (!response.ok) {
+      console.log("DIVIPOLA API error, usando fallback");
+      return FALLBACK_DEPARTMENTS;
+    }
 
-    const data = await response.json();
-    departmentsCache = data.map(
-      (d: { departamento: string }) => d.departamento
+    const data: { dpto: string }[] = await response.json();
+    departmentsCache = data.map((d) => d.dpto);
+    console.log(
+      `✅ ${departmentsCache.length} departamentos cargados de DIVIPOLA`
     );
     return departmentsCache;
   } catch (error) {
@@ -50,18 +63,30 @@ export async function getMunicipalities(
   }
 
   try {
-    const encoded = encodeURIComponent(departamento);
     const response = await fetch(
-      `${DIVIPOLA_API}?departamento=${encoded}&$order=municipio&$limit=500`
+      `${DIVIPOLA_API}?dpto=${encodeURIComponent(
+        departamento
+      )}&$select=nom_mpio&$order=nom_mpio`,
+      {
+        headers: {
+          Accept: "application/json",
+        },
+      }
     );
 
-    if (!response.ok) throw new Error("Error fetching municipalities");
+    if (!response.ok) {
+      console.log(`DIVIPOLA API error para ${departamento}, usando fallback`);
+      return FALLBACK_MUNICIPALITIES[departamento] || [];
+    }
 
-    const data: DivipolaMunicipality[] = await response.json();
-    const municipalities = data.map((m) => m.municipio);
+    const data: { nom_mpio: string }[] = await response.json();
+    const municipalities = data.map((m) => m.nom_mpio);
 
     // Cache result
     municipalitiesCache.set(departamento, municipalities);
+    console.log(
+      `✅ ${municipalities.length} municipios cargados para ${departamento}`
+    );
     return municipalities;
   } catch (error) {
     console.error(`Error loading municipalities for ${departamento}:`, error);
@@ -70,41 +95,24 @@ export async function getMunicipalities(
 }
 
 /**
- * Obtiene código DANE del municipio
- */
-export async function getMunicipalityCode(
-  departamento: string,
-  municipio: string
-): Promise<string | null> {
-  try {
-    const response = await fetch(
-      `${DIVIPOLA_API}?departamento=${encodeURIComponent(
-        departamento
-      )}&municipio=${encodeURIComponent(municipio)}&$limit=1`
-    );
-
-    if (!response.ok) return null;
-
-    const data: DivipolaMunicipality[] = await response.json();
-    return data[0]?.c_digo_dane_del_municipio || null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Busca municipios por nombre (útil para autocompletado)
+ * Busca municipios por texto
  */
 export async function searchMunicipalities(
   query: string
 ): Promise<DivipolaMunicipality[]> {
   try {
     const response = await fetch(
-      `${DIVIPOLA_API}?$where=upper(municipio) like upper('%${query}%')&$order=municipio&$limit=20`
+      `${DIVIPOLA_API}?$where=upper(nom_mpio) like upper('%25${encodeURIComponent(
+        query
+      )}%25')&$order=nom_mpio&$limit=20`,
+      {
+        headers: {
+          Accept: "application/json",
+        },
+      }
     );
 
     if (!response.ok) return [];
-
     return await response.json();
   } catch {
     return [];
@@ -120,7 +128,7 @@ export function clearCache(): void {
 }
 
 // ============================================
-// FALLBACK DATA (offline/error)
+// FALLBACK DATA (cuando la API falla)
 // ============================================
 const FALLBACK_DEPARTMENTS = [
   "AMAZONAS",
@@ -167,12 +175,13 @@ const FALLBACK_MUNICIPALITIES: Record<string, string[]> = {
     "APARTADÓ",
     "RIONEGRO",
     "TURBO",
+    "CAUCASIA",
   ],
-  ATLÁNTICO: ["BARRANQUILLA", "SOLEDAD", "MALAMBO", "SABANALARGA"],
+  ATLÁNTICO: ["BARRANQUILLA", "SOLEDAD", "MALAMBO", "SABANALARGA", "GALAPA"],
   "BOGOTÁ, D.C.": ["BOGOTÁ, D.C."],
-  BOLÍVAR: ["CARTAGENA DE INDIAS", "MAGANGUÉ", "TURBACO"],
-  BOYACÁ: ["TUNJA", "DUITAMA", "SOGAMOSO", "CHIQUINQUIRÁ"],
-  CALDAS: ["MANIZALES", "LA DORADA", "CHINCHINÁ"],
+  BOLÍVAR: ["CARTAGENA DE INDIAS", "MAGANGUÉ", "TURBACO", "ARJONA"],
+  BOYACÁ: ["TUNJA", "DUITAMA", "SOGAMOSO", "CHIQUINQUIRÁ", "PAIPA"],
+  CALDAS: ["MANIZALES", "LA DORADA", "CHINCHINÁ", "VILLAMARÍA"],
   CUNDINAMARCA: [
     "SOACHA",
     "FACATATIVÁ",
@@ -180,22 +189,36 @@ const FALLBACK_MUNICIPALITIES: Record<string, string[]> = {
     "CHÍA",
     "FUSAGASUGÁ",
     "GIRARDOT",
+    "MOSQUERA",
+    "MADRID",
+    "FUNZA",
     "TOCANCIPÁ",
+    "CAJICÁ",
+    "SOPÓ",
+    "COTA",
+    "LA CALERA",
   ],
-  HUILA: ["NEIVA", "PITALITO", "GARZÓN"],
-  META: ["VILLAVICENCIO", "ACACÍAS", "GRANADA"],
-  NARIÑO: ["PASTO", "TUMACO", "IPIALES"],
-  "NORTE DE SANTANDER": ["CÚCUTA", "OCAÑA", "PAMPLONA"],
-  QUINDÍO: ["ARMENIA", "CALARCÁ", "MONTENEGRO"],
-  RISARALDA: ["PEREIRA", "DOSQUEBRADAS", "SANTA ROSA DE CABAL"],
+  HUILA: ["NEIVA", "PITALITO", "GARZÓN", "LA PLATA"],
+  META: ["VILLAVICENCIO", "ACACÍAS", "GRANADA", "PUERTO LÓPEZ"],
+  NARIÑO: ["PASTO", "TUMACO", "IPIALES", "TÚQUERRES"],
+  "NORTE DE SANTANDER": [
+    "CÚCUTA",
+    "OCAÑA",
+    "PAMPLONA",
+    "VILLA DEL ROSARIO",
+    "LOS PATIOS",
+  ],
+  QUINDÍO: ["ARMENIA", "CALARCÁ", "MONTENEGRO", "LA TEBAIDA", "QUIMBAYA"],
+  RISARALDA: ["PEREIRA", "DOSQUEBRADAS", "SANTA ROSA DE CABAL", "LA VIRGINIA"],
   SANTANDER: [
     "BUCARAMANGA",
     "FLORIDABLANCA",
     "GIRÓN",
     "PIEDECUESTA",
     "BARRANCABERMEJA",
+    "SAN GIL",
   ],
-  TOLIMA: ["IBAGUÉ", "ESPINAL", "MELGAR"],
+  TOLIMA: ["IBAGUÉ", "ESPINAL", "MELGAR", "HONDA", "MARIQUITA"],
   "VALLE DEL CAUCA": [
     "CALI",
     "BUENAVENTURA",
@@ -203,13 +226,14 @@ const FALLBACK_MUNICIPALITIES: Record<string, string[]> = {
     "TULUÁ",
     "CARTAGO",
     "BUGA",
+    "JAMUNDÍ",
+    "YUMBO",
   ],
 };
 
 export default {
   getDepartments,
   getMunicipalities,
-  getMunicipalityCode,
   searchMunicipalities,
   clearCache,
 };
