@@ -276,17 +276,28 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setError(null);
   };
 
-  // Seleccionar departamento
+  // Seleccionar/Deseleccionar departamento
   const handleSelectDept = (dept: string) => {
-    setSelectedDepartamento(dept);
-    setSelectedMunicipio("");
+    if (selectedDepartamento === dept) {
+      // Si es el mismo, limpiar
+      setSelectedDepartamento("");
+      setSelectedMunicipio("");
+    } else {
+      setSelectedDepartamento(dept);
+      setSelectedMunicipio("");
+    }
     setShowDeptModal(false);
     setDeptSearchText("");
   };
 
-  // Seleccionar municipio
+  // Seleccionar/Deseleccionar municipio
   const handleSelectMuni = (muni: string) => {
-    setSelectedMunicipio(muni);
+    if (selectedMunicipio === muni) {
+      // Si es el mismo, limpiar
+      setSelectedMunicipio("");
+    } else {
+      setSelectedMunicipio(muni);
+    }
     setShowMuniModal(false);
     setMuniSearchText("");
   };

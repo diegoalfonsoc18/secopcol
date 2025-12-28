@@ -35,7 +35,7 @@ export const lightColors = {
   textTertiary: "#8E8E93",
 
   // Accent
-  accent: "#0037ff",
+  accent: "#007AFF",
   accentLight: "rgba(0, 122, 255, 0.12)",
 
   // Status
@@ -53,6 +53,9 @@ export const lightColors = {
   // Tab Bar
   tabBarBackground: "rgba(255, 255, 255, 0.94)",
   tabBarBorder: "rgba(0, 0, 0, 0.1)",
+
+  // Button
+  buttonBackground: "#ffff",
 };
 
 export const darkColors = {
@@ -67,7 +70,7 @@ export const darkColors = {
   textTertiary: "#636366",
 
   // Accent
-  accent: "#e1ff00",
+  accent: "#0A84FF",
   accentLight: "rgba(10, 132, 255, 0.2)",
 
   // Status
@@ -85,6 +88,9 @@ export const darkColors = {
   // Tab Bar
   tabBarBackground: "rgba(28, 28, 30, 0.94)",
   tabBarBorder: "rgba(255, 255, 255, 0.1)",
+
+  // Button
+  buttonBackground: "#fff",
 };
 
 // ============================================

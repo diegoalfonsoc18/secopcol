@@ -546,11 +546,11 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
                 value={settings.enabled}
                 onValueChange={handleToggleNotifications}
                 trackColor={{
-                  false: colors.backgroundTertiary,
+                  false: colors.accentLight,
                   true: colors.accentLight,
                 }}
                 thumbColor={
-                  settings.enabled ? colors.accent : colors.textTertiary
+                  settings.enabled ? colors.accent : colors.buttonBackground
                 }
               />
             </View>
