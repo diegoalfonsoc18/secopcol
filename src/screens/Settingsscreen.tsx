@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { spacing, borderRadius } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
+import { useHaptics } from "../hooks/useHaptics";
 import {
   getDepartments,
   getMunicipalities,
@@ -335,6 +336,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const haptics = useHaptics();
   const { preferences, updatePreferences } = useAuth();
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
@@ -403,6 +405,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
 
   // Toggle tipo de contrato favorito
   const handleToggleFavoriteType = async (tipoId: string) => {
+    haptics.selection();
     const current = preferences.selectedContractTypes || [];
     const updated = current.includes(tipoId)
       ? current.filter((t) => t !== tipoId)
@@ -447,6 +450,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
   };
 
   const handleRemoveMunicipality = async (municipality: string) => {
+    haptics.warning();
     Alert.alert(
       "Eliminar municipio",
       `¿Dejar de recibir alertas de ${municipality}?`,
@@ -468,11 +472,13 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
   };
 
   const handleToggleModality = async (modalityId: string) => {
+    haptics.selection();
     const updated = await toggleWatchedModality(modalityId);
     setSettings((prev) => ({ ...prev, watchedModalities: updated }));
   };
 
   const handleToggleContractType = async (typeId: string) => {
+    haptics.selection();
     const updated = await toggleWatchedContractType(typeId);
     setSettings((prev) => ({ ...prev, watchedContractTypes: updated }));
   };
@@ -486,11 +492,13 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
       return;
     }
 
+    haptics.medium();
     setChecking(true);
     const newProcesses = await checkForNewProcesses();
     setChecking(false);
 
     if (newProcesses.length > 0) {
+      haptics.success();
       Alert.alert(
         "Nuevos procesos",
         `Se encontraron ${newProcesses.length} procesos nuevos en tus municipios de interés.`
@@ -772,6 +780,10 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
             )}
           </View>
 
+          <Text style={styles.sectionDesc}>
+            Filtra por modalidad. Sin selección = todas las modalidades.
+          </Text>
+
           <View style={styles.chipsGrid}>
             {MODALIDADES_CONTRATACION.map((modalidad) => {
               const isSelected = settings.watchedModalities.includes(
@@ -827,6 +839,10 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
               </View>
             )}
           </View>
+
+          <Text style={styles.sectionDesc}>
+            Filtra por tipo. Sin selección = todos los tipos.
+          </Text>
 
           <View style={styles.chipsGrid}>
             {TIPOS_CONTRATO.map((tipo) => {

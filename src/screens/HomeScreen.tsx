@@ -12,12 +12,17 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { ProcessCard, DashboardSkeleton } from "../components/index";
+import {
+  ProcessCard,
+  DashboardSkeleton,
+  StaggeredItem,
+} from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
 import { spacing, borderRadius } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
+import { useHaptics } from "../hooks/useHaptics";
 
 // ============================================
 // COMPONENTE PRINCIPAL
@@ -25,6 +30,7 @@ import { useAuth } from "../context/AuthContext";
 export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const haptics = useHaptics();
   const { user, preferences } = useAuth();
   const { processes, loading, fetchRecentProcesses } = useProcessesStore();
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -90,22 +96,27 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   // Handlers
   const handleProcessPress = useCallback(
     (process: SecopProcess) => {
+      haptics.light();
       navigation.navigate("Detail", { process });
     },
-    [navigation]
+    [navigation, haptics]
   );
 
   const handleRefresh = useCallback(async () => {
+    haptics.medium();
     await fetchRecentProcesses(100);
-  }, [fetchRecentProcesses]);
+  }, [fetchRecentProcesses, haptics]);
 
   const handleViewAll = useCallback(() => {
+    haptics.light();
     navigation.navigate("Search");
-  }, [navigation]);
+  }, [navigation, haptics]);
 
   const renderProcess = useCallback(
-    ({ item }: { item: SecopProcess }) => (
-      <ProcessCard process={item} onPress={() => handleProcessPress(item)} />
+    ({ item, index }: { item: SecopProcess; index: number }) => (
+      <StaggeredItem index={index} staggerDelay={30}>
+        <ProcessCard process={item} onPress={() => handleProcessPress(item)} />
+      </StaggeredItem>
     ),
     [handleProcessPress]
   );

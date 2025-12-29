@@ -4,6 +4,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { Ionicons } from "@expo/vector-icons";
 import {
   HomeScreen,
@@ -104,8 +105,8 @@ function TabNavigator() {
           paddingTop: 8,
           paddingBottom: Platform.OS === "ios" ? 24 : 12,
           height: Platform.OS === "ios" ? 88 : 70,
-          borderTopLeftRadius: 28,
-          borderTopRightRadius: 28,
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
           overflow: "hidden",
           ...Platform.select({
             ios: {
@@ -308,7 +309,9 @@ export default function App() {
     <GestureHandlerRootView style={styles.container}>
       <ThemeProvider>
         <AuthProvider>
-          <AppContent />
+          <BottomSheetModalProvider>
+            <AppContent />
+          </BottomSheetModalProvider>
         </AuthProvider>
       </ThemeProvider>
     </GestureHandlerRootView>

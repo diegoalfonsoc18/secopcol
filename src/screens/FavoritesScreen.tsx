@@ -13,12 +13,13 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Swipeable } from "react-native-gesture-handler";
-import { ProcessCard } from "../components/index";
+import { ProcessCard, StaggeredItem } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
 import { spacing, borderRadius } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { exportFavorites } from "../services/exportService";
+import { useHaptics } from "../hooks/useHaptics";
 
 // ============================================
 // COMPONENTE PRINCIPAL
@@ -28,6 +29,7 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const haptics = useHaptics();
   const { favorites, removeFavorite } = useProcessesStore();
   const scrollY = useRef(new Animated.Value(0)).current;
   const [exporting, setExporting] = useState(false);
@@ -42,10 +44,13 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
       return;
     }
 
+    haptics.light();
     setExporting(true);
     try {
       await exportFavorites(favorites);
+      haptics.success();
     } catch (err) {
+      haptics.error();
       Alert.alert(
         "Error",
         err instanceof Error ? err.message : "No se pudo exportar"
@@ -77,13 +82,17 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
   // Handlers
   const handleProcessPress = useCallback(
     (process: SecopProcess) => {
+      haptics.light();
       navigation.navigate("Detail", { process });
     },
-    [navigation]
+    [navigation, haptics]
   );
 
   const handleRemoveFavorite = useCallback(
     (process: SecopProcess) => {
+      // Haptic feedback
+      haptics.warning();
+
       // Cerrar el swipeable
       const swipeable = swipeableRefs.current.get(process.id_del_proceso);
       if (swipeable) {
@@ -95,7 +104,7 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
         removeFavorite(process.id_del_proceso);
       }, 200);
     },
-    [removeFavorite]
+    [removeFavorite, haptics]
   );
 
   // Render del botón de eliminar (swipe right)
@@ -141,29 +150,31 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
       };
       return RightActions;
     },
-    [handleRemoveFavorite, styles]
+    [handleRemoveFavorite, styles, colors.backgroundSecondary]
   );
 
   // Render item con swipe
   const renderFavorite = useCallback(
-    ({ item }: { item: SecopProcess }) => (
-      <Swipeable
-        ref={(ref) => {
-          if (ref) {
-            swipeableRefs.current.set(item.id_del_proceso, ref);
-          }
-        }}
-        renderRightActions={createRightActions(item)}
-        rightThreshold={40}
-        overshootRight={false}
-        friction={2}>
-        <View style={styles.favoriteItem}>
-          <ProcessCard
-            process={item}
-            onPress={() => handleProcessPress(item)}
-          />
-        </View>
-      </Swipeable>
+    ({ item, index }: { item: SecopProcess; index: number }) => (
+      <StaggeredItem index={index} staggerDelay={40}>
+        <Swipeable
+          ref={(ref) => {
+            if (ref) {
+              swipeableRefs.current.set(item.id_del_proceso, ref);
+            }
+          }}
+          renderRightActions={createRightActions(item)}
+          rightThreshold={40}
+          overshootRight={false}
+          friction={2}>
+          <View style={styles.favoriteItem}>
+            <ProcessCard
+              process={item}
+              onPress={() => handleProcessPress(item)}
+            />
+          </View>
+        </Swipeable>
+      </StaggeredItem>
     ),
     [handleProcessPress, createRightActions, styles]
   );

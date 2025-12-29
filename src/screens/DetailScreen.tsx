@@ -14,6 +14,8 @@ import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
 import { spacing, borderRadius } from "../theme";
 import { useTheme } from "../context/ThemeContext";
+import { useHaptics } from "../hooks/useHaptics";
+import { FadeIn, SlideInUp } from "../components/Animations";
 
 // ============================================
 // UTILIDADES
@@ -73,6 +75,7 @@ const isAdjudicado = (process: SecopProcess): boolean => {
 export const DetailScreen = ({ route, navigation }: any) => {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const haptics = useHaptics();
   const { process } = route.params as { process: SecopProcess };
   const { isFavorite, addFavorite, removeFavorite } = useProcessesStore();
   const favorite = isFavorite(process.id_del_proceso);
@@ -147,30 +150,53 @@ export const DetailScreen = ({ route, navigation }: any) => {
 
   const handleToggleFavorite = () => {
     if (favorite) {
+      haptics.warning();
       removeFavorite(process.id_del_proceso);
     } else {
+      haptics.success();
       addFavorite(process);
     }
   };
 
   const handleShare = async () => {
+    haptics.light();
     try {
-      const message = `📋 Proceso SECOP II\n\n${
-        process.nombre_del_procedimiento || "Sin nombre"
-      }\n\n🏢 Entidad: ${process.entidad}\n📍 Ubicación: ${
-        process.ciudad_entidad
-      }, ${process.departamento_entidad}\n💰 Precio base: ${formatCurrency(
-        process.precio_base
-      )}\n📊 Fase: ${fase}${
-        adjudicado ? `\n✅ Adjudicado a: ${process.nombre_del_proveedor}` : ""
-      }\n\n🔗 Ver más en SECOP II`;
-      await Share.share({ message, title: "Compartir Proceso SECOP" });
+      const url = getProcessUrl(process.urlproceso);
+      const message = `📋 *Proceso SECOP II*
+
+📌 *${process.nombre_del_procedimiento || "Sin nombre"}*
+
+🏢 *Entidad:* ${process.entidad}
+📍 *Ubicación:* ${process.ciudad_entidad}, ${process.departamento_entidad}
+💰 *Precio base:* ${formatCurrency(process.precio_base)}
+📊 *Fase:* ${fase}
+📅 *Publicado:* ${formatDateTime(process.fecha_de_publicacion_del)}${
+        adjudicado
+          ? `
+✅ *Adjudicado a:* ${process.nombre_del_proveedor}
+💵 *Valor adjudicado:* ${formatCurrency(process.valor_total_adjudicacion)}`
+          : ""
+      }
+
+🔗 ${
+        url ||
+        "https://community.secop.gov.co/Public/Tendering/ContractNoticeManagement/Index"
+      }
+
+_Enviado desde SECOP Colombia App_`;
+
+      await Share.share({
+        message,
+        title: "Compartir Proceso SECOP",
+        url: url || undefined,
+      });
     } catch (error) {
       console.error("Error sharing:", error);
     }
   };
 
   const handleOpenSecop = () => {
+    haptics.medium();
     const url = getProcessUrl(process.urlproceso);
     if (url) {
       Linking.openURL(url);
@@ -228,7 +254,10 @@ export const DetailScreen = ({ route, navigation }: any) => {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            haptics.light();
+            navigation.goBack();
+          }}
           style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color={colors.accent} />
           <Text style={styles.backText}>Atrás</Text>
@@ -258,72 +287,76 @@ export const DetailScreen = ({ route, navigation }: any) => {
         ]}
         showsVerticalScrollIndicator={false}>
         {/* Hero Section */}
-        <View style={styles.heroSection}>
-          <View style={styles.idContainer}>
-            <Text style={styles.idLabel}>PROCESO</Text>
-            <Text style={styles.idValue}>{process.id_del_proceso}</Text>
-          </View>
+        <FadeIn delay={50}>
+          <View style={styles.heroSection}>
+            <View style={styles.idContainer}>
+              <Text style={styles.idLabel}>PROCESO</Text>
+              <Text style={styles.idValue}>{process.id_del_proceso}</Text>
+            </View>
 
-          <View style={styles.badgesRow}>
-            {adjudicado && (
+            <View style={styles.badgesRow}>
+              {adjudicado && (
+                <View
+                  style={[
+                    styles.phaseBadge,
+                    { backgroundColor: colors.backgroundTertiary },
+                  ]}>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={12}
+                    color={colors.textSecondary}
+                  />
+                  <Text
+                    style={[styles.phaseText, { color: colors.textSecondary }]}>
+                    ADJUDICADO
+                  </Text>
+                </View>
+              )}
               <View
-                style={[
-                  styles.phaseBadge,
-                  { backgroundColor: colors.backgroundTertiary },
-                ]}>
+                style={[styles.phaseBadge, { backgroundColor: phaseStyle.bg }]}>
                 <Ionicons
-                  name="checkmark-circle"
-                  size={12}
-                  color={colors.textSecondary}
+                  name={phaseStyle.icon as any}
+                  size={14}
+                  color={phaseStyle.color}
                 />
-                <Text
-                  style={[styles.phaseText, { color: colors.textSecondary }]}>
-                  ADJUDICADO
+                <Text style={[styles.phaseText, { color: phaseStyle.color }]}>
+                  {fase}
                 </Text>
               </View>
-            )}
-            <View
-              style={[styles.phaseBadge, { backgroundColor: phaseStyle.bg }]}>
-              <Ionicons
-                name={phaseStyle.icon as any}
-                size={14}
-                color={phaseStyle.color}
-              />
-              <Text style={[styles.phaseText, { color: phaseStyle.color }]}>
-                {fase}
-              </Text>
             </View>
           </View>
-        </View>
 
-        {/* Nombre del Procedimiento */}
-        {process.nombre_del_procedimiento && (
-          <Text style={styles.procedureName}>
-            {process.nombre_del_procedimiento}
-          </Text>
-        )}
+          {/* Nombre del Procedimiento */}
+          {process.nombre_del_procedimiento && (
+            <Text style={styles.procedureName}>
+              {process.nombre_del_procedimiento}
+            </Text>
+          )}
 
-        {/* Descripción */}
-        <View style={styles.descriptionCard}>
-          <Text style={styles.descriptionLabel}>Objeto del Proceso</Text>
-          <Text style={styles.descriptionText}>
-            {process.descripci_n_del_procedimiento ||
-              "Sin descripción disponible"}
-          </Text>
-        </View>
-
-        {/* Precio Base */}
-        {process.precio_base && (
-          <View style={styles.priceCard}>
-            <View style={styles.priceHeader}>
-              <Ionicons name="cash-outline" size={22} color={colors.accent} />
-              <Text style={styles.priceLabel}>Precio Base</Text>
-            </View>
-            <Text style={styles.priceValue}>
-              {formatCurrency(process.precio_base)}
+          {/* Descripción */}
+          <View style={styles.descriptionCard}>
+            <Text style={styles.descriptionLabel}>Objeto del Proceso</Text>
+            <Text style={styles.descriptionText}>
+              {process.descripci_n_del_procedimiento ||
+                "Sin descripción disponible"}
             </Text>
           </View>
-        )}
+        </FadeIn>
+
+        {/* Precio Base */}
+        <SlideInUp delay={100}>
+          {process.precio_base && (
+            <View style={styles.priceCard}>
+              <View style={styles.priceHeader}>
+                <Ionicons name="cash-outline" size={22} color={colors.accent} />
+                <Text style={styles.priceLabel}>Precio Base</Text>
+              </View>
+              <Text style={styles.priceValue}>
+                {formatCurrency(process.precio_base)}
+              </Text>
+            </View>
+          )}
+        </SlideInUp>
 
         {/* SECCIÓN ADJUDICACIÓN - Mismo estilo que las demás */}
         {adjudicado && (

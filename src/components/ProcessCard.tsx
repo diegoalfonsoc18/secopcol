@@ -1,9 +1,10 @@
-import React from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import React, { useRef } from "react";
+import { View, Text, StyleSheet, Animated, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SecopProcess } from "../types/index";
 import { spacing, borderRadius, shadows, typography } from "../theme";
 import { useTheme } from "../context/ThemeContext";
+import { useHaptics } from "../hooks/useHaptics";
 
 // ============================================
 // UTILIDADES
@@ -93,6 +94,8 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
   onPress,
 }) => {
   const { colors } = useTheme();
+  const haptics = useHaptics();
+  const scale = useRef(new Animated.Value(1)).current;
   const styles = createStyles(colors);
 
   // Configuración de fases
@@ -162,115 +165,138 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
   const phaseStyle = phaseConfig[fase] || defaultPhase;
   const isNew = isNewProcess(process.fecha_de_publicacion_del);
 
+  const handlePressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.98,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 8,
+    }).start();
+  };
+
+  const handlePress = () => {
+    haptics.light();
+    onPress();
+  };
+
   return (
     <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.container,
-        pressed && styles.containerPressed,
-      ]}>
-      {/* Header: ID y Badges */}
-      <View style={styles.header}>
-        <View style={styles.idContainer}>
-          <Text style={styles.idLabel}>PROCESO</Text>
-          <Text style={styles.idValue} numberOfLines={1}>
-            {process.id_del_proceso || "Sin ID"}
-          </Text>
-        </View>
-
-        <View style={styles.badgesContainer}>
-          {/* Badge NUEVO */}
-          {isNew && (
-            <View style={styles.newBadge}>
-              <Ionicons
-                name="sparkles"
-                size={10}
-                color={colors.backgroundSecondary}
-              />
-              <Text style={styles.newBadgeText}>NUEVO</Text>
-            </View>
-          )}
-
-          {/* Badge Fase */}
-          <View
-            style={[styles.statusBadge, { backgroundColor: phaseStyle.bg }]}>
-            <Ionicons
-              name={phaseStyle.icon as any}
-              size={12}
-              color={phaseStyle.color}
-            />
-            <Text style={[styles.statusText, { color: phaseStyle.color }]}>
-              {fase}
+      onPress={handlePress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}>
+      <Animated.View style={[styles.container, { transform: [{ scale }] }]}>
+        {/* Header: ID y Badges */}
+        <View style={styles.header}>
+          <View style={styles.idContainer}>
+            <Text style={styles.idLabel}>PROCESO</Text>
+            <Text style={styles.idValue} numberOfLines={1}>
+              {process.id_del_proceso || "Sin ID"}
             </Text>
           </View>
+
+          <View style={styles.badgesContainer}>
+            {/* Badge NUEVO */}
+            {isNew && (
+              <View style={styles.newBadge}>
+                <Ionicons
+                  name="sparkles"
+                  size={10}
+                  color={colors.backgroundSecondary}
+                />
+                <Text style={styles.newBadgeText}>NUEVO</Text>
+              </View>
+            )}
+
+            {/* Badge Fase */}
+            <View
+              style={[styles.statusBadge, { backgroundColor: phaseStyle.bg }]}>
+              <Ionicons
+                name={phaseStyle.icon as any}
+                size={12}
+                color={phaseStyle.color}
+              />
+              <Text style={[styles.statusText, { color: phaseStyle.color }]}>
+                {fase}
+              </Text>
+            </View>
+          </View>
         </View>
-      </View>
 
-      {/* Nombre del procedimiento */}
-      {process.nombre_del_procedimiento && (
-        <Text style={styles.procedureName} numberOfLines={1}>
-          {process.nombre_del_procedimiento}
+        {/* Nombre del procedimiento */}
+        {process.nombre_del_procedimiento && (
+          <Text style={styles.procedureName} numberOfLines={1}>
+            {process.nombre_del_procedimiento}
+          </Text>
+        )}
+
+        {/* Descripción */}
+        <Text style={styles.description} numberOfLines={2}>
+          {truncateText(process.descripci_n_del_procedimiento, 120)}
         </Text>
-      )}
 
-      {/* Descripción */}
-      <Text style={styles.description} numberOfLines={2}>
-        {truncateText(process.descripci_n_del_procedimiento, 120)}
-      </Text>
-
-      {/* Entidad */}
-      <View style={styles.infoRow}>
-        <Ionicons
-          name="business-outline"
-          size={14}
-          color={colors.textSecondary}
-        />
-        <Text style={styles.infoText} numberOfLines={1}>
-          {truncateText(process.entidad, 50)}
-        </Text>
-      </View>
-
-      {/* Ciudad / Departamento */}
-      {process.ciudad_entidad && (
+        {/* Entidad */}
         <View style={styles.infoRow}>
           <Ionicons
-            name="location-outline"
+            name="business-outline"
             size={14}
             color={colors.textSecondary}
           />
           <Text style={styles.infoText} numberOfLines={1}>
-            {process.ciudad_entidad}
-            {process.departamento_entidad
-              ? `, ${process.departamento_entidad}`
-              : ""}
-          </Text>
-        </View>
-      )}
-
-      {/* Separador */}
-      <View style={styles.separator} />
-
-      {/* Footer: NIT y Fecha */}
-      <View style={styles.footer}>
-        <View style={styles.valueContainer}>
-          <Text style={styles.valueLabel}>NIT Entidad</Text>
-          <Text style={styles.nitValue}>
-            {process.nit_entidad || "No especificado"}
+            {truncateText(process.entidad, 50)}
           </Text>
         </View>
 
-        <View style={styles.dateContainer}>
-          <Text style={styles.dateLabel}>Publicación</Text>
-          <View style={styles.timeRow}>
-            <Text style={styles.dateValue}>
-              {formatDate(process.fecha_de_publicacion_del)}
-            </Text>
-            <Text style={styles.relativeTime}>
-              · {getRelativeTime(process.fecha_de_publicacion_del)}
+        {/* Ciudad / Departamento */}
+        {process.ciudad_entidad && (
+          <View style={styles.infoRow}>
+            <Ionicons
+              name="location-outline"
+              size={14}
+              color={colors.textSecondary}
+            />
+            <Text style={styles.infoText} numberOfLines={1}>
+              {process.ciudad_entidad}
+              {process.departamento_entidad
+                ? `, ${process.departamento_entidad}`
+                : ""}
             </Text>
           </View>
+        )}
+
+        {/* Separador */}
+        <View style={styles.separator} />
+
+        {/* Footer: NIT y Fecha */}
+        <View style={styles.footer}>
+          <View style={styles.valueContainer}>
+            <Text style={styles.valueLabel}>NIT Entidad</Text>
+            <Text style={styles.nitValue}>
+              {process.nit_entidad || "No especificado"}
+            </Text>
+          </View>
+
+          <View style={styles.dateContainer}>
+            <Text style={styles.dateLabel}>Publicación</Text>
+            <View style={styles.timeRow}>
+              <Text style={styles.dateValue}>
+                {formatDate(process.fecha_de_publicacion_del)}
+              </Text>
+              <Text style={styles.relativeTime}>
+                · {getRelativeTime(process.fecha_de_publicacion_del)}
+              </Text>
+            </View>
+          </View>
         </View>
-      </View>
+      </Animated.View>
     </Pressable>
   );
 };
@@ -286,10 +312,6 @@ const createStyles = (colors: any) =>
       padding: spacing.lg,
       marginBottom: spacing.md,
       ...shadows.card,
-    },
-    containerPressed: {
-      opacity: 0.95,
-      transform: [{ scale: 0.99 }],
     },
 
     // Header
