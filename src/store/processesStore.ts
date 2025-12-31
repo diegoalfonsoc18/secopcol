@@ -2,6 +2,14 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SecopProcess, getRecentProcesses, advancedSearch } from "../api/secop";
+import {
+  cacheRecentProcesses,
+  getCachedRecentProcesses,
+  cacheSearchResults,
+  getCachedSearchResults,
+  setLastSyncTime,
+  getTimeSinceLastSync,
+} from "../services/cacheService";
 
 // ============================================
 // TIPOS DEL STORE
@@ -15,12 +23,20 @@ interface ProcessesState {
   // Favoritos (persistidos)
   favorites: SecopProcess[];
 
+  // Estado offline
+  isOffline: boolean;
+  isFromCache: boolean;
+  lastSync: string;
+
   // Filtros seleccionados
   selectedMunicipality: string;
   selectedStatus: string;
 
   // Acciones de procesos
-  fetchRecentProcesses: (limit?: number) => Promise<void>;
+  fetchRecentProcesses: (
+    limit?: number,
+    forceRefresh?: boolean
+  ) => Promise<void>;
   fetchProcesses: (
     municipality?: string,
     status?: string,
@@ -41,6 +57,8 @@ interface ProcessesState {
   // Acciones de estado
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  setIsOffline: (isOffline: boolean) => void;
+  updateLastSync: () => Promise<void>;
 
   // Hydration
   _hasHydrated: boolean;
@@ -58,34 +76,99 @@ export const useProcessesStore = create<ProcessesState>()(
       loading: false,
       error: null,
       favorites: [],
+      isOffline: false,
+      isFromCache: false,
+      lastSync: "Nunca",
       selectedMunicipality: "",
       selectedStatus: "",
       _hasHydrated: false,
 
-      // Cargar procesos recientes
-      fetchRecentProcesses: async (limit = 20) => {
+      // Cargar procesos recientes (con cache)
+      fetchRecentProcesses: async (limit = 20, forceRefresh = false) => {
         set({ loading: true, error: null });
-        // console.log("📅 Cargando procesos recientes...");
+
+        // Intentar cargar desde cache primero si no forzamos refresh
+        if (!forceRefresh) {
+          const cached = await getCachedRecentProcesses();
+          if (cached && cached.length > 0) {
+            const lastSyncText = await getTimeSinceLastSync();
+            set({
+              processes: cached,
+              loading: false,
+              isFromCache: true,
+              lastSync: lastSyncText,
+            });
+            // Continuar en background para actualizar
+          }
+        }
+
         try {
           const data = await getRecentProcesses(limit);
-          set({ processes: data, loading: false });
-          // console.log(`✅ Procesos recientes cargados: ${data.length}`);
+
+          // Guardar en cache
+          await cacheRecentProcesses(data);
+          await setLastSyncTime();
+          const lastSyncText = await getTimeSinceLastSync();
+
+          set({
+            processes: data,
+            loading: false,
+            isFromCache: false,
+            isOffline: false,
+            lastSync: lastSyncText,
+            error: null,
+          });
         } catch (error) {
           const message =
             error instanceof Error ? error.message : "Error de conexión";
-          set({ error: message, loading: false });
+
+          // Si hay error, intentar cargar cache
+          const cached = await getCachedRecentProcesses();
+          if (cached && cached.length > 0) {
+            const lastSyncText = await getTimeSinceLastSync();
+            set({
+              processes: cached,
+              loading: false,
+              isFromCache: true,
+              isOffline: true,
+              lastSync: lastSyncText,
+              error: null,
+            });
+          } else {
+            set({
+              error: message,
+              loading: false,
+              isOffline: true,
+            });
+          }
           console.error("❌ Error cargando procesos:", message);
         }
       },
 
-      // Buscar procesos con filtros
+      // Buscar procesos con filtros (con cache)
       fetchProcesses: async (
         municipality?: string,
         status?: string,
         keyword?: string
       ) => {
         set({ loading: true, error: null });
-        // console.log("🔍 Buscando procesos...", { municipality, status, keyword });
+
+        const searchQuery = {
+          municipio: municipality,
+          tipoContrato: status,
+          keyword: keyword,
+        };
+
+        // Intentar cache primero
+        const cached = await getCachedSearchResults(searchQuery);
+        if (cached && cached.length > 0) {
+          set({
+            processes: cached,
+            loading: false,
+            isFromCache: true,
+          });
+        }
+
         try {
           const data = await advancedSearch({
             municipio: municipality,
@@ -93,12 +176,34 @@ export const useProcessesStore = create<ProcessesState>()(
             keyword: keyword,
             limit: 50,
           });
-          set({ processes: data, loading: false });
-          // console.log(`✅ Procesos encontrados: ${data.length}`);
+
+          // Guardar en cache
+          await cacheSearchResults(searchQuery, data);
+
+          set({
+            processes: data,
+            loading: false,
+            isFromCache: false,
+            isOffline: false,
+            error: null,
+          });
         } catch (error) {
           const message =
             error instanceof Error ? error.message : "Error de conexión";
-          set({ error: message, loading: false });
+
+          // Si no hay cache previo, mostrar error
+          if (!cached || cached.length === 0) {
+            set({
+              error: message,
+              loading: false,
+              isOffline: true,
+            });
+          } else {
+            set({
+              loading: false,
+              isOffline: true,
+            });
+          }
           console.error("❌ Error buscando procesos:", message);
         }
       },
@@ -115,7 +220,6 @@ export const useProcessesStore = create<ProcessesState>()(
         ) {
           const newFavorites = [process, ...favorites];
           set({ favorites: newFavorites });
-          // console.log(`❤️ Agregado a favoritos: ${process.id_del_proceso}`);
         }
       },
 
@@ -125,7 +229,6 @@ export const useProcessesStore = create<ProcessesState>()(
           (f) => f.id_del_proceso !== processId
         );
         set({ favorites: newFavorites });
-        // console.log(`💔 Eliminado de favoritos: ${processId}`);
       },
 
       isFavorite: (processId: string) => {
@@ -135,7 +238,6 @@ export const useProcessesStore = create<ProcessesState>()(
 
       clearFavorites: () => {
         set({ favorites: [] });
-        // console.log("🗑️ Favoritos limpiados");
       },
 
       // Acciones de filtros
@@ -156,6 +258,15 @@ export const useProcessesStore = create<ProcessesState>()(
         set({ error });
       },
 
+      setIsOffline: (isOffline: boolean) => {
+        set({ isOffline });
+      },
+
+      updateLastSync: async () => {
+        const lastSyncText = await getTimeSinceLastSync();
+        set({ lastSync: lastSyncText });
+      },
+
       // Hydration
       setHasHydrated: (state: boolean) => {
         set({ _hasHydrated: state });
@@ -170,7 +281,6 @@ export const useProcessesStore = create<ProcessesState>()(
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
-        // console.log("💾 Favoritos cargados desde almacenamiento");
       },
     }
   )
