@@ -19,6 +19,7 @@ import {
 import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { useProcessesStore } from "./src/store/processesStore";
+import { ErrorBoundary } from "./src/components/ErrorBoundary";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -306,15 +307,17 @@ function AppContent() {
 // ============================================
 export default function App() {
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <ThemeProvider>
-        <AuthProvider>
-          <BottomSheetModalProvider>
-            <AppContent />
-          </BottomSheetModalProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={styles.container}>
+        <ThemeProvider>
+          <AuthProvider>
+            <BottomSheetModalProvider>
+              <AppContent />
+            </BottomSheetModalProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
 
