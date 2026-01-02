@@ -31,7 +31,7 @@ import {
   updateAlert,
   deleteAlert,
   toggleAlert,
-  ALERT_FREQUENCIES,
+  ALERT_FREQUENCY_HOURS,
   formatAlertFilters,
 } from "../services/alertService";
 import { Alert as AlertType, AlertFilters } from "../types/database";
@@ -89,9 +89,6 @@ const AlertCard: React.FC<AlertCardProps> = ({
   colors,
 }) => {
   const haptics = useHaptics();
-  const frequency = ALERT_FREQUENCIES.find(
-    (f) => f.value === alert.frequency_hours
-  );
 
   const handleToggle = () => {
     haptics.light();
@@ -170,7 +167,7 @@ const AlertCard: React.FC<AlertCardProps> = ({
         <View style={styles.alertMeta}>
           <Ionicons name="time-outline" size={14} color={colors.textTertiary} />
           <Text style={[styles.alertMetaText, { color: colors.textTertiary }]}>
-            {frequency?.label || `Cada ${alert.frequency_hours}h`}
+            Cada {ALERT_FREQUENCY_HOURS} horas
           </Text>
         </View>
 
@@ -204,11 +201,7 @@ interface AlertModalProps {
   alert?: AlertType | null;
   initialFilters?: AlertFilters;
   onClose: () => void;
-  onSave: (data: {
-    name: string;
-    filters: AlertFilters;
-    frequency_hours: number;
-  }) => void;
+  onSave: (data: { name: string; filters: AlertFilters }) => void;
   colors: any;
 }
 
@@ -229,7 +222,6 @@ const AlertModal: React.FC<AlertModalProps> = ({
   const [selectedMunicipio, setSelectedMunicipio] = useState("");
   const [selectedModalidad, setSelectedModalidad] = useState("");
   const [selectedTipo, setSelectedTipo] = useState("");
-  const [frequencyHours, setFrequencyHours] = useState(6);
 
   // Estados DIVIPOLA
   const [departments, setDepartments] = useState<string[]>([]);
@@ -282,7 +274,6 @@ const AlertModal: React.FC<AlertModalProps> = ({
       setSelectedModalidad(mod?.id || "");
       const tipo = TIPOS.find((t) => t.value === alert.filters.tipo_contrato);
       setSelectedTipo(tipo?.id || "");
-      setFrequencyHours(alert.frequency_hours);
     } else if (initialFilters) {
       // Nueva alerta con filtros iniciales (desde SearchScreen)
       setName("");
@@ -293,7 +284,6 @@ const AlertModal: React.FC<AlertModalProps> = ({
       setSelectedModalidad(mod?.id || "");
       const tipo = TIPOS.find((t) => t.value === initialFilters.tipo_contrato);
       setSelectedTipo(tipo?.id || "");
-      setFrequencyHours(6);
     } else {
       // Nueva alerta vacía
       setName("");
@@ -302,7 +292,6 @@ const AlertModal: React.FC<AlertModalProps> = ({
       setSelectedMunicipio("");
       setSelectedModalidad("");
       setSelectedTipo("");
-      setFrequencyHours(6);
     }
   }, [alert, initialFilters, visible]);
 
@@ -342,7 +331,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
       return;
     }
 
-    onSave({ name: name.trim(), filters, frequency_hours: frequencyHours });
+    onSave({ name: name.trim(), filters });
   };
 
   const handleSelectDept = (dept: string) => {
@@ -621,42 +610,6 @@ const AlertModal: React.FC<AlertModalProps> = ({
               ))}
             </ScrollView>
 
-            {/* Frecuencia */}
-            <Text
-              style={[
-                styles.sectionTitle,
-                { color: colors.textPrimary, marginTop: 24 },
-              ]}>
-              Frecuencia de notificación
-            </Text>
-            <View style={styles.frequencyContainer}>
-              {ALERT_FREQUENCIES.map((freq) => (
-                <TouchableOpacity
-                  key={freq.value}
-                  style={[
-                    styles.frequencyOption,
-                    {
-                      backgroundColor: colors.backgroundSecondary,
-                      borderColor: colors.separator,
-                    },
-                    frequencyHours === freq.value && {
-                      backgroundColor: colors.accent,
-                      borderColor: colors.accent,
-                    },
-                  ]}
-                  onPress={() => setFrequencyHours(freq.value)}>
-                  <Text
-                    style={[
-                      styles.frequencyText,
-                      { color: colors.textPrimary },
-                      frequencyHours === freq.value && { color: "#FFFFFF" },
-                    ]}>
-                    {freq.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
             {/* Info */}
             <View
               style={[styles.infoBox, { backgroundColor: colors.accentLight }]}>
@@ -666,8 +619,9 @@ const AlertModal: React.FC<AlertModalProps> = ({
                 color={colors.accent}
               />
               <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-                Recibirás una notificación cuando se publiquen nuevos procesos
-                que coincidan con tus filtros.
+                Recibirás una notificación cada {ALERT_FREQUENCY_HOURS} horas
+                cuando se publiquen nuevos procesos que coincidan con tus
+                filtros.
               </Text>
             </View>
           </ScrollView>
@@ -885,11 +839,7 @@ const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
     }
   };
 
-  const handleSave = async (data: {
-    name: string;
-    filters: AlertFilters;
-    frequency_hours: number;
-  }) => {
+  const handleSave = async (data: { name: string; filters: AlertFilters }) => {
     if (!user) return;
 
     if (editingAlert) {
@@ -904,8 +854,7 @@ const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
       const { alert, error } = await createAlert(
         user.id,
         data.name,
-        data.filters,
-        data.frequency_hours
+        data.filters
       );
       if (alert && !error) {
         setAlerts((prev) => [alert, ...prev]);
@@ -1154,27 +1103,13 @@ const styles = StyleSheet.create({
   },
   chipText: { fontSize: 13, fontWeight: "500" },
 
-  // Frequency
-  frequencyContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 20,
-  },
-  frequencyOption: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  frequencyText: { fontSize: 14, fontWeight: "500" },
-
   // Info
   infoBox: {
     flexDirection: "row",
     gap: 12,
     padding: 16,
     borderRadius: 12,
+    marginTop: 24,
     marginBottom: 20,
   },
   infoText: { flex: 1, fontSize: 14, lineHeight: 20 },

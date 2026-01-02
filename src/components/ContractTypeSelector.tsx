@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -8,20 +8,17 @@ import {
   Modal,
   Pressable,
   ActivityIndicator,
+  Animated,
+  Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  runOnJS,
-} from "react-native-reanimated";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { spacing, borderRadius, colors as themeColors } from "../theme";
 import { useHaptics } from "../hooks/useHaptics";
+
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 // ============================================
 // TIPOS DE CONTRATO DISPONIBLES
@@ -103,8 +100,9 @@ export const ContractTypeSelector: React.FC<ContractTypeSelectorProps> = ({
   const [loading, setLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  const translateY = useSharedValue(1000);
-  const backdropOpacity = useSharedValue(0);
+  // Animaciones nativas
+  const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
 
   const styles = createStyles(colors);
 
@@ -113,19 +111,43 @@ export const ContractTypeSelector: React.FC<ContractTypeSelectorProps> = ({
     if (visible) {
       setSelectedTypes(preferences.selectedContractTypes || []);
       setHasChanges(false);
-      translateY.value = withSpring(0, { damping: 20, stiffness: 90 });
-      backdropOpacity.value = withTiming(1, { duration: 200 });
+
+      // Animar entrada
+      Animated.parallel([
+        Animated.spring(translateY, {
+          toValue: 0,
+          damping: 20,
+          stiffness: 90,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backdropOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
   }, [visible, preferences.selectedContractTypes]);
 
   const handleClose = () => {
     haptics.light();
-    translateY.value = withSpring(1000, { damping: 20 }, (finished) => {
-      if (finished) {
-        runOnJS(onClose)();
-      }
+
+    // Animar salida
+    Animated.parallel([
+      Animated.spring(translateY, {
+        toValue: SCREEN_HEIGHT,
+        damping: 20,
+        stiffness: 90,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backdropOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      onClose();
     });
-    backdropOpacity.value = withTiming(0, { duration: 200 });
   };
 
   const toggleType = (typeId: string) => {
@@ -177,14 +199,6 @@ export const ContractTypeSelector: React.FC<ContractTypeSelectorProps> = ({
     }
   };
 
-  const animatedBackdrop = useAnimatedStyle(() => ({
-    opacity: backdropOpacity.value,
-  }));
-
-  const animatedSheet = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
-
   const allSelected = selectedTypes.length === CONTRACT_TYPES.length;
 
   if (!visible) return null;
@@ -193,7 +207,7 @@ export const ContractTypeSelector: React.FC<ContractTypeSelectorProps> = ({
     <Modal transparent visible={visible} animationType="none">
       <View style={styles.modalContainer}>
         {/* Backdrop */}
-        <Animated.View style={[styles.backdrop, animatedBackdrop]}>
+        <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
         </Animated.View>
 
@@ -201,8 +215,10 @@ export const ContractTypeSelector: React.FC<ContractTypeSelectorProps> = ({
         <Animated.View
           style={[
             styles.sheet,
-            animatedSheet,
-            { paddingBottom: insets.bottom + spacing.md },
+            {
+              transform: [{ translateY }],
+              paddingBottom: insets.bottom + spacing.md,
+            },
           ]}>
           {/* Handle */}
           <View style={styles.handleContainer}>

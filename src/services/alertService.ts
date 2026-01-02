@@ -5,6 +5,11 @@ import { supabase } from "./supabase";
 import { Alert, AlertFilters, AlertHistory } from "../types/database";
 
 // ============================================
+// CONSTANTES
+// ============================================
+export const ALERT_FREQUENCY_HOURS = 5; // Frecuencia fija de notificaciones
+
+// ============================================
 // OBTENER ALERTAS
 // ============================================
 export const getAlerts = async (userId: string): Promise<Alert[]> => {
@@ -44,8 +49,7 @@ export const getAlert = async (alertId: string): Promise<Alert | null> => {
 export const createAlert = async (
   userId: string,
   name: string,
-  filters: AlertFilters,
-  frequencyHours: number = 6
+  filters: AlertFilters
 ): Promise<{ alert: Alert | null; error: string | null }> => {
   try {
     const { data, error } = await supabase
@@ -54,7 +58,7 @@ export const createAlert = async (
         user_id: userId,
         name,
         filters,
-        frequency_hours: frequencyHours,
+        frequency_hours: ALERT_FREQUENCY_HOURS,
         is_active: true,
       })
       .select()
@@ -75,7 +79,6 @@ export const updateAlert = async (
   updates: {
     name?: string;
     filters?: AlertFilters;
-    frequency_hours?: number;
     is_active?: boolean;
   }
 ): Promise<{ error: string | null }> => {
@@ -138,17 +141,6 @@ export const getAlertHistory = async (
   }
   return data || [];
 };
-
-// ============================================
-// FRECUENCIAS DISPONIBLES
-// ============================================
-export const ALERT_FREQUENCIES = [
-  { value: 1, label: "Cada hora" },
-  { value: 3, label: "Cada 3 horas" },
-  { value: 6, label: "Cada 6 horas" },
-  { value: 12, label: "Cada 12 horas" },
-  { value: 24, label: "Una vez al día" },
-];
 
 // ============================================
 // FORMATEAR FILTROS PARA MOSTRAR

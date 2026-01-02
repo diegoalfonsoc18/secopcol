@@ -21,6 +21,7 @@ import {
   ProcessCard,
   DashboardSkeleton,
   StaggeredItem,
+  ContractTypeSelector, // <-- Importar el nuevo componente
 } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
@@ -202,19 +203,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             </TouchableOpacity>
           )}
         </ScrollView>
-
-        {/* Indicador de filtros activos */}
-        {preferences.selectedContractTypes.length > 0 && (
-          <View style={styles.activeFiltersRow}>
-            <Ionicons name="funnel" size={12} color={colors.textTertiary} />
-            <Text style={styles.activeFiltersText}>
-              Mostrando {preferences.selectedContractTypes.length} de 8 tipos
-            </Text>
-            <TouchableOpacity onPress={handleOpenTypeSelector}>
-              <Text style={styles.changeFiltersText}>Cambiar</Text>
-            </TouchableOpacity>
-          </View>
-        )}
       </View>
 
       <View style={styles.recentHeader}>
@@ -303,19 +291,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               ? `Hola, ${user.name.split(" ")[0]}`
               : "Contratación pública"}
           </Text>
-          {preferences.selectedContractTypes.length > 0 && (
-            <TouchableOpacity
-              style={styles.filterBadge}
-              onPress={handleOpenTypeSelector}>
-              <Ionicons name="filter" size={12} color={colors.accent} />
-              <Text style={styles.filterBadgeText}>
-                {preferences.selectedContractTypes.length} tipo
-                {preferences.selectedContractTypes.length > 1 ? "s" : ""} de
-                contrato
-              </Text>
-              <Ionicons name="chevron-down" size={12} color={colors.accent} />
-            </TouchableOpacity>
-          )}
         </Animated.View>
       </Animated.View>
 
@@ -431,22 +406,6 @@ const createStyles = (colors: any) =>
       color: colors.textSecondary,
       marginTop: spacing.xs,
     },
-    filterBadge: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: colors.accentLight,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.xs,
-      borderRadius: borderRadius.full,
-      alignSelf: "flex-start",
-      marginTop: spacing.xs,
-      gap: spacing.xs,
-    },
-    filterBadgeText: {
-      fontSize: 12,
-      color: colors.accent,
-      fontWeight: "500",
-    },
     listContent: {
       paddingHorizontal: spacing.lg,
       paddingTop: spacing.md,
@@ -535,22 +494,6 @@ const createStyles = (colors: any) =>
       borderStyle: "dashed",
     },
     addTypeChipText: {
-      fontSize: 12,
-      color: colors.accent,
-      fontWeight: "600",
-    },
-    activeFiltersRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginTop: spacing.sm,
-      gap: spacing.xs,
-    },
-    activeFiltersText: {
-      flex: 1,
-      fontSize: 12,
-      color: colors.textTertiary,
-    },
-    changeFiltersText: {
       fontSize: 12,
       color: colors.accent,
       fontWeight: "600",
