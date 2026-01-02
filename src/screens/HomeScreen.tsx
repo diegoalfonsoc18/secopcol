@@ -346,19 +346,21 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         </View>
 
         <Animated.View style={{ opacity: subtitleOpacity }}>
-          <Text style={styles.subtitle}>
-            {user?.name
-              ? `Hola, ${user.name.split(" ")[0]}`
-              : "Contratación pública"}
-          </Text>
-          {(userMunicipio || userDepartamento) && (
-            <View style={styles.locationSubtitle}>
-              <Ionicons name="location" size={14} color={colors.success} />
-              <Text style={styles.locationSubtitleText}>
-                {userMunicipio || userDepartamento}
-              </Text>
-            </View>
-          )}
+          <View style={styles.subtitleRow}>
+            <Text style={styles.subtitle}>
+              {user?.name
+                ? `Hola, ${user.name.split(" ")[0]}`
+                : "Contratación pública"}
+            </Text>
+            {(userMunicipio || userDepartamento) && (
+              <View style={styles.locationBadge}>
+                <Ionicons name="location" size={12} color={colors.success} />
+                <Text style={styles.locationText}>
+                  {userMunicipio || userDepartamento}
+                </Text>
+              </View>
+            )}
+          </View>
         </Animated.View>
       </Animated.View>
 
@@ -472,18 +474,26 @@ const createStyles = (colors: any) =>
     subtitle: {
       fontSize: 15,
       color: colors.textSecondary,
-      marginTop: spacing.xs,
     },
-    locationSubtitle: {
+    subtitleRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: spacing.xs,
       marginTop: spacing.xs,
+      gap: spacing.md,
     },
-    locationSubtitleText: {
-      fontSize: 13,
+    locationBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.successLight || "rgba(48, 209, 88, 0.12)",
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      borderRadius: borderRadius.full,
+      gap: 4,
+    },
+    locationText: {
+      fontSize: 12,
       color: colors.success,
-      fontWeight: "500",
+      fontWeight: "600",
     },
     listContent: {
       paddingHorizontal: spacing.lg,
