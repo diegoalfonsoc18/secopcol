@@ -1,7 +1,7 @@
 // src/screens/AlertsScreen.tsx
 // Pantalla para gestionar alertas de búsqueda con filtros completos
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -17,7 +17,9 @@ import {
   Platform,
   FlatList,
   ActivityIndicator,
+  Animated,
 } from "react-native";
+import { Swipeable } from "react-native-gesture-handler";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -71,7 +73,7 @@ const TIPOS = [
 ];
 
 // ============================================
-// COMPONENTE: CARD DE ALERTA
+// COMPONENTE: CARD DE ALERTA CON SWIPE
 // ============================================
 interface AlertCardProps {
   alert: AlertType;
@@ -79,6 +81,7 @@ interface AlertCardProps {
   onEdit: (alert: AlertType) => void;
   onDelete: (id: string) => void;
   colors: any;
+  swipeableRef: (ref: Swipeable | null) => void;
 }
 
 const AlertCard: React.FC<AlertCardProps> = ({
@@ -87,28 +90,13 @@ const AlertCard: React.FC<AlertCardProps> = ({
   onEdit,
   onDelete,
   colors,
+  swipeableRef,
 }) => {
   const haptics = useHaptics();
 
   const handleToggle = () => {
     haptics.light();
     onToggle(alert.id, !alert.is_active);
-  };
-
-  const handleDelete = () => {
-    haptics.warning();
-    Alert.alert(
-      "Eliminar alerta",
-      `¿Estás seguro de eliminar "${alert.name}"?`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Eliminar",
-          style: "destructive",
-          onPress: () => onDelete(alert.id),
-        },
-      ]
-    );
   };
 
   // Formatear filtros para mostrar
@@ -128,68 +116,118 @@ const AlertCard: React.FC<AlertCardProps> = ({
     return parts.length > 0 ? parts.join(" • ") : "Todos los procesos";
   };
 
-  return (
-    <TouchableOpacity
-      style={[
-        styles.alertCard,
-        { backgroundColor: colors.backgroundSecondary },
-      ]}
-      onPress={() => onEdit(alert)}
-      activeOpacity={0.7}>
-      <View style={styles.alertHeader}>
-        <View style={styles.alertTitleRow}>
+  const renderRightActions = (
+    _progress: Animated.AnimatedInterpolation<number>,
+    dragX: Animated.AnimatedInterpolation<number>
+  ) => {
+    const scale = dragX.interpolate({
+      inputRange: [-100, 0],
+      outputRange: [1, 0.8],
+      extrapolate: "clamp",
+    });
+
+    const opacity = dragX.interpolate({
+      inputRange: [-100, -50, 0],
+      outputRange: [1, 0.8, 0],
+      extrapolate: "clamp",
+    });
+
+    return (
+      <Animated.View
+        style={[
+          styles.deleteAction,
+          {
+            transform: [{ scale }],
+            opacity,
+          },
+        ]}>
+        <TouchableOpacity
+          style={[styles.deleteButton, { backgroundColor: colors.danger }]}
+          onPress={() => onDelete(alert.id)}>
           <Ionicons
-            name="notifications"
-            size={20}
-            color={alert.is_active ? colors.accent : colors.textSecondary}
+            name="trash-outline"
+            size={24}
+            color={colors.backgroundSecondary}
           />
           <Text
-            style={[styles.alertName, { color: colors.textPrimary }]}
-            numberOfLines={1}>
-            {alert.name}
+            style={[styles.deleteText, { color: colors.backgroundSecondary }]}>
+            Eliminar
           </Text>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
+  return (
+    <Swipeable
+      ref={swipeableRef}
+      renderRightActions={renderRightActions}
+      rightThreshold={40}
+      overshootRight={false}
+      friction={2}>
+      <TouchableOpacity
+        style={[
+          styles.alertCard,
+          { backgroundColor: colors.backgroundSecondary },
+        ]}
+        onPress={() => onEdit(alert)}
+        activeOpacity={0.7}>
+        <View style={styles.alertHeader}>
+          <View style={styles.alertTitleRow}>
+            <Ionicons
+              name="notifications"
+              size={20}
+              color={alert.is_active ? colors.accent : colors.textSecondary}
+            />
+            <Text
+              style={[styles.alertName, { color: colors.textPrimary }]}
+              numberOfLines={1}>
+              {alert.name}
+            </Text>
+          </View>
+          <Switch
+            value={alert.is_active}
+            onValueChange={handleToggle}
+            trackColor={{ false: colors.separator, true: colors.accent + "50" }}
+            thumbColor={alert.is_active ? colors.accent : colors.textSecondary}
+          />
         </View>
-        <Switch
-          value={alert.is_active}
-          onValueChange={handleToggle}
-          trackColor={{ false: colors.separator, true: colors.accent + "50" }}
-          thumbColor={alert.is_active ? colors.accent : colors.textSecondary}
-        />
-      </View>
 
-      <Text
-        style={[styles.alertFilters, { color: colors.textSecondary }]}
-        numberOfLines={2}>
-        {getFiltersSummary()}
-      </Text>
+        <Text
+          style={[styles.alertFilters, { color: colors.textSecondary }]}
+          numberOfLines={2}>
+          {getFiltersSummary()}
+        </Text>
 
-      <View style={styles.alertFooter}>
-        <View style={styles.alertMeta}>
-          <Ionicons name="time-outline" size={14} color={colors.textTertiary} />
-          <Text style={[styles.alertMetaText, { color: colors.textTertiary }]}>
-            Cada {ALERT_FREQUENCY_HOURS} horas
-          </Text>
-        </View>
-
-        {alert.last_check && (
+        <View style={styles.alertFooter}>
           <View style={styles.alertMeta}>
             <Ionicons
-              name="checkmark-circle-outline"
+              name="time-outline"
               size={14}
-              color={colors.success}
+              color={colors.textTertiary}
             />
             <Text
               style={[styles.alertMetaText, { color: colors.textTertiary }]}>
-              {alert.last_results_count} resultados
+              Cada {ALERT_FREQUENCY_HOURS} horas
             </Text>
           </View>
-        )}
 
-        <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-          <Ionicons name="trash-outline" size={18} color={colors.danger} />
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
+          {alert.last_check && (
+            <View style={styles.alertMeta}>
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={14}
+                color={colors.success}
+              />
+              <Text
+                style={[styles.alertMetaText, { color: colors.textTertiary }]}>
+                {alert.last_results_count} resultados
+              </Text>
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
+    </Swipeable>
   );
 };
 
@@ -630,11 +668,16 @@ const AlertModal: React.FC<AlertModalProps> = ({
 
       {/* Modal Departamentos */}
       <Modal visible={showDeptModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalOverlay}>
           <View
             style={[
               styles.subModalContent,
-              { backgroundColor: colors.background },
+              {
+                backgroundColor: colors.background,
+                paddingBottom: insets.bottom,
+              },
             ]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
@@ -662,11 +705,21 @@ const AlertModal: React.FC<AlertModalProps> = ({
                 onChangeText={setDeptSearchText}
                 autoFocus
               />
+              {deptSearchText.length > 0 && (
+                <TouchableOpacity onPress={() => setDeptSearchText("")}>
+                  <Ionicons
+                    name="close-circle"
+                    size={18}
+                    color={colors.textTertiary}
+                  />
+                </TouchableOpacity>
+              )}
             </View>
             <FlatList
               data={filteredDepartments}
               keyExtractor={(item) => item}
               keyboardShouldPersistTaps="handled"
+              style={styles.listContainer}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[
@@ -690,18 +743,30 @@ const AlertModal: React.FC<AlertModalProps> = ({
                   )}
                 </TouchableOpacity>
               )}
+              ListEmptyComponent={
+                <View style={styles.emptyList}>
+                  <Text style={{ color: colors.textTertiary }}>
+                    No se encontraron resultados
+                  </Text>
+                </View>
+              }
             />
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Modal Municipios */}
       <Modal visible={showMuniModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalOverlay}>
           <View
             style={[
               styles.subModalContent,
-              { backgroundColor: colors.background },
+              {
+                backgroundColor: colors.background,
+                paddingBottom: insets.bottom,
+              },
             ]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
@@ -729,11 +794,21 @@ const AlertModal: React.FC<AlertModalProps> = ({
                 onChangeText={setMuniSearchText}
                 autoFocus
               />
+              {muniSearchText.length > 0 && (
+                <TouchableOpacity onPress={() => setMuniSearchText("")}>
+                  <Ionicons
+                    name="close-circle"
+                    size={18}
+                    color={colors.textTertiary}
+                  />
+                </TouchableOpacity>
+              )}
             </View>
             <FlatList
               data={filteredMunicipalities}
               keyExtractor={(item) => item}
               keyboardShouldPersistTaps="handled"
+              style={styles.listContainer}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[
@@ -757,9 +832,16 @@ const AlertModal: React.FC<AlertModalProps> = ({
                   )}
                 </TouchableOpacity>
               )}
+              ListEmptyComponent={
+                <View style={styles.emptyList}>
+                  <Text style={{ color: colors.textTertiary }}>
+                    No se encontraron resultados
+                  </Text>
+                </View>
+              }
             />
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </Modal>
   );
@@ -782,6 +864,8 @@ const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
   const [initialFilters, setInitialFilters] = useState<
     AlertFilters | undefined
   >();
+
+  const swipeableRefs = useRef<Map<string, Swipeable>>(new Map());
 
   // Cargar alertas
   const loadAlerts = useCallback(async () => {
@@ -831,13 +915,26 @@ const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
     setModalVisible(true);
   };
 
-  const handleDelete = async (id: string) => {
-    haptics.error();
-    const { error } = await deleteAlert(id);
-    if (!error) {
-      setAlerts((prev) => prev.filter((a) => a.id !== id));
-    }
-  };
+  const handleDelete = useCallback(
+    async (id: string) => {
+      haptics.warning();
+
+      // Cerrar el swipeable
+      const swipeable = swipeableRefs.current.get(id);
+      if (swipeable) {
+        swipeable.close();
+      }
+
+      // Eliminar después de un pequeño delay para la animación
+      setTimeout(async () => {
+        const { error } = await deleteAlert(id);
+        if (!error) {
+          setAlerts((prev) => prev.filter((a) => a.id !== id));
+        }
+      }, 200);
+    },
+    [haptics]
+  );
 
   const handleSave = async (data: { name: string; filters: AlertFilters }) => {
     if (!user) return;
@@ -941,6 +1038,11 @@ const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 colors={colors}
+                swipeableRef={(ref) => {
+                  if (ref) {
+                    swipeableRefs.current.set(alert.id, ref);
+                  }
+                }}
               />
             </SlideInUp>
           ))
@@ -1006,7 +1108,25 @@ const styles = StyleSheet.create({
   alertFooter: { flexDirection: "row", alignItems: "center", gap: 16 },
   alertMeta: { flexDirection: "row", alignItems: "center", gap: 4 },
   alertMetaText: { fontSize: 12 },
-  deleteButton: { marginLeft: "auto", padding: 4 },
+
+  // Delete action (mismo estilo que FavoritesScreen)
+  deleteAction: {
+    justifyContent: "center",
+    alignItems: "flex-end",
+    marginBottom: 12,
+  },
+  deleteButton: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: 90,
+    height: "100%",
+    borderRadius: 12,
+  },
+  deleteText: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 4,
+  },
 
   // Empty State
   emptyState: {
@@ -1118,7 +1238,8 @@ const styles = StyleSheet.create({
   subModalContent: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: "70%",
+    flex: 1,
+    maxHeight: "80%",
     marginTop: "auto",
   },
   searchBarSmall: {
@@ -1140,6 +1261,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   listItemText: { fontSize: 16 },
+  listContainer: {
+    flex: 1,
+    minHeight: 200,
+  },
+  emptyList: {
+    padding: 20,
+    alignItems: "center",
+  },
 });
 
 export default AlertsScreen;
