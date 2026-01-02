@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import {
   Animated,
-  FlatList,
   RefreshControl,
   StyleSheet,
   Text,
@@ -37,7 +36,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const styles = createStyles(colors);
 
-  // Configuración de tipos de contrato (usando colores del theme)
   const tipoContratoConfig: Record<string, { color: string; icon: string }> = {
     Obra: { color: colors.warning, icon: "construct-outline" },
     Consultoría: { color: "#5856D6", icon: "bulb-outline" },
@@ -50,7 +48,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     Interventoría: { color: "#AF52DE", icon: "eye-outline" },
   };
 
-  // Filtrar procesos por tipos de contrato seleccionados
   const filteredProcesses = useMemo(() => {
     if (preferences.selectedContractTypes.length === 0) {
       return processes;
@@ -64,7 +61,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     fetchRecentProcesses(100);
   }, [fetchRecentProcesses]);
 
-  // Contar por tipo de contrato
   const porTipo = useMemo(() => {
     const counts: Record<string, number> = {};
     filteredProcesses.forEach((p) => {
@@ -74,7 +70,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     return counts;
   }, [filteredProcesses]);
 
-  // Animaciones del header
   const headerHeight = scrollY.interpolate({
     inputRange: [0, 80],
     outputRange: [120, 70],
@@ -93,7 +88,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     extrapolate: "clamp",
   });
 
-  // Handlers
   const handleProcessPress = useCallback(
     (process: SecopProcess) => {
       haptics.light();
@@ -126,10 +120,8 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     []
   );
 
-  // Header del listado
   const ListHeader = () => (
     <View style={styles.listHeader}>
-      {/* Distribución por tipo */}
       <View style={styles.sectionCard}>
         <View style={styles.sectionHeader}>
           <Ionicons name="grid-outline" size={18} color={colors.accent} />
@@ -172,7 +164,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         </ScrollView>
       </View>
 
-      {/* Header de procesos recientes */}
       <View style={styles.recentHeader}>
         <Text style={styles.recentTitle}>Procesos Recientes</Text>
         <TouchableOpacity onPress={handleViewAll} style={styles.viewAllButton}>
@@ -183,7 +174,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     </View>
   );
 
-  // Empty state
   const ListEmpty = () => (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIconContainer}>
@@ -232,26 +222,12 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             </View>
           </Animated.View>
 
-          <View style={styles.headerButtons}>
-            <TouchableOpacity
-              style={styles.headerButton}
-              onPress={() => navigation.navigate("Settings")}>
-              <Ionicons
-                name="notifications-outline"
-                size={22}
-                color={colors.accent}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.headerButton}
-              onPress={() => navigation.navigate("AppSettings")}>
-              <Ionicons
-                name="settings-outline"
-                size={22}
-                color={colors.accent}
-              />
-            </TouchableOpacity>
-          </View>
+          {/* Solo botón de configuración de la app */}
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => navigation.navigate("AppSettings")}>
+            <Ionicons name="settings-outline" size={22} color={colors.accent} />
+          </TouchableOpacity>
         </View>
 
         <Animated.View style={{ opacity: subtitleOpacity }}>
@@ -324,8 +300,6 @@ const createStyles = (colors: any) =>
       flex: 1,
       backgroundColor: colors.background,
     },
-
-    // Header
     header: {
       backgroundColor: colors.background,
       paddingHorizontal: spacing.lg,
@@ -335,10 +309,6 @@ const createStyles = (colors: any) =>
     headerRow: {
       flexDirection: "row",
       alignItems: "center",
-    },
-    headerButtons: {
-      flexDirection: "row",
-      gap: spacing.sm,
     },
     headerButton: {
       width: 40,
@@ -401,8 +371,6 @@ const createStyles = (colors: any) =>
       color: colors.accent,
       fontWeight: "500",
     },
-
-    // List
     listContent: {
       paddingHorizontal: spacing.lg,
       paddingTop: spacing.md,
@@ -410,8 +378,6 @@ const createStyles = (colors: any) =>
     listHeader: {
       marginBottom: spacing.md,
     },
-
-    // Section
     sectionCard: {
       backgroundColor: colors.backgroundSecondary,
       borderRadius: borderRadius.md,
@@ -429,8 +395,6 @@ const createStyles = (colors: any) =>
       fontWeight: "600",
       color: colors.textPrimary,
     },
-
-    // Type chips
     typeChips: {
       gap: spacing.sm,
       paddingVertical: spacing.xs,
@@ -463,8 +427,6 @@ const createStyles = (colors: any) =>
       fontWeight: "700",
       color: colors.backgroundSecondary,
     },
-
-    // Recent header
     recentHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -486,8 +448,6 @@ const createStyles = (colors: any) =>
       color: colors.accent,
       fontWeight: "600",
     },
-
-    // Empty state
     emptyContainer: {
       alignItems: "center",
       paddingVertical: spacing.xxl * 2,

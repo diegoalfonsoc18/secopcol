@@ -1,8 +1,8 @@
-export { HomeScreen } from "./HomeScreen";
-export { SearchScreen } from "./SearchScreen";
-export { FavoritesScreen } from "./FavoritesScreen";
-export { DetailScreen } from "./DetailScreen";
-export { SettingsScreen } from "./SettingsScreen";
-export { AppSettingsScreen } from "./AppSettingsScreen";
-export { OnboardingScreen } from "./OnboardingScreen";
-export { LoginScreen } from "./LoginScreen";
+export { default as HomeScreen } from "./HomeScreen";
+export { default as SearchScreen } from "./SearchScreen";
+export { default as FavoritesScreen } from "./FavoritesScreen";
+export { default as DetailScreen } from "./DetailScreen";
+export { default as AppSettingsScreen } from "./AppSettingsScreen";
+export { default as LoginScreen } from "./LoginScreen";
+export { default as OnboardingScreen } from "./OnboardingScreen";
+export { default as AlertsScreen } from "./AlertsScreen"; // ← Agregar

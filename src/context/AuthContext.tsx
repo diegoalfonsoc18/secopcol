@@ -1,3 +1,6 @@
+// src/context/AuthContext.tsx
+// Contexto de autenticación con Supabase
+
 import React, {
   createContext,
   useContext,
@@ -5,7 +8,8 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from "../services/supabase";
+import { Session, User as SupabaseUser } from "@supabase/supabase-js";
 
 // ============================================
 // TIPOS
@@ -15,11 +19,14 @@ interface User {
   name: string;
   email: string;
   createdAt: string;
+  avatarUrl?: string;
 }
 
 interface UserPreferences {
   selectedContractTypes: string[];
   onboardingCompleted: boolean;
+  notificationsEnabled: boolean;
+  theme: "light" | "dark" | "system";
 }
 
 interface AuthContextType {
@@ -27,22 +34,36 @@ interface AuthContextType {
   preferences: UserPreferences;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (name: string, email: string, password: string) => Promise<boolean>;
+  login: (
+    email: string,
+    password: string
+  ) => Promise<{ success: boolean; error?: string }>;
+  register: (
+    name: string,
+    email: string,
+    password: string
+  ) => Promise<{ success: boolean; error?: string }>;
+  loginWithMagicLink: (
+    email: string
+  ) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   updatePreferences: (prefs: Partial<UserPreferences>) => Promise<void>;
   completeOnboarding: (contractTypes: string[]) => Promise<void>;
+  updateProfile: (updates: {
+    name?: string;
+    avatarUrl?: string;
+  }) => Promise<void>;
+  savePushToken: (token: string) => Promise<void>;
+  resetPassword: (
+    email: string
+  ) => Promise<{ success: boolean; error?: string }>;
 }
-
-const STORAGE_KEYS = {
-  USER: "secop-user",
-  PREFERENCES: "secop-preferences",
-  CREDENTIALS: "secop-credentials",
-};
 
 const DEFAULT_PREFERENCES: UserPreferences = {
   selectedContractTypes: [],
   onboardingCompleted: false,
+  notificationsEnabled: true,
+  theme: "system",
 };
 
 // ============================================
@@ -57,100 +78,187 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [preferences, setPreferences] =
     useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [isLoading, setIsLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(null);
 
-  // Cargar datos al iniciar
+  // ============================================
+  // INICIALIZACIÓN
+  // ============================================
   useEffect(() => {
-    loadStoredData();
+    // Obtener sesión inicial
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        loadUserData(session.user);
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    // Escuchar cambios de autenticación
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth event:", event);
+      setSession(session);
+
+      if (event === "SIGNED_IN" && session?.user) {
+        await loadUserData(session.user);
+      } else if (event === "SIGNED_OUT") {
+        setUser(null);
+        setPreferences(DEFAULT_PREFERENCES);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const loadStoredData = async () => {
+  // ============================================
+  // CARGAR DATOS DEL USUARIO
+  // ============================================
+  const loadUserData = async (supabaseUser: SupabaseUser) => {
     try {
-      const [storedUser, storedPrefs] = await Promise.all([
-        AsyncStorage.getItem(STORAGE_KEYS.USER),
-        AsyncStorage.getItem(STORAGE_KEYS.PREFERENCES),
-      ]);
+      // Cargar perfil
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", supabaseUser.id)
+        .single();
 
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+      // Cargar preferencias
+      let { data: prefs } = await supabase
+        .from("preferences")
+        .select("*")
+        .eq("user_id", supabaseUser.id)
+        .single();
+
+      // Si no existen preferencias, crearlas
+      if (!prefs) {
+        const { data: newPrefs } = await supabase
+          .from("preferences")
+          .insert({
+            user_id: supabaseUser.id,
+            theme: "system",
+            notifications_enabled: true,
+            onboarding_completed: false,
+            favorite_contract_types: [],
+          })
+          .select()
+          .single();
+        prefs = newPrefs;
       }
-      if (storedPrefs) {
-        setPreferences(JSON.parse(storedPrefs));
-      }
+
+      // Mapear a nuestro formato
+      setUser({
+        id: supabaseUser.id,
+        name:
+          profile?.full_name || supabaseUser.email?.split("@")[0] || "Usuario",
+        email: supabaseUser.email || "",
+        createdAt: supabaseUser.created_at || new Date().toISOString(),
+        avatarUrl: profile?.avatar_url || undefined,
+      });
+
+      setPreferences({
+        selectedContractTypes: prefs?.favorite_contract_types || [],
+        onboardingCompleted: prefs?.onboarding_completed || false,
+        notificationsEnabled: prefs?.notifications_enabled ?? true,
+        theme: prefs?.theme || "system",
+      });
     } catch (error) {
-      console.error("Error loading auth data:", error);
+      console.error("Error loading user data:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Login (simulado - en producción conectar a backend)
-  const login = async (email: string, password: string): Promise<boolean> => {
+  // ============================================
+  // LOGIN CON EMAIL/PASSWORD
+  // ============================================
+  const login = async (
+    email: string,
+    password: string
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
-      // Verificar credenciales guardadas
-      const storedCreds = await AsyncStorage.getItem(STORAGE_KEYS.CREDENTIALS);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      if (storedCreds) {
-        const creds = JSON.parse(storedCreds);
-        if (creds.email === email && creds.password === password) {
-          const storedUser = await AsyncStorage.getItem(STORAGE_KEYS.USER);
-          if (storedUser) {
-            setUser(JSON.parse(storedUser));
-            return true;
-          }
-        }
+      if (error) {
+        return { success: false, error: getErrorMessage(error.message) };
       }
 
-      return false;
-    } catch (error) {
-      console.error("Login error:", error);
-      return false;
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
     }
   };
 
-  // Registro
+  // ============================================
+  // REGISTRO
+  // ============================================
   const register = async (
     name: string,
     email: string,
     password: string
-  ): Promise<boolean> => {
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const newUser: User = {
-        id: Date.now().toString(),
-        name,
+      const { data, error } = await supabase.auth.signUp({
         email,
-        createdAt: new Date().toISOString(),
-      };
+        password,
+        options: {
+          data: {
+            full_name: name,
+          },
+        },
+      });
 
-      // Guardar usuario y credenciales
-      await Promise.all([
-        AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(newUser)),
-        AsyncStorage.setItem(
-          STORAGE_KEYS.CREDENTIALS,
-          JSON.stringify({ email, password })
-        ),
-        AsyncStorage.setItem(
-          STORAGE_KEYS.PREFERENCES,
-          JSON.stringify(DEFAULT_PREFERENCES)
-        ),
-      ]);
+      if (error) {
+        return { success: false, error: getErrorMessage(error.message) };
+      }
 
-      setUser(newUser);
-      setPreferences(DEFAULT_PREFERENCES);
-      return true;
-    } catch (error) {
-      console.error("Register error:", error);
-      return false;
+      // Actualizar nombre en perfil
+      if (data.user) {
+        await supabase
+          .from("profiles")
+          .update({ full_name: name })
+          .eq("id", data.user.id);
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
     }
   };
 
-  // Logout
+  // ============================================
+  // LOGIN CON MAGIC LINK
+  // ============================================
+  const loginWithMagicLink = async (
+    email: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+      });
+
+      if (error) {
+        return { success: false, error: getErrorMessage(error.message) };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // ============================================
+  // LOGOUT
+  // ============================================
   const logout = async () => {
     try {
-      await AsyncStorage.multiRemove([
-        STORAGE_KEYS.USER,
-        STORAGE_KEYS.PREFERENCES,
-        STORAGE_KEYS.CREDENTIALS,
-      ]);
+      await supabase.auth.signOut();
       setUser(null);
       setPreferences(DEFAULT_PREFERENCES);
     } catch (error) {
@@ -158,26 +266,117 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
-  // Actualizar preferencias
+  // ============================================
+  // ACTUALIZAR PREFERENCIAS
+  // ============================================
   const updatePreferences = async (prefs: Partial<UserPreferences>) => {
     try {
       const newPrefs = { ...preferences, ...prefs };
-      await AsyncStorage.setItem(
-        STORAGE_KEYS.PREFERENCES,
-        JSON.stringify(newPrefs)
-      );
       setPreferences(newPrefs);
+
+      if (user) {
+        await supabase
+          .from("preferences")
+          .update({
+            theme: newPrefs.theme,
+            notifications_enabled: newPrefs.notificationsEnabled,
+            onboarding_completed: newPrefs.onboardingCompleted,
+            favorite_contract_types: newPrefs.selectedContractTypes,
+          })
+          .eq("user_id", user.id);
+      }
     } catch (error) {
       console.error("Error updating preferences:", error);
     }
   };
 
-  // Completar onboarding
+  // ============================================
+  // COMPLETAR ONBOARDING
+  // ============================================
   const completeOnboarding = async (contractTypes: string[]) => {
     await updatePreferences({
       selectedContractTypes: contractTypes,
       onboardingCompleted: true,
     });
+  };
+
+  // ============================================
+  // ACTUALIZAR PERFIL
+  // ============================================
+  const updateProfile = async (updates: {
+    name?: string;
+    avatarUrl?: string;
+  }) => {
+    try {
+      if (!user) return;
+
+      const profileUpdates: any = {};
+      if (updates.name) profileUpdates.full_name = updates.name;
+      if (updates.avatarUrl) profileUpdates.avatar_url = updates.avatarUrl;
+
+      await supabase.from("profiles").update(profileUpdates).eq("id", user.id);
+
+      setUser({
+        ...user,
+        name: updates.name || user.name,
+        avatarUrl: updates.avatarUrl || user.avatarUrl,
+      });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    }
+  };
+
+  // ============================================
+  // GUARDAR PUSH TOKEN
+  // ============================================
+  const savePushToken = async (token: string) => {
+    try {
+      if (!user) return;
+
+      await supabase
+        .from("profiles")
+        .update({ push_token: token })
+        .eq("id", user.id);
+    } catch (error) {
+      console.error("Error saving push token:", error);
+    }
+  };
+
+  // ============================================
+  // RESET PASSWORD
+  // ============================================
+  const resetPassword = async (
+    email: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+
+      if (error) {
+        return { success: false, error: getErrorMessage(error.message) };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // ============================================
+  // HELPER: TRADUCIR ERRORES
+  // ============================================
+  const getErrorMessage = (error: string): string => {
+    const errorMap: Record<string, string> = {
+      "Invalid login credentials": "Credenciales inválidas",
+      "Email not confirmed": "Por favor confirma tu email",
+      "User already registered": "Este email ya está registrado",
+      "Password should be at least 6 characters":
+        "La contraseña debe tener al menos 6 caracteres",
+      "Unable to validate email address: invalid format":
+        "Formato de email inválido",
+      "Email rate limit exceeded": "Demasiados intentos, espera un momento",
+    };
+
+    return errorMap[error] || error;
   };
 
   return (
@@ -189,9 +388,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         isAuthenticated: !!user,
         login,
         register,
+        loginWithMagicLink,
         logout,
         updatePreferences,
         completeOnboarding,
+        updateProfile,
+        savePushToken,
+        resetPassword,
       }}>
       {children}
     </AuthContext.Provider>

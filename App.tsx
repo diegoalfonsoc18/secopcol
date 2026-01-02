@@ -6,15 +6,16 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { Ionicons } from "@expo/vector-icons";
+
 import {
   HomeScreen,
   SearchScreen,
   FavoritesScreen,
   DetailScreen,
-  SettingsScreen,
   AppSettingsScreen,
   LoginScreen,
   OnboardingScreen,
+  AlertsScreen,
 } from "./src/screens/index";
 import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
@@ -39,11 +40,7 @@ function HomeStackNavigator() {
       }}>
       <Stack.Screen name="HomeTab" component={HomeScreen} />
       <Stack.Screen name="Detail" component={DetailScreen} />
-      <Stack.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{ animation: "slide_from_bottom" }}
-      />
+
       <Stack.Screen
         name="AppSettings"
         component={AppSettingsScreen}
@@ -81,6 +78,21 @@ function FavoritesStackNavigator() {
       }}>
       <Stack.Screen name="FavoritesTab" component={FavoritesScreen} />
       <Stack.Screen name="Detail" component={DetailScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function AlertsStackNavigator() {
+  const { colors } = useTheme();
+
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: "slide_from_right",
+        contentStyle: { backgroundColor: colors.background },
+      }}>
+      <Stack.Screen name="AlertsTab" component={AlertsScreen} />
     </Stack.Navigator>
   );
 }
@@ -182,6 +194,21 @@ function TabNavigator() {
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name={focused ? "heart" : "heart-outline"}
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      <Tab.Screen
+        name="Alerts"
+        component={AlertsStackNavigator}
+        options={{
+          tabBarLabel: "Alertas",
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? "notifications" : "notifications-outline"}
               size={24}
               color={color}
             />
