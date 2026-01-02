@@ -16,8 +16,8 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
                BuildableName = "Secopcol.app"
-               BlueprintName = "SECOPColombia"
-               ReferencedContainer = "container:SECOPColombia.xcodeproj">
+               BlueprintName = "Secopcol"
+               ReferencedContainer = "container:Secopcol.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "SECOPColombiaTests.xctest"
-               BlueprintName = "SECOPColombiaTests"
-               ReferencedContainer = "container:SECOPColombia.xcodeproj">
+               BuildableName = "SecopcolTests.xctest"
+               BlueprintName = "SecopcolTests"
+               ReferencedContainer = "container:Secopcol.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -56,8 +56,8 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
             BuildableName = "Secopcol.app"
-            BlueprintName = "SECOPColombia"
-            ReferencedContainer = "container:SECOPColombia.xcodeproj">
+            BlueprintName = "Secopcol"
+            ReferencedContainer = "container:Secopcol.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -73,8 +73,8 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
             BuildableName = "Secopcol.app"
-            BlueprintName = "SECOPColombia"
-            ReferencedContainer = "container:SECOPColombia.xcodeproj">
+            BlueprintName = "Secopcol"
+            ReferencedContainer = "container:Secopcol.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

@@ -43,7 +43,11 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const scrollY = useRef(new Animated.Value(0)).current;
 
   // Ubicación del usuario
-  const { departamento: userDepartamento, nearbyDepartamentos } = useLocation();
+  const {
+    departamento: userDepartamento,
+    municipio: userMunicipio,
+    nearbyDepartamentos,
+  } = useLocation();
 
   // Estado para el modal de tipos de contrato
   const [showTypeSelector, setShowTypeSelector] = useState(false);
@@ -77,20 +81,50 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       );
     }
 
-    // Filtrar por departamentos cercanos (si hay ubicación)
-    if (nearbyDepartamentos.length > 0) {
-      const nearbyDeptNames = nearbyDepartamentos.map((d) =>
-        d.departamento.toUpperCase()
-      );
-
-      filtered = filtered.filter((process) => {
-        const processDept = process.departamento_entidad?.toUpperCase() || "";
-        return nearbyDeptNames.some(
-          (dept) => processDept.includes(dept) || dept.includes(processDept)
-        );
-      });
+    // Si no hay ubicación, retornar filtrados solo por tipo
+    if (nearbyDepartamentos.length === 0) {
+      return filtered;
     }
 
+    // Filtrar por departamentos cercanos (priorizar 80km, luego expandir)
+    const RADIUS_CLOSE = 80; // km
+
+    // Departamentos dentro de 80km
+    const closeDepts = nearbyDepartamentos
+      .filter((d) => d.distance <= RADIUS_CLOSE)
+      .map((d) => d.departamento.toUpperCase());
+
+    // Filtrar por departamentos cercanos (80km)
+    const closeProcesses = filtered.filter((process) => {
+      const processDept = process.departamento_entidad?.toUpperCase() || "";
+      return closeDepts.some(
+        (dept) => processDept.includes(dept) || dept.includes(processDept)
+      );
+    });
+
+    // Si hay procesos cercanos, retornarlos
+    if (closeProcesses.length > 0) {
+      return closeProcesses;
+    }
+
+    // Si no hay cercanos, buscar en todos los departamentos disponibles
+    const allNearbyDepts = nearbyDepartamentos.map((d) =>
+      d.departamento.toUpperCase()
+    );
+
+    const expandedProcesses = filtered.filter((process) => {
+      const processDept = process.departamento_entidad?.toUpperCase() || "";
+      return allNearbyDepts.some(
+        (dept) => processDept.includes(dept) || dept.includes(processDept)
+      );
+    });
+
+    // Si hay procesos en el rango expandido, retornarlos
+    if (expandedProcesses.length > 0) {
+      return expandedProcesses;
+    }
+
+    // Si no hay nada, retornar todos los filtrados por tipo (sin filtro de ubicación)
     return filtered;
   }, [processes, preferences.selectedContractTypes, nearbyDepartamentos]);
 
@@ -165,17 +199,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const ListHeader = () => (
     <View style={styles.listHeader}>
-      {/* Badge de ubicación */}
-      {userDepartamento && (
-        <View style={styles.locationInfoCard}>
-          <Ionicons name="location" size={16} color={colors.success} />
-          <Text style={styles.locationInfoText}>
-            Mostrando procesos cerca de{" "}
-            <Text style={styles.locationInfoHighlight}>{userDepartamento}</Text>
-          </Text>
-        </View>
-      )}
-
       {/* Por Tipo de Contrato */}
       <View style={styles.sectionCard}>
         {/* Header de la sección con botón de editar */}
@@ -328,6 +351,14 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               ? `Hola, ${user.name.split(" ")[0]}`
               : "Contratación pública"}
           </Text>
+          {(userMunicipio || userDepartamento) && (
+            <View style={styles.locationSubtitle}>
+              <Ionicons name="location" size={14} color={colors.success} />
+              <Text style={styles.locationSubtitleText}>
+                {userMunicipio || userDepartamento}
+              </Text>
+            </View>
+          )}
         </Animated.View>
       </Animated.View>
 
@@ -442,6 +473,17 @@ const createStyles = (colors: any) =>
       fontSize: 15,
       color: colors.textSecondary,
       marginTop: spacing.xs,
+    },
+    locationSubtitle: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      marginTop: spacing.xs,
+    },
+    locationSubtitleText: {
+      fontSize: 13,
+      color: colors.success,
+      fontWeight: "500",
     },
     listContent: {
       paddingHorizontal: spacing.lg,
@@ -613,27 +655,6 @@ const createStyles = (colors: any) =>
       fontSize: 15,
       fontWeight: "600",
       color: colors.accent,
-    },
-
-    // Ubicación
-    locationInfoCard: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: colors.successLight || colors.accentLight,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      borderRadius: borderRadius.full,
-      gap: spacing.sm,
-      marginBottom: spacing.md,
-      alignSelf: "flex-start",
-    },
-    locationInfoText: {
-      fontSize: 13,
-      color: colors.textSecondary,
-    },
-    locationInfoHighlight: {
-      fontWeight: "600",
-      color: colors.textPrimary,
     },
   });
 

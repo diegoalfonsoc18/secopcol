@@ -11,10 +11,6 @@
     </dependencies>
     <scenes>
         <scene sceneID="EXPO-SCENE-1">
-            v
-            
-            
-        
             <objects>
                 <viewController storyboardIdentifier="SplashScreenViewController" id="EXPO-VIEWCONTROLLER-1" sceneMemberID="viewController">
                     <view key="view" userInteractionEnabled="NO" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="EXPO-ContainerView" userLabel="ContainerView">
