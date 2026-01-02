@@ -10,11 +10,13 @@
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain"
-      //"backgroundColor": "#000000"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.secopcol.app"
+      "bundleIdentifier": "com.secopcol.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Secopcol usa tu ubicación para mostrarte procesos de contratación cercanos a ti."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,9 +24,18 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "backgroundColor": "#000000"
       },
-      "package": "com.secopcol.app"
+      "package": "com.secopcol.app",
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Secopcol usa tu ubicación para mostrarte procesos de contratación cercanos a ti."
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     },

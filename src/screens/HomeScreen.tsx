@@ -21,7 +21,7 @@ import {
   ProcessCard,
   DashboardSkeleton,
   StaggeredItem,
-  ContractTypeSelector, // <-- Importar el nuevo componente
+  ContractTypeSelector,
 } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
@@ -29,6 +29,7 @@ import { spacing, borderRadius } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { useHaptics } from "../hooks/useHaptics";
+import { useLocation } from "../hooks/useLocation";
 
 // ============================================
 // COMPONENTE PRINCIPAL
@@ -40,6 +41,9 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { user, preferences } = useAuth();
   const { processes, loading, fetchRecentProcesses } = useProcessesStore();
   const scrollY = useRef(new Animated.Value(0)).current;
+
+  // Ubicación del usuario
+  const { departamento: userDepartamento, nearbyDepartamentos } = useLocation();
 
   // Estado para el modal de tipos de contrato
   const [showTypeSelector, setShowTypeSelector] = useState(false);
@@ -60,14 +64,35 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     Concesión: { color: colors.warning, icon: "key-outline" },
   };
 
+  // Filtrar procesos por tipo de contrato Y por ubicación cercana
   const filteredProcesses = useMemo(() => {
-    if (preferences.selectedContractTypes.length === 0) {
-      return processes;
+    let filtered: SecopProcess[] = [...processes];
+
+    // Filtrar por tipos de contrato seleccionados
+    if (preferences.selectedContractTypes.length > 0) {
+      filtered = filtered.filter((process) =>
+        preferences.selectedContractTypes.includes(
+          process.tipo_de_contrato || ""
+        )
+      );
     }
-    return processes.filter((process) =>
-      preferences.selectedContractTypes.includes(process.tipo_de_contrato || "")
-    );
-  }, [processes, preferences.selectedContractTypes]);
+
+    // Filtrar por departamentos cercanos (si hay ubicación)
+    if (nearbyDepartamentos.length > 0) {
+      const nearbyDeptNames = nearbyDepartamentos.map((d) =>
+        d.departamento.toUpperCase()
+      );
+
+      filtered = filtered.filter((process) => {
+        const processDept = process.departamento_entidad?.toUpperCase() || "";
+        return nearbyDeptNames.some(
+          (dept) => processDept.includes(dept) || dept.includes(processDept)
+        );
+      });
+    }
+
+    return filtered;
+  }, [processes, preferences.selectedContractTypes, nearbyDepartamentos]);
 
   useEffect(() => {
     fetchRecentProcesses(100);
@@ -140,6 +165,18 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const ListHeader = () => (
     <View style={styles.listHeader}>
+      {/* Badge de ubicación */}
+      {userDepartamento && (
+        <View style={styles.locationInfoCard}>
+          <Ionicons name="location" size={16} color={colors.success} />
+          <Text style={styles.locationInfoText}>
+            Mostrando procesos cerca de{" "}
+            <Text style={styles.locationInfoHighlight}>{userDepartamento}</Text>
+          </Text>
+        </View>
+      )}
+
+      {/* Por Tipo de Contrato */}
       <View style={styles.sectionCard}>
         {/* Header de la sección con botón de editar */}
         <View style={styles.sectionHeader}>
@@ -576,6 +613,27 @@ const createStyles = (colors: any) =>
       fontSize: 15,
       fontWeight: "600",
       color: colors.accent,
+    },
+
+    // Ubicación
+    locationInfoCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.successLight || colors.accentLight,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.full,
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+      alignSelf: "flex-start",
+    },
+    locationInfoText: {
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    locationInfoHighlight: {
+      fontWeight: "600",
+      color: colors.textPrimary,
     },
   });
 
