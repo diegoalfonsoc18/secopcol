@@ -6,3 +6,4 @@ export { default as AppSettingsScreen } from "./AppSettingsScreen";
 export { default as LoginScreen } from "./LoginScreen";
 export { default as OnboardingScreen } from "./OnboardingScreen";
 export { default as AlertsScreen } from "./AlertsScreen"; // ← Agregar
+export { ContractTypeSelector } from "./ContractTypeSelector";

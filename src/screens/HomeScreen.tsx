@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useCallback, useMemo } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 import {
   Animated,
   RefreshControl,
@@ -34,6 +40,9 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { processes, loading, fetchRecentProcesses } = useProcessesStore();
   const scrollY = useRef(new Animated.Value(0)).current;
 
+  // Estado para el modal de tipos de contrato
+  const [showTypeSelector, setShowTypeSelector] = useState(false);
+
   const styles = createStyles(colors);
 
   const tipoContratoConfig: Record<string, { color: string; icon: string }> = {
@@ -46,6 +55,8 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     Suministro: { color: colors.success, icon: "cube-outline" },
     Compraventa: { color: colors.danger, icon: "cart-outline" },
     Interventoría: { color: "#AF52DE", icon: "eye-outline" },
+    Arrendamiento: { color: colors.success, icon: "home-outline" },
+    Concesión: { color: colors.warning, icon: "key-outline" },
   };
 
   const filteredProcesses = useMemo(() => {
@@ -106,6 +117,12 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     navigation.navigate("Search");
   }, [navigation, haptics]);
 
+  // Handler para abrir el selector de tipos
+  const handleOpenTypeSelector = useCallback(() => {
+    haptics.light();
+    setShowTypeSelector(true);
+  }, [haptics]);
+
   const renderProcess = useCallback(
     ({ item, index }: { item: SecopProcess; index: number }) => (
       <StaggeredItem index={index} staggerDelay={30}>
@@ -123,10 +140,23 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const ListHeader = () => (
     <View style={styles.listHeader}>
       <View style={styles.sectionCard}>
+        {/* Header de la sección con botón de editar */}
         <View style={styles.sectionHeader}>
-          <Ionicons name="grid-outline" size={18} color={colors.accent} />
-          <Text style={styles.sectionTitle}>Por Tipo de Contrato</Text>
+          <View style={styles.sectionHeaderLeft}>
+            <Ionicons name="grid-outline" size={18} color={colors.accent} />
+            <Text style={styles.sectionTitle}>Por Tipo de Contrato</Text>
+          </View>
+          {/* Botón para editar tipos de contrato */}
+          <TouchableOpacity
+            onPress={handleOpenTypeSelector}
+            style={styles.editButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Ionicons name="pencil" size={14} color={colors.accent} />
+            <Text style={styles.editButtonText}>Editar</Text>
+          </TouchableOpacity>
         </View>
+
+        {/* Chips de tipos de contrato */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -161,7 +191,30 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 </View>
               );
             })}
+
+          {/* Chip para agregar más tipos si no hay ninguno o pocos */}
+          {preferences.selectedContractTypes.length === 0 && (
+            <TouchableOpacity
+              style={styles.addTypeChip}
+              onPress={handleOpenTypeSelector}>
+              <Ionicons name="add" size={16} color={colors.accent} />
+              <Text style={styles.addTypeChipText}>Filtrar tipos</Text>
+            </TouchableOpacity>
+          )}
         </ScrollView>
+
+        {/* Indicador de filtros activos */}
+        {preferences.selectedContractTypes.length > 0 && (
+          <View style={styles.activeFiltersRow}>
+            <Ionicons name="funnel" size={12} color={colors.textTertiary} />
+            <Text style={styles.activeFiltersText}>
+              Mostrando {preferences.selectedContractTypes.length} de 8 tipos
+            </Text>
+            <TouchableOpacity onPress={handleOpenTypeSelector}>
+              <Text style={styles.changeFiltersText}>Cambiar</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       <View style={styles.recentHeader}>
@@ -187,6 +240,20 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       <Text style={styles.emptyMessage}>
         No hay procesos disponibles con los filtros seleccionados
       </Text>
+
+      {/* Botón para cambiar filtros cuando está vacío */}
+      {preferences.selectedContractTypes.length > 0 && (
+        <Pressable
+          style={({ pressed }) => [
+            styles.changeFiltersButton,
+            pressed && { opacity: 0.8 },
+          ]}
+          onPress={handleOpenTypeSelector}>
+          <Ionicons name="options-outline" size={18} color={colors.accent} />
+          <Text style={styles.changeFiltersButtonText}>Cambiar filtros</Text>
+        </Pressable>
+      )}
+
       <Pressable
         style={({ pressed }) => [
           styles.retryButton,
@@ -237,14 +304,17 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               : "Contratación pública"}
           </Text>
           {preferences.selectedContractTypes.length > 0 && (
-            <View style={styles.filterBadge}>
+            <TouchableOpacity
+              style={styles.filterBadge}
+              onPress={handleOpenTypeSelector}>
               <Ionicons name="filter" size={12} color={colors.accent} />
               <Text style={styles.filterBadgeText}>
                 {preferences.selectedContractTypes.length} tipo
                 {preferences.selectedContractTypes.length > 1 ? "s" : ""} de
                 contrato
               </Text>
-            </View>
+              <Ionicons name="chevron-down" size={12} color={colors.accent} />
+            </TouchableOpacity>
           )}
         </Animated.View>
       </Animated.View>
@@ -287,6 +357,12 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           initialNumToRender={5}
         />
       )}
+
+      {/* Modal para seleccionar tipos de contrato */}
+      <ContractTypeSelector
+        visible={showTypeSelector}
+        onClose={() => setShowTypeSelector(false)}
+      />
     </View>
   );
 };
@@ -387,13 +463,32 @@ const createStyles = (colors: any) =>
     sectionHeader: {
       flexDirection: "row",
       alignItems: "center",
-      gap: spacing.sm,
+      justifyContent: "space-between",
       marginBottom: spacing.md,
+    },
+    sectionHeaderLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
     },
     sectionTitle: {
       fontSize: 15,
       fontWeight: "600",
       color: colors.textPrimary,
+    },
+    editButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.accentLight,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.full,
+      gap: spacing.xs,
+    },
+    editButtonText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.accent,
     },
     typeChips: {
       gap: spacing.sm,
@@ -426,6 +521,39 @@ const createStyles = (colors: any) =>
       fontSize: 10,
       fontWeight: "700",
       color: colors.backgroundSecondary,
+    },
+    addTypeChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.accentLight,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.full,
+      gap: spacing.xs,
+      borderWidth: 1,
+      borderColor: colors.accent,
+      borderStyle: "dashed",
+    },
+    addTypeChipText: {
+      fontSize: 12,
+      color: colors.accent,
+      fontWeight: "600",
+    },
+    activeFiltersRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: spacing.sm,
+      gap: spacing.xs,
+    },
+    activeFiltersText: {
+      flex: 1,
+      fontSize: 12,
+      color: colors.textTertiary,
+    },
+    changeFiltersText: {
+      fontSize: 12,
+      color: colors.accent,
+      fontWeight: "600",
     },
     recentHeader: {
       flexDirection: "row",
@@ -474,10 +602,27 @@ const createStyles = (colors: any) =>
       textAlign: "center",
       lineHeight: 22,
     },
+    changeFiltersButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: spacing.lg,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: borderRadius.full,
+      gap: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.accent,
+    },
+    changeFiltersButtonText: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: colors.accent,
+    },
     retryButton: {
       flexDirection: "row",
       alignItems: "center",
-      marginTop: spacing.xl,
+      marginTop: spacing.md,
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.md,
       backgroundColor: colors.accentLight,
