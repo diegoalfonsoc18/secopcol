@@ -98,10 +98,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth event:", event);
+      console.log(
+        "Auth event:",
+        event,
+        "Session:",
+        !!session,
+        "User:",
+        !!session?.user
+      );
       setSession(session);
 
       if (event === "SIGNED_IN" && session?.user) {
+        console.log("Calling loadUserData...");
         await loadUserData(session.user);
       } else if (event === "SIGNED_OUT") {
         setUser(null);
@@ -115,63 +123,52 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   // ============================================
-  // CARGAR DATOS DEL USUARIO
+  // CARGAR DATOS DEL USUARIO (Corregido)
   // ============================================
   const loadUserData = async (supabaseUser: SupabaseUser) => {
+    console.log("Cargando datos para:", supabaseUser.id);
     try {
-      // Cargar perfil
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", supabaseUser.id)
-        .single();
-
-      // Cargar preferencias
-      let { data: prefs } = await supabase
-        .from("preferences")
-        .select("*")
-        .eq("user_id", supabaseUser.id)
-        .single();
-
-      // Si no existen preferencias, crearlas
-      if (!prefs) {
-        const { data: newPrefs } = await supabase
+      // Intentamos leer ambos al tiempo
+      const [profileRes, prefsRes] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", supabaseUser.id)
+          .single(),
+        supabase
           .from("preferences")
-          .insert({
-            user_id: supabaseUser.id,
-            theme: "system",
-            notifications_enabled: true,
-            onboarding_completed: false,
-            favorite_contract_types: [],
-          })
-          .select()
-          .single();
-        prefs = newPrefs;
+          .select("*")
+          .eq("user_id", supabaseUser.id)
+          .single(),
+      ]);
+
+      // Si no existen (porque el trigger falló o el usuario es antiguo)
+      // podrías redirigir a un error, pero con el Trigger ya deberían estar ahí.
+
+      if (profileRes.data) {
+        setUser({
+          id: supabaseUser.id,
+          name: profileRes.data.full_name || "Usuario",
+          email: supabaseUser.email || "",
+          createdAt: supabaseUser.created_at,
+          avatarUrl: profileRes.data.avatar_url,
+        });
       }
 
-      // Mapear a nuestro formato
-      setUser({
-        id: supabaseUser.id,
-        name:
-          profile?.full_name || supabaseUser.email?.split("@")[0] || "Usuario",
-        email: supabaseUser.email || "",
-        createdAt: supabaseUser.created_at || new Date().toISOString(),
-        avatarUrl: profile?.avatar_url || undefined,
-      });
-
-      setPreferences({
-        selectedContractTypes: prefs?.favorite_contract_types || [],
-        onboardingCompleted: prefs?.onboarding_completed || false,
-        notificationsEnabled: prefs?.notifications_enabled ?? true,
-        theme: prefs?.theme || "system",
-      });
+      if (prefsRes.data) {
+        setPreferences({
+          selectedContractTypes: prefsRes.data.favorite_contract_types || [],
+          onboardingCompleted: prefsRes.data.onboarding_completed || false,
+          notificationsEnabled: prefsRes.data.notifications_enabled ?? true,
+          theme: prefsRes.data.theme || "system",
+        });
+      }
     } catch (error) {
-      console.error("Error loading user data:", error);
+      console.error("Error en loadUserData:", error);
     } finally {
       setIsLoading(false);
     }
   };
-
   // ============================================
   // LOGIN CON EMAIL/PASSWORD
   // ============================================

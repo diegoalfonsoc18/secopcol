@@ -67,20 +67,18 @@ export const LoginScreen: React.FC = () => {
 
     setLoading(true);
     try {
-      let success = false;
-
       if (mode === "login") {
-        success = await login(email, password);
-        if (!success) {
-          Alert.alert("Error", "Credenciales incorrectas");
+        const result = await login(email, password);
+        if (!result.success) {
+          Alert.alert("Error", result.error || "Credenciales incorrectas");
         }
       } else {
-        success = await register(name, email, password);
-        if (!success) {
-          Alert.alert("Error", "No se pudo crear la cuenta");
+        const result = await register(name, email, password);
+        if (!result.success) {
+          Alert.alert("Error", result.error || "No se pudo crear la cuenta");
         }
       }
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Ocurrió un error inesperado");
     } finally {
       setLoading(false);

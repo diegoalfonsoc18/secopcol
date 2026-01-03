@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { StyleSheet, Platform, ActivityIndicator, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -6,6 +6,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { Ionicons } from "@expo/vector-icons";
+import * as Linking from "expo-linking";
 
 import {
   HomeScreen,
@@ -21,6 +22,7 @@ import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { useProcessesStore } from "./src/store/processesStore";
 import { ErrorBoundary } from "./src/components/ErrorBoundary";
+import { supabase } from "./src/services/supabase";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -40,7 +42,6 @@ function HomeStackNavigator() {
       }}>
       <Stack.Screen name="HomeTab" component={HomeScreen} />
       <Stack.Screen name="Detail" component={DetailScreen} />
-
       <Stack.Screen
         name="AppSettings"
         component={AppSettingsScreen}
@@ -161,7 +162,6 @@ function TabNavigator() {
           ),
         }}
       />
-
       <Tab.Screen
         name="Search"
         component={SearchStackNavigator}
@@ -176,7 +176,6 @@ function TabNavigator() {
           ),
         }}
       />
-
       <Tab.Screen
         name="Favorites"
         component={FavoritesStackNavigator}
@@ -200,7 +199,6 @@ function TabNavigator() {
           ),
         }}
       />
-
       <Tab.Screen
         name="Alerts"
         component={AlertsStackNavigator}
@@ -260,7 +258,6 @@ function RootNavigator() {
   const { isAuthenticated, isLoading, preferences } = useAuth();
   const { colors } = useTheme();
 
-  // Pantalla de carga
   if (isLoading) {
     return (
       <View
@@ -273,25 +270,71 @@ function RootNavigator() {
     );
   }
 
-  // No autenticado -> Login
   if (!isAuthenticated) {
     return <AuthNavigator />;
   }
 
-  // Autenticado pero sin completar onboarding -> Onboarding
   if (!preferences.onboardingCompleted) {
     return <OnboardingNavigator />;
   }
 
-  // Autenticado y onboarding completo -> App principal
   return <TabNavigator />;
 }
 
 // ============================================
-// APP CONTENT
+// APP CONTENT (con manejo de deep links)
 // ============================================
 function AppContent() {
   const { colors, isDark } = useTheme();
+
+  // Manejar deep links de Supabase
+  useEffect(() => {
+    const handleDeepLink = async (url: string) => {
+      console.log("Deep link received:", url);
+
+      if (
+        url.includes("access_token") ||
+        url.includes("refresh_token") ||
+        url.includes("token_hash")
+      ) {
+        try {
+          const hashPart = url.split("#")[1];
+          if (!hashPart) return;
+
+          const params = new URLSearchParams(hashPart);
+          const accessToken = params.get("access_token");
+          const refreshToken = params.get("refresh_token");
+
+          console.log("Tokens found:", !!accessToken, !!refreshToken);
+
+          if (accessToken && refreshToken) {
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+
+            if (error) {
+              console.error("Error setting session:", error);
+            } else {
+              console.log("Session set successfully:", !!data.session);
+            }
+          }
+        } catch (error) {
+          console.error("Error handling deep link:", error);
+        }
+      }
+    };
+
+    const subscription = Linking.addEventListener("url", (event) => {
+      handleDeepLink(event.url);
+    });
+
+    Linking.getInitialURL().then((url) => {
+      if (url) handleDeepLink(url);
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   return (
     <NavigationContainer

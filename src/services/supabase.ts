@@ -1,8 +1,7 @@
 // src/services/supabase.ts
-// Configuración y cliente de Supabase
-
 import { createClient } from "@supabase/supabase-js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Linking from "expo-linking";
 
 const SUPABASE_URL = "https://drwxgdwtlcvgiihwvgxd.supabase.co";
 const SUPABASE_ANON_KEY =
@@ -13,8 +12,13 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     storage: AsyncStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
+    detectSessionInUrl: true,
   },
 });
+
+// Helper para obtener la URL de redirect
+export const getRedirectUrl = () => {
+  return Linking.createURL("/");
+};
 
 export { SUPABASE_URL, SUPABASE_ANON_KEY };
