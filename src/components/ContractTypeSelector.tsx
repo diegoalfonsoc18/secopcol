@@ -15,72 +15,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
-import { spacing, borderRadius, colors as themeColors } from "../theme";
+import { spacing, borderRadius } from "../theme";
 import { useHaptics } from "../hooks/useHaptics";
+import {
+  CONTRACT_TYPES,
+  getContractTypeColor,
+} from "../constants/contractTypes";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-
-// ============================================
-// TIPOS DE CONTRATO DISPONIBLES
-// ============================================
-const CONTRACT_TYPES = [
-  {
-    id: "Obra",
-    label: "Obra",
-    description: "Construcción, infraestructura",
-    icon: "construct-outline",
-    color: themeColors.warning,
-  },
-  {
-    id: "Consultoría",
-    label: "Consultoría",
-    description: "Estudios, asesorías, diseños",
-    icon: "bulb-outline",
-    color: "#5856D6",
-  },
-  {
-    id: "Prestación de servicios",
-    label: "Prestación de Servicios",
-    description: "Servicios profesionales",
-    icon: "briefcase-outline",
-    color: themeColors.accent,
-  },
-  {
-    id: "Suministro",
-    label: "Suministro",
-    description: "Entrega periódica de bienes",
-    icon: "cube-outline",
-    color: themeColors.success,
-  },
-  {
-    id: "Compraventa",
-    label: "Compraventa",
-    description: "Adquisición de bienes",
-    icon: "cart-outline",
-    color: themeColors.danger,
-  },
-  {
-    id: "Interventoría",
-    label: "Interventoría",
-    description: "Supervisión de contratos",
-    icon: "eye-outline",
-    color: "#AF52DE",
-  },
-  {
-    id: "Arrendamiento",
-    label: "Arrendamiento",
-    description: "Alquiler de bienes",
-    icon: "home-outline",
-    color: themeColors.success,
-  },
-  {
-    id: "Concesión",
-    label: "Concesión",
-    description: "Explotación de servicios",
-    icon: "key-outline",
-    color: themeColors.warning,
-  },
-];
 
 interface ContractTypeSelectorProps {
   visible: boolean;
@@ -273,6 +215,7 @@ export const ContractTypeSelector: React.FC<ContractTypeSelectorProps> = ({
             showsVerticalScrollIndicator={false}>
             {CONTRACT_TYPES.map((type) => {
               const isSelected = selectedTypes.includes(type.id);
+              const typeColor = getContractTypeColor(type, colors);
 
               return (
                 <TouchableOpacity
@@ -280,21 +223,25 @@ export const ContractTypeSelector: React.FC<ContractTypeSelectorProps> = ({
                   style={[
                     styles.typeCard,
                     isSelected && styles.typeCardSelected,
-                    isSelected && { borderColor: type.color },
+                    isSelected && { borderColor: typeColor },
                   ]}
                   onPress={() => toggleType(type.id)}
                   activeOpacity={0.7}>
                   <View
                     style={[
                       styles.typeIcon,
-                      { backgroundColor: `${type.color}15` },
-                      isSelected && { backgroundColor: `${type.color}25` },
+                      { backgroundColor: `${typeColor}15` },
+                      isSelected && { backgroundColor: `${typeColor}25` },
                     ]}>
-                    <Ionicons
-                      name={type.icon as any}
-                      size={20}
-                      color={type.color}
-                    />
+                    {type.CustomIcon ? (
+                      <type.CustomIcon size={20} color={typeColor} />
+                    ) : (
+                      <Ionicons
+                        name={type.icon as any}
+                        size={20}
+                        color={typeColor}
+                      />
+                    )}
                   </View>
 
                   <View style={styles.typeInfo}>
@@ -308,8 +255,8 @@ export const ContractTypeSelector: React.FC<ContractTypeSelectorProps> = ({
                     style={[
                       styles.typeCheckbox,
                       isSelected && {
-                        backgroundColor: type.color,
-                        borderColor: type.color,
+                        backgroundColor: typeColor,
+                        borderColor: typeColor,
                       },
                     ]}>
                     {isSelected && (

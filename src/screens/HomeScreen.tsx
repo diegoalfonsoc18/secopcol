@@ -30,6 +30,12 @@ import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { useHaptics } from "../hooks/useHaptics";
 import { useLocation } from "../hooks/useLocation";
+import {
+  CONTRACT_TYPES,
+  getContractTypeColor,
+  DEFAULT_CONTRACT_CONFIG,
+  ContractTypeConfig,
+} from "../constants/contractTypes";
 
 // ============================================
 // COMPONENTE PRINCIPAL
@@ -54,19 +60,14 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const styles = createStyles(colors);
 
-  const tipoContratoConfig: Record<string, { color: string; icon: string }> = {
-    Obra: { color: colors.warning, icon: "construct-outline" },
-    Consultoría: { color: "#5856D6", icon: "bulb-outline" },
-    "Prestación de servicios": {
-      color: colors.accent,
-      icon: "briefcase-outline",
-    },
-    Suministro: { color: colors.success, icon: "cube-outline" },
-    Compraventa: { color: colors.danger, icon: "cart-outline" },
-    Interventoría: { color: "#AF52DE", icon: "eye-outline" },
-    Arrendamiento: { color: colors.success, icon: "home-outline" },
-    Concesión: { color: colors.warning, icon: "key-outline" },
-  };
+  // Crear mapa de configuración por ID para acceso rápido
+  const tipoContratoConfig = useMemo(() => {
+    const map: Record<string, ContractTypeConfig> = {};
+    CONTRACT_TYPES.forEach((type) => {
+      map[type.id] = type;
+    });
+    return map;
+  }, []);
 
   // Filtrar procesos por tipo de contrato Y por ubicación cercana
   const filteredProcesses = useMemo(() => {
@@ -79,8 +80,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           process.tipo_de_contrato || ""
         )
       );
-      console.log("después de filtro por tipo:", filtered.length);
-      console.log("selectedContractTypes:", preferences.selectedContractTypes);
     }
 
     // Si no hay ubicación, retornar filtrados solo por tipo
@@ -171,8 +170,8 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const handleRefresh = useCallback(async () => {
     haptics.medium();
-    await fetchRecentProcesses(100);
-  }, [fetchRecentProcesses, haptics]);
+    await fetchRecentProcesses(100, false, preferences.selectedContractTypes);
+  }, [fetchRecentProcesses, haptics, preferences.selectedContractTypes]);
 
   const handleViewAll = useCallback(() => {
     haptics.light();
@@ -228,26 +227,29 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             .sort((a, b) => b[1] - a[1])
             .slice(0, 6)
             .map(([tipo, count]) => {
-              const config = tipoContratoConfig[tipo] || {
-                color: colors.textSecondary,
-                icon: "help-outline",
-              };
+              const config =
+                tipoContratoConfig[tipo] || DEFAULT_CONTRACT_CONFIG;
+              const typeColor = getContractTypeColor(config, colors);
               return (
                 <View
                   key={tipo}
-                  style={[styles.typeChip, { borderColor: config.color }]}>
-                  <Ionicons
-                    name={config.icon as any}
-                    size={14}
-                    color={config.color}
-                  />
+                  style={[styles.typeChip, { borderColor: typeColor }]}>
+                  {config.CustomIcon ? (
+                    <config.CustomIcon size={14} color={typeColor} />
+                  ) : (
+                    <Ionicons
+                      name={config.icon as any}
+                      size={14}
+                      color={typeColor}
+                    />
+                  )}
                   <Text style={styles.typeChipLabel} numberOfLines={1}>
                     {tipo}
                   </Text>
                   <View
                     style={[
                       styles.typeChipBadge,
-                      { backgroundColor: config.color },
+                      { backgroundColor: typeColor },
                     ]}>
                     <Text style={styles.typeChipCount}>{count}</Text>
                   </View>
