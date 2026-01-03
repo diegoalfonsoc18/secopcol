@@ -11,69 +11,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
-import { spacing, borderRadius, colors as themeColors } from "../theme";
-
-// ============================================
-// TIPOS DE CONTRATO DISPONIBLES
-// ============================================
-const CONTRACT_TYPES = [
-  {
-    id: "Obra",
-    label: "Obra",
-    description: "Construcción, infraestructura, obras civiles",
-    icon: "construct-outline",
-    color: themeColors.warning,
-  },
-  {
-    id: "Consultoría",
-    label: "Consultoría",
-    description: "Estudios, asesorías, diseños técnicos",
-    icon: "bulb-outline",
-    color: "#5856D6",
-  },
-  {
-    id: "Prestación de servicios",
-    label: "Prestación de Servicios",
-    description: "Servicios profesionales y técnicos",
-    icon: "briefcase-outline",
-    color: themeColors.accent,
-  },
-  {
-    id: "Suministro",
-    label: "Suministro",
-    description: "Entrega periódica de bienes",
-    icon: "cube-outline",
-    color: themeColors.success,
-  },
-  {
-    id: "Compraventa",
-    label: "Compraventa",
-    description: "Adquisición de bienes muebles",
-    icon: "cart-outline",
-    color: themeColors.danger,
-  },
-  {
-    id: "Interventoría",
-    label: "Interventoría",
-    description: "Supervisión y control de contratos",
-    icon: "eye-outline",
-    color: "#AF52DE",
-  },
-  {
-    id: "Arrendamiento",
-    label: "Arrendamiento",
-    description: "Alquiler de bienes muebles e inmuebles",
-    icon: "home-outline",
-    color: themeColors.success,
-  },
-  {
-    id: "Concesión",
-    label: "Concesión",
-    description: "Explotación de bienes o servicios públicos",
-    icon: "key-outline",
-    color: themeColors.warning,
-  },
-];
+import { spacing, borderRadius } from "../theme";
+import {
+  CONTRACT_TYPES,
+  ContractTypeConfig,
+  getContractTypeColor,
+} from "../constants/contractTypes";
 
 export const OnboardingScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -84,6 +27,11 @@ export const OnboardingScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const styles = createStyles(colors);
+
+  // Helper para obtener color del tipo
+  const getTypeColor = (type: ContractTypeConfig): string => {
+    return getContractTypeColor(type, colors);
+  };
 
   const toggleType = (typeId: string) => {
     setSelectedTypes((prev) =>
@@ -159,6 +107,7 @@ export const OnboardingScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}>
         {CONTRACT_TYPES.map((type) => {
           const isSelected = selectedTypes.includes(type.id);
+          const typeColor = getTypeColor(type);
 
           return (
             <TouchableOpacity
@@ -166,21 +115,25 @@ export const OnboardingScreen: React.FC = () => {
               style={[
                 styles.typeCard,
                 isSelected && styles.typeCardSelected,
-                isSelected && { borderColor: type.color },
+                isSelected && { borderColor: typeColor },
               ]}
               onPress={() => toggleType(type.id)}
               activeOpacity={0.7}>
               <View
                 style={[
                   styles.typeIcon,
-                  { backgroundColor: `${type.color}15` },
-                  isSelected && { backgroundColor: `${type.color}25` },
+                  { backgroundColor: `${typeColor}15` },
+                  isSelected && { backgroundColor: `${typeColor}25` },
                 ]}>
-                <Ionicons
-                  name={type.icon as any}
-                  size={24}
-                  color={type.color}
-                />
+                {type.CustomIcon ? (
+                  <type.CustomIcon size={24} color={typeColor} />
+                ) : (
+                  <Ionicons
+                    name={type.icon as any}
+                    size={24}
+                    color={typeColor}
+                  />
+                )}
               </View>
 
               <View style={styles.typeInfo}>
@@ -192,8 +145,8 @@ export const OnboardingScreen: React.FC = () => {
                 style={[
                   styles.typeCheckbox,
                   isSelected && {
-                    backgroundColor: type.color,
-                    borderColor: type.color,
+                    backgroundColor: typeColor,
+                    borderColor: typeColor,
                   },
                 ]}>
                 {isSelected && (

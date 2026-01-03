@@ -15,14 +15,14 @@ import {
   Platform,
   Animated,
 } from "react-native";
-import { Swipeable } from "react-native-gesture-handler";
+
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ProcessCard, SearchResultsSkeleton } from "../components/index";
 import { SecopProcess, advancedSearch } from "../api/secop";
 import { spacing, borderRadius } from "../theme";
 import { useTheme } from "../context/ThemeContext";
-import { exportSearchResults } from "../services/exportService";
+
 import { useFiltersStore, SavedFilter } from "../store/filtersStore";
 import { getDepartments, getMunicipalities } from "../services/divipola";
 

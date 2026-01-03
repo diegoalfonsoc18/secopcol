@@ -79,6 +79,8 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           process.tipo_de_contrato || ""
         )
       );
+      console.log("después de filtro por tipo:", filtered.length);
+      console.log("selectedContractTypes:", preferences.selectedContractTypes);
     }
 
     // Si no hay ubicación, retornar filtrados solo por tipo
@@ -129,8 +131,8 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   }, [processes, preferences.selectedContractTypes, nearbyDepartamentos]);
 
   useEffect(() => {
-    fetchRecentProcesses(100);
-  }, [fetchRecentProcesses]);
+    fetchRecentProcesses(100, false, preferences.selectedContractTypes);
+  }, [fetchRecentProcesses, preferences.selectedContractTypes]);
 
   const porTipo = useMemo(() => {
     const counts: Record<string, number> = {};

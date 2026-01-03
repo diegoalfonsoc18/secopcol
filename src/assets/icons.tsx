@@ -76,3 +76,13 @@ export function FavoritesIcon({
     </Svg>
   );
 }
+export function ObraIcon({ size = 24, color = "#000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M21.5 0H13v7h11V2.5C24 1.122 22.879 0 21.5 0zM23 6h-9V1h7.5c.827 0 1.5.673 1.5 1.5V6zM8 5H2.5A2.503 2.503 0 000 7.5V24h24V11H8V5zM1 7.5C1 6.673 1.673 6 2.5 6H7v5H1V7.5zM1 18h6v5H1v-5zm15 0v5H8v-5h8zm1 5v-5h6v5h-6zm6-6H12.5v-5H23v5zm-11.5-5v5H1v-5h10.5z"
+        fill={color}
+      />
+    </Svg>
+  );
+}

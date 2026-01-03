@@ -35,7 +35,8 @@ interface ProcessesState {
   // Acciones de procesos
   fetchRecentProcesses: (
     limit?: number,
-    forceRefresh?: boolean
+    forceRefresh?: boolean,
+    tiposContrato?: string[]
   ) => Promise<void>;
   fetchProcesses: (
     municipality?: string,
@@ -83,8 +84,12 @@ export const useProcessesStore = create<ProcessesState>()(
       selectedStatus: "",
       _hasHydrated: false,
 
-      // Cargar procesos recientes (con cache)
-      fetchRecentProcesses: async (limit = 20, forceRefresh = false) => {
+      // Cargar procesos recientes (con cache) - filtrado por tipos de contrato
+      fetchRecentProcesses: async (
+        limit = 20,
+        forceRefresh = false,
+        tiposContrato?: string[]
+      ) => {
         set({ loading: true, error: null });
 
         // Intentar cargar desde cache primero si no forzamos refresh
@@ -98,12 +103,48 @@ export const useProcessesStore = create<ProcessesState>()(
               isFromCache: true,
               lastSync: lastSyncText,
             });
-            // Continuar en background para actualizar
           }
         }
 
         try {
-          const data = await getRecentProcesses(limit);
+          let data: SecopProcess[] = [];
+
+          // Si hay tipos de contrato seleccionados, hacer múltiples búsquedas
+          if (tiposContrato && tiposContrato.length > 0) {
+            const limitPerType = Math.ceil(limit / tiposContrato.length);
+            const promises = tiposContrato.map((tipo) =>
+              advancedSearch({
+                tipoContrato: tipo,
+                limit: limitPerType,
+              })
+            );
+            const results = await Promise.all(promises);
+
+            // Combinar y ordenar por fecha
+            data = results
+              .flat()
+              .sort((a, b) => {
+                const dateA = new Date(
+                  a.fecha_de_publicacion_del || 0
+                ).getTime();
+                const dateB = new Date(
+                  b.fecha_de_publicacion_del || 0
+                ).getTime();
+                return dateB - dateA;
+              })
+              .slice(0, limit);
+
+            // Eliminar duplicados
+            const seen = new Set<string>();
+            data = data.filter((p) => {
+              if (seen.has(p.id_del_proceso)) return false;
+              seen.add(p.id_del_proceso);
+              return true;
+            });
+          } else {
+            // Sin filtro de tipos, traer todos los recientes
+            data = await getRecentProcesses(limit);
+          }
 
           // Guardar en cache
           await cacheRecentProcesses(data);
@@ -122,7 +163,6 @@ export const useProcessesStore = create<ProcessesState>()(
           const message =
             error instanceof Error ? error.message : "Error de conexión";
 
-          // Si hay error, intentar cargar cache
           const cached = await getCachedRecentProcesses();
           if (cached && cached.length > 0) {
             const lastSyncText = await getTimeSinceLastSync();
