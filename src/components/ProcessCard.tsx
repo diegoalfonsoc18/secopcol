@@ -2,9 +2,15 @@ import React, { useRef } from "react";
 import { View, Text, StyleSheet, Animated, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SecopProcess } from "../types/index";
-import { spacing, borderRadius, shadows, typography } from "../theme";
+import { spacing, borderRadius, shadows } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { useHaptics } from "../hooks/useHaptics";
+import {
+  CONTRACT_TYPES,
+  getContractTypeColor,
+  DEFAULT_CONTRACT_CONFIG,
+  ContractTypeConfig,
+} from "../constants/contractTypes";
 
 // ============================================
 // UTILIDADES
@@ -78,6 +84,12 @@ const truncateText = (text: string | undefined, maxLength: number): string => {
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength).trim() + "...";
 };
+
+// Crear mapa de configuración de tipos de contrato
+const contractTypeMap: Record<string, ContractTypeConfig> = {};
+CONTRACT_TYPES.forEach((type) => {
+  contractTypeMap[type.id] = type;
+});
 
 // ============================================
 // COMPONENTE PRINCIPAL
@@ -165,6 +177,12 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
   const phaseStyle = phaseConfig[fase] || defaultPhase;
   const isNew = isNewProcess(process.fecha_de_publicacion_del);
 
+  // Obtener configuración del tipo de contrato
+  const tipoContrato = process.tipo_de_contrato || "";
+  const contractConfig =
+    contractTypeMap[tipoContrato] || DEFAULT_CONTRACT_CONFIG;
+  const contractColor = getContractTypeColor(contractConfig, colors);
+
   const handlePressIn = () => {
     Animated.spring(scale, {
       toValue: 0.98,
@@ -230,6 +248,25 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
             </View>
           </View>
         </View>
+
+        {/* Tipo de contrato con ícono */}
+        {tipoContrato && (
+          <View
+            style={[styles.contractTypeBadge, { borderColor: contractColor }]}>
+            {contractConfig.CustomIcon ? (
+              <contractConfig.CustomIcon size={14} color={contractColor} />
+            ) : (
+              <Ionicons
+                name={contractConfig.icon as any}
+                size={14}
+                color={contractColor}
+              />
+            )}
+            <Text style={[styles.contractTypeText, { color: contractColor }]}>
+              {contractConfig.label || tipoContrato}
+            </Text>
+          </View>
+        )}
 
         {/* Nombre del procedimiento */}
         {process.nombre_del_procedimiento && (
@@ -366,6 +403,24 @@ const createStyles = (colors: any) =>
     },
     statusText: {
       fontSize: 11,
+      fontWeight: "600",
+    },
+
+    // Contract type badge
+    contractTypeBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      alignSelf: "flex-start",
+      backgroundColor: colors.backgroundTertiary,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      borderRadius: borderRadius.full,
+      borderWidth: 1,
+      gap: 6,
+      marginBottom: spacing.sm,
+    },
+    contractTypeText: {
+      fontSize: 12,
       fontWeight: "600",
     },
 
