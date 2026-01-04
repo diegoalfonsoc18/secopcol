@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Linking,
   ScrollView,
@@ -7,6 +7,8 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,6 +18,7 @@ import { spacing, borderRadius } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { useHaptics } from "../hooks/useHaptics";
 import { FadeIn, SlideInUp } from "../components/Animations";
+import { analyzeProcess, AnalysisResult } from "../services/aiAnalysis";
 
 // ============================================
 // UTILIDADES
@@ -79,6 +82,10 @@ export const DetailScreen = ({ route, navigation }: any) => {
   const { process } = route.params as { process: SecopProcess };
   const { isFavorite, addFavorite, removeFavorite } = useProcessesStore();
   const favorite = isFavorite(process.id_del_proceso);
+
+  // Estado para análisis IA
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
 
   const styles = createStyles(colors);
 
@@ -207,6 +214,30 @@ _Enviado desde SECOP Colombia App_`;
     }
   };
 
+  // Handler para análisis con IA
+  const handleAnalyze = async () => {
+    if (analyzing) return;
+
+    haptics.medium();
+    setAnalyzing(true);
+
+    try {
+      const result = await analyzeProcess(process);
+      setAnalysis(result);
+      haptics.success();
+    } catch (error) {
+      console.error("Error analyzing:", error);
+      haptics.error();
+      Alert.alert(
+        "Error",
+        "No se pudo analizar el proceso. Intenta de nuevo.",
+        [{ text: "OK" }]
+      );
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   const InfoRow = ({
     icon,
     label,
@@ -248,6 +279,137 @@ _Enviado desde SECOP Colombia App_`;
       <View style={styles.sectionContent}>{children}</View>
     </View>
   );
+
+  // Componente para mostrar el análisis IA
+  const AIAnalysisSection = () => {
+    if (!analysis) return null;
+
+    return (
+      <View style={styles.aiSection}>
+        <View style={styles.aiHeader}>
+          <View style={styles.aiTitleRow}>
+            <Ionicons name="sparkles" size={20} color="#8B5CF6" />
+            <Text style={styles.aiTitle}>Análisis IA</Text>
+          </View>
+          <View style={styles.aiBadge}>
+            <Text style={styles.aiBadgeText}>Gemini</Text>
+          </View>
+        </View>
+
+        {/* Resumen */}
+        <View style={styles.aiCard}>
+          <View style={styles.aiCardHeader}>
+            <Ionicons
+              name="document-text-outline"
+              size={16}
+              color={colors.accent}
+            />
+            <Text style={styles.aiCardTitle}>Resumen</Text>
+          </View>
+          <Text style={styles.aiCardText}>{analysis.resumen}</Text>
+        </View>
+
+        {/* Requisitos */}
+        {(analysis.requisitos.documentos.length > 0 ||
+          analysis.requisitos.experiencia ||
+          analysis.requisitos.capacidad_financiera) && (
+          <View style={styles.aiCard}>
+            <View style={styles.aiCardHeader}>
+              <Ionicons
+                name="checkbox-outline"
+                size={16}
+                color={colors.accent}
+              />
+              <Text style={styles.aiCardTitle}>Requisitos</Text>
+            </View>
+
+            {analysis.requisitos.documentos.length > 0 && (
+              <View style={styles.aiList}>
+                <Text style={styles.aiListLabel}>Documentos:</Text>
+                {analysis.requisitos.documentos.map((doc, index) => (
+                  <View key={index} style={styles.aiListItem}>
+                    <Ionicons
+                      name="document"
+                      size={12}
+                      color={colors.textTertiary}
+                    />
+                    <Text style={styles.aiListText}>{doc}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {analysis.requisitos.experiencia && (
+              <View style={styles.aiList}>
+                <Text style={styles.aiListLabel}>Experiencia:</Text>
+                <Text style={styles.aiCardText}>
+                  {analysis.requisitos.experiencia}
+                </Text>
+              </View>
+            )}
+
+            {analysis.requisitos.capacidad_financiera && (
+              <View style={styles.aiList}>
+                <Text style={styles.aiListLabel}>Capacidad financiera:</Text>
+                <Text style={styles.aiCardText}>
+                  {analysis.requisitos.capacidad_financiera}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Fechas Clave */}
+        {(analysis.fechas_clave.fecha_limite ||
+          analysis.fechas_clave.otras_fechas.length > 0) && (
+          <View style={styles.aiCard}>
+            <View style={styles.aiCardHeader}>
+              <Ionicons
+                name="calendar-outline"
+                size={16}
+                color={colors.accent}
+              />
+              <Text style={styles.aiCardTitle}>Fechas Clave</Text>
+            </View>
+
+            {analysis.fechas_clave.fecha_limite && (
+              <View style={styles.aiDateRow}>
+                <Text style={styles.aiDateLabel}>Fecha límite:</Text>
+                <Text style={styles.aiDateValue}>
+                  {analysis.fechas_clave.fecha_limite}
+                </Text>
+              </View>
+            )}
+
+            {analysis.fechas_clave.fecha_visita && (
+              <View style={styles.aiDateRow}>
+                <Text style={styles.aiDateLabel}>Visita técnica:</Text>
+                <Text style={styles.aiDateValue}>
+                  {analysis.fechas_clave.fecha_visita}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Recomendaciones */}
+        {analysis.recomendaciones.length > 0 && (
+          <View style={styles.aiCard}>
+            <View style={styles.aiCardHeader}>
+              <Ionicons name="bulb-outline" size={16} color={colors.warning} />
+              <Text style={styles.aiCardTitle}>Recomendaciones</Text>
+            </View>
+            {analysis.recomendaciones.map((rec, index) => (
+              <View key={index} style={styles.aiRecommendation}>
+                <Text style={styles.aiRecommendationNumber}>{index + 1}</Text>
+                <Text style={styles.aiRecommendationText}>{rec}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -342,6 +504,36 @@ _Enviado desde SECOP Colombia App_`;
             </Text>
           </View>
         </FadeIn>
+
+        {/* Botón Analizar con IA */}
+        <SlideInUp delay={75}>
+          {!analysis ? (
+            <TouchableOpacity
+              style={[
+                styles.analyzeButton,
+                analyzing && styles.analyzeButtonDisabled,
+              ]}
+              onPress={handleAnalyze}
+              disabled={analyzing}>
+              {analyzing ? (
+                <>
+                  <ActivityIndicator size="small" color="#8B5CF6" />
+                  <Text style={styles.analyzeButtonText}>Analizando...</Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="sparkles" size={20} color="#8B5CF6" />
+                  <Text style={styles.analyzeButtonText}>Analizar con IA</Text>
+                  <View style={styles.analyzeButtonBadge}>
+                    <Text style={styles.analyzeButtonBadgeText}>Gratis</Text>
+                  </View>
+                </>
+              )}
+            </TouchableOpacity>
+          ) : (
+            <AIAnalysisSection />
+          )}
+        </SlideInUp>
 
         {/* Precio Base */}
         <SlideInUp delay={100}>
@@ -593,6 +785,153 @@ const createStyles = (colors: any) =>
       color: colors.textPrimary,
       lineHeight: 22,
     },
+
+    // Botón Analizar con IA
+    analyzeButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "rgba(139, 92, 246, 0.1)",
+      borderWidth: 1,
+      borderColor: "#8B5CF6",
+      borderRadius: borderRadius.md,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.lg,
+      gap: spacing.sm,
+    },
+    analyzeButtonDisabled: {
+      opacity: 0.7,
+    },
+    analyzeButtonText: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: "#8B5CF6",
+    },
+    analyzeButtonBadge: {
+      backgroundColor: "#8B5CF6",
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      borderRadius: borderRadius.full,
+    },
+    analyzeButtonBadgeText: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: "#FFFFFF",
+    },
+
+    // Sección Análisis IA
+    aiSection: {
+      marginBottom: spacing.lg,
+    },
+    aiHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: spacing.md,
+    },
+    aiTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    aiTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: colors.textPrimary,
+    },
+    aiBadge: {
+      backgroundColor: "rgba(139, 92, 246, 0.15)",
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      borderRadius: borderRadius.full,
+    },
+    aiBadgeText: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: "#8B5CF6",
+    },
+    aiCard: {
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: borderRadius.md,
+      padding: spacing.md,
+      marginBottom: spacing.sm,
+    },
+    aiCardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      marginBottom: spacing.sm,
+    },
+    aiCardTitle: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.textPrimary,
+    },
+    aiCardText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 20,
+    },
+    aiList: {
+      marginTop: spacing.sm,
+    },
+    aiListLabel: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.textTertiary,
+      marginBottom: spacing.xs,
+    },
+    aiListItem: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: spacing.xs,
+      marginBottom: 4,
+    },
+    aiListText: {
+      flex: 1,
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    aiDateRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: spacing.xs,
+    },
+    aiDateLabel: {
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    aiDateValue: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: colors.textPrimary,
+    },
+    aiRecommendation: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: spacing.sm,
+      marginBottom: spacing.sm,
+    },
+    aiRecommendationNumber: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: colors.warningLight,
+      color: colors.warning,
+      fontSize: 12,
+      fontWeight: "700",
+      textAlign: "center",
+      lineHeight: 20,
+    },
+    aiRecommendationText: {
+      flex: 1,
+      fontSize: 13,
+      color: colors.textSecondary,
+      lineHeight: 18,
+    },
+
     priceCard: {
       backgroundColor: colors.backgroundSecondary,
       borderRadius: borderRadius.md,
