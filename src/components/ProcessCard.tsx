@@ -13,79 +13,63 @@ import {
 } from "../constants/contractTypes";
 
 // ============================================
-// UTILIDADES
+// UTILIDADES (Tiempo y Formato)
 // ============================================
 
-// Tiempo relativo
 const getRelativeTime = (dateString: string | undefined): string => {
   if (!dateString) return "";
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return "";
-
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return "ahora";
-    if (diffMins < 60) return `hace ${diffMins}m`;
-    if (diffHours < 24) return `hace ${diffHours}h`;
+    if (diffMins < 1) return "justo ahora";
+    if (diffMins < 60) return `hace ${diffMins} min`;
+    if (diffHours < 24) return `hace ${diffHours} h`;
     if (diffDays === 1) return "ayer";
-    if (diffDays < 7) return `hace ${diffDays}d`;
-
+    if (diffDays < 7) return `hace ${diffDays} d`;
     return "";
   } catch {
     return "";
   }
 };
 
-// Formato de fecha
 const formatDate = (dateString: string | undefined): string => {
   if (!dateString) return "Sin fecha";
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return "Sin fecha";
-    return date.toLocaleDateString("es-CO", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+    return date.toLocaleDateString("es-CO", { day: "numeric", month: "short" });
   } catch {
     return "Sin fecha";
   }
 };
 
-// Verificar si es nuevo (hoy o ayer)
 const isNewProcess = (dateString: string | undefined): boolean => {
   if (!dateString) return false;
   try {
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) return false;
-
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffHours = diffMs / 3600000;
-
-    return diffHours < 48; // Menos de 48 horas
+    return (
+      !isNaN(date.getTime()) &&
+      (new Date().getTime() - date.getTime()) / 3600000 < 48
+    );
   } catch {
     return false;
   }
 };
 
-// Obtener el estado/fase del proceso
-const getProcessPhase = (process: SecopProcess): string => {
-  return process.fase || process.estado_del_procedimiento || "Desconocido";
-};
-
 const truncateText = (text: string | undefined, maxLength: number): string => {
-  if (!text) return "Sin descripción";
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength).trim() + "...";
+  if (!text || text.toLowerCase() === "no definido") return "Sin información";
+  return text.length <= maxLength
+    ? text
+    : text.substring(0, maxLength).trim() + "...";
 };
 
-// Crear mapa de configuración de tipos de contrato
+// Mapa de configuración indexado por ID
 const contractTypeMap: Record<string, ContractTypeConfig> = {};
 CONTRACT_TYPES.forEach((type) => {
   contractTypeMap[type.id] = type;
@@ -97,8 +81,6 @@ CONTRACT_TYPES.forEach((type) => {
 interface ProcessCardProps {
   process: SecopProcess;
   onPress: () => void;
-  onFavoritePress?: () => void;
-  isFavorite?: boolean;
 }
 
 export const ProcessCard: React.FC<ProcessCardProps> = ({
@@ -110,96 +92,31 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
   const scale = useRef(new Animated.Value(1)).current;
   const styles = createStyles(colors);
 
-  // Configuración de fases
-  const phaseConfig: Record<
-    string,
-    { color: string; bg: string; icon: string }
-  > = {
-    Borrador: {
-      color: colors.textSecondary,
-      bg: colors.backgroundTertiary,
-      icon: "document-outline",
-    },
-    Planeación: {
-      color: colors.warning,
-      bg: colors.warningLight,
-      icon: "clipboard-outline",
-    },
-    Selección: {
-      color: colors.accent,
-      bg: colors.accentLight,
-      icon: "search-outline",
-    },
-    Contratación: {
-      color: colors.accent,
-      bg: colors.accentLight,
-      icon: "document-text-outline",
-    },
-    Ejecución: {
-      color: colors.success,
-      bg: colors.successLight,
-      icon: "play-circle-outline",
-    },
-    Liquidación: {
-      color: colors.warning,
-      bg: colors.warningLight,
-      icon: "checkmark-done-outline",
-    },
-    Terminado: {
-      color: colors.textSecondary,
-      bg: colors.backgroundTertiary,
-      icon: "checkmark-circle-outline",
-    },
-    Cancelado: {
-      color: colors.danger,
-      bg: colors.dangerLight,
-      icon: "close-circle-outline",
-    },
-    Suspendido: {
-      color: colors.warning,
-      bg: colors.warningLight,
-      icon: "pause-circle-outline",
-    },
-    Desierto: {
-      color: colors.textSecondary,
-      bg: colors.backgroundTertiary,
-      icon: "remove-circle-outline",
-    },
-  };
-
-  const defaultPhase = {
-    color: colors.textSecondary,
-    bg: colors.backgroundTertiary,
-    icon: "help-circle-outline",
-  };
-
-  const fase = getProcessPhase(process);
-  const phaseStyle = phaseConfig[fase] || defaultPhase;
+  const fase =
+    process.fase || process.estado_del_procedimiento || "Desconocido";
   const isNew = isNewProcess(process.fecha_de_publicacion_del);
 
-  // Obtener configuración del tipo de contrato
-  const tipoContrato = process.tipo_de_contrato || "";
+  // Lógica de Contrato e Iconos Personalizados
+  const tipoContratoOriginal = process.tipo_de_contrato || "";
+
+  // Normalización para búsqueda (Remover tildes y a Mayúsculas)
+  const normalizedType = tipoContratoOriginal
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  // Buscar coincidencia (por ID exacto como "Obra" o por texto normalizado)
   const contractConfig =
-    contractTypeMap[tipoContrato] || DEFAULT_CONTRACT_CONFIG;
+    contractTypeMap[tipoContratoOriginal] ||
+    CONTRACT_TYPES.find(
+      (ct) =>
+        ct.id
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toUpperCase() === normalizedType.toUpperCase()
+    ) ||
+    DEFAULT_CONTRACT_CONFIG;
+
   const contractColor = getContractTypeColor(contractConfig, colors);
-
-  const handlePressIn = () => {
-    Animated.spring(scale, {
-      toValue: 0.98,
-      useNativeDriver: true,
-      speed: 50,
-      bounciness: 4,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scale, {
-      toValue: 1,
-      useNativeDriver: true,
-      speed: 50,
-      bounciness: 8,
-    }).start();
-  };
 
   const handlePress = () => {
     haptics.light();
@@ -209,20 +126,22 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
   return (
     <Pressable
       onPress={handlePress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}>
+      onPressIn={() =>
+        Animated.spring(scale, { toValue: 0.98, useNativeDriver: true }).start()
+      }
+      onPressOut={() =>
+        Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start()
+      }>
       <Animated.View style={[styles.container, { transform: [{ scale }] }]}>
-        {/* Header: ID y Badges */}
+        {/* Header */}
         <View style={styles.header}>
           <View style={styles.idContainer}>
             <Text style={styles.idLabel}>PROCESO</Text>
             <Text style={styles.idValue} numberOfLines={1}>
-              {process.id_del_proceso || "Sin ID"}
+              {process.id_del_proceso || "---"}
             </Text>
           </View>
-
           <View style={styles.badgesContainer}>
-            {/* Badge NUEVO */}
             {isNew && (
               <View style={styles.newBadge}>
                 <Ionicons
@@ -233,54 +152,41 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
                 <Text style={styles.newBadgeText}>NUEVO</Text>
               </View>
             )}
-
-            {/* Badge Fase */}
-            <View
-              style={[styles.statusBadge, { backgroundColor: phaseStyle.bg }]}>
-              <Ionicons
-                name={phaseStyle.icon as any}
-                size={12}
-                color={phaseStyle.color}
-              />
-              <Text style={[styles.statusText, { color: phaseStyle.color }]}>
-                {fase}
-              </Text>
+            <View style={styles.statusBadge}>
+              <Text style={styles.statusText}>{fase}</Text>
             </View>
           </View>
         </View>
 
-        {/* Tipo de contrato con ícono */}
-        {tipoContrato && (
-          <View
-            style={[styles.contractTypeBadge, { borderColor: contractColor }]}>
-            {contractConfig.CustomIcon ? (
-              <contractConfig.CustomIcon size={14} color={contractColor} />
-            ) : (
-              <Ionicons
-                name={contractConfig.icon as any}
-                size={14}
-                color={contractColor}
-              />
-            )}
-            <Text style={[styles.contractTypeText, { color: contractColor }]}>
-              {contractConfig.label || tipoContrato}
-            </Text>
-          </View>
-        )}
-
-        {/* Nombre del procedimiento */}
-        {process.nombre_del_procedimiento && (
-          <Text style={styles.procedureName} numberOfLines={1}>
-            {process.nombre_del_procedimiento}
+        {/* Badge de Contrato con CustomIcon */}
+        <View
+          style={[styles.contractTypeBadge, { borderColor: contractColor }]}>
+          {contractConfig.CustomIcon ? (
+            <contractConfig.CustomIcon size={14} color={contractColor} />
+          ) : (
+            <Ionicons
+              name={(contractConfig.icon as any) || "document-text-outline"}
+              size={14}
+              color={contractColor}
+            />
+          )}
+          <Text style={[styles.contractTypeText, { color: contractColor }]}>
+            {contractConfig.label || tipoContratoOriginal}
           </Text>
-        )}
+        </View>
 
-        {/* Descripción */}
+        {/* Títulos y descripción */}
+        <Text style={styles.procedureName} numberOfLines={1}>
+          {process.nombre_del_procedimiento &&
+          process.nombre_del_procedimiento.toLowerCase() !== "no definido"
+            ? process.nombre_del_procedimiento
+            : "Procedimiento sin título"}
+        </Text>
         <Text style={styles.description} numberOfLines={2}>
           {truncateText(process.descripci_n_del_procedimiento, 120)}
         </Text>
 
-        {/* Entidad */}
+        {/* Información Entidad y Ubicación */}
         <View style={styles.infoRow}>
           <Ionicons
             name="business-outline"
@@ -288,47 +194,53 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
             color={colors.textSecondary}
           />
           <Text style={styles.infoText} numberOfLines={1}>
-            {truncateText(process.entidad, 50)}
+            {process.entidad && process.entidad.toLowerCase() !== "no definido"
+              ? process.entidad
+              : "Entidad por confirmar"}
+          </Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Ionicons
+            name="location-outline"
+            size={14}
+            color={colors.textSecondary}
+          />
+          <Text style={styles.infoText} numberOfLines={1}>
+            {[process.ciudad_entidad, process.departamento_entidad]
+              .filter((v) => v && v.toLowerCase() !== "no definido")
+              .join(", ") || "Ubicación por confirmar"}
           </Text>
         </View>
 
-        {/* Ciudad / Departamento */}
-        {process.ciudad_entidad && (
-          <View style={styles.infoRow}>
-            <Ionicons
-              name="location-outline"
-              size={14}
-              color={colors.textSecondary}
-            />
-            <Text style={styles.infoText} numberOfLines={1}>
-              {process.ciudad_entidad}
-              {process.departamento_entidad
-                ? `, ${process.departamento_entidad}`
-                : ""}
-            </Text>
-          </View>
-        )}
-
-        {/* Separador */}
         <View style={styles.separator} />
 
-        {/* Footer: NIT y Fecha */}
+        {/* Footer */}
         <View style={styles.footer}>
           <View style={styles.valueContainer}>
-            <Text style={styles.valueLabel}>NIT Entidad</Text>
-            <Text style={styles.nitValue}>
-              {process.nit_entidad || "No especificado"}
-            </Text>
+            <Text style={styles.valueLabel}>NIT ENTIDAD</Text>
+            <Text style={styles.nitValue}>{process.nit_entidad || "---"}</Text>
           </View>
-
           <View style={styles.dateContainer}>
             <Text style={styles.dateLabel}>Publicación</Text>
-            <View style={styles.timeRow}>
-              <Text style={styles.dateValue}>
-                {formatDate(process.fecha_de_publicacion_del)}
-              </Text>
-              <Text style={styles.relativeTime}>
-                · {getRelativeTime(process.fecha_de_publicacion_del)}
+            <View
+              style={[
+                styles.timeBadge,
+                isNew
+                  ? { backgroundColor: colors.successLight }
+                  : { backgroundColor: colors.backgroundTertiary },
+              ]}>
+              <Ionicons
+                name="time-outline"
+                size={12}
+                color={isNew ? colors.success : colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.dateValue,
+                  { color: isNew ? colors.success : colors.textPrimary },
+                ]}>
+                {getRelativeTime(process.fecha_de_publicacion_del) ||
+                  formatDate(process.fecha_de_publicacion_del)}
               </Text>
             </View>
           </View>
@@ -338,9 +250,6 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
   );
 };
 
-// ============================================
-// ESTILOS
-// ============================================
 const createStyles = (colors: any) =>
   StyleSheet.create({
     container: {
@@ -350,39 +259,25 @@ const createStyles = (colors: any) =>
       marginBottom: spacing.md,
       ...shadows.card,
     },
-
-    // Header
     header: {
       flexDirection: "row",
       justifyContent: "space-between",
-      alignItems: "flex-start",
       marginBottom: spacing.sm,
     },
-    idContainer: {
-      flex: 1,
-    },
+    idContainer: { flex: 1 },
     idLabel: {
       fontSize: 10,
       fontWeight: "600",
       color: colors.textTertiary,
       letterSpacing: 0.8,
-      marginBottom: 2,
     },
-    idValue: {
-      fontSize: 14,
-      fontWeight: "700",
-      color: colors.accent,
-    },
-    badgesContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.xs,
-    },
+    idValue: { fontSize: 14, fontWeight: "700", color: colors.accent },
+    badgesContainer: { flexDirection: "row", gap: spacing.xs },
     newBadge: {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.warning,
-      paddingHorizontal: spacing.sm,
+      paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: borderRadius.full,
       gap: 4,
@@ -391,118 +286,79 @@ const createStyles = (colors: any) =>
       fontSize: 10,
       fontWeight: "700",
       color: colors.backgroundSecondary,
-      letterSpacing: 0.5,
     },
     statusBadge: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: spacing.sm,
+      backgroundColor: colors.backgroundTertiary,
+      paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: borderRadius.full,
-      gap: 4,
     },
     statusText: {
       fontSize: 11,
       fontWeight: "600",
+      color: colors.textSecondary,
     },
-
-    // Contract type badge
     contractTypeBadge: {
       flexDirection: "row",
       alignItems: "center",
       alignSelf: "flex-start",
       backgroundColor: colors.backgroundTertiary,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 4,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
       borderRadius: borderRadius.full,
       borderWidth: 1,
       gap: 6,
       marginBottom: spacing.sm,
     },
-    contractTypeText: {
-      fontSize: 12,
-      fontWeight: "600",
-    },
-
-    // Procedure name
+    contractTypeText: { fontSize: 12, fontWeight: "700" },
     procedureName: {
       fontSize: 13,
-      fontWeight: "600",
+      fontWeight: "700",
       color: colors.accent,
       marginBottom: spacing.xs,
     },
-
-    // Description
     description: {
       fontSize: 14,
       color: colors.textPrimary,
       lineHeight: 20,
       marginBottom: spacing.md,
     },
-
-    // Info rows
     infoRow: {
       flexDirection: "row",
       alignItems: "center",
       gap: spacing.xs,
-      marginBottom: spacing.xs,
+      marginBottom: 4,
     },
-    infoText: {
-      flex: 1,
-      fontSize: 13,
-      color: colors.textSecondary,
-    },
-
-    // Separator
+    infoText: { flex: 1, fontSize: 13, color: colors.textSecondary },
     separator: {
       height: 1,
       backgroundColor: colors.separatorLight,
       marginVertical: spacing.md,
     },
-
-    // Footer
     footer: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-end",
     },
-    valueContainer: {
-      flex: 1,
-    },
-    valueLabel: {
-      fontSize: 10,
-      fontWeight: "600",
-      color: colors.textTertiary,
-      marginBottom: 2,
-    },
-    nitValue: {
-      fontSize: 13,
-      fontWeight: "600",
-      color: colors.textPrimary,
-    },
-    dateContainer: {
-      alignItems: "flex-end",
-    },
+    valueContainer: { flex: 1 },
+    valueLabel: { fontSize: 10, fontWeight: "600", color: colors.textTertiary },
+    nitValue: { fontSize: 13, fontWeight: "600", color: colors.textPrimary },
+    dateContainer: { alignItems: "flex-end" },
     dateLabel: {
       fontSize: 10,
       fontWeight: "600",
       color: colors.textTertiary,
       marginBottom: 2,
     },
-    timeRow: {
+    timeBadge: {
       flexDirection: "row",
       alignItems: "center",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
       gap: 4,
     },
-    dateValue: {
-      fontSize: 13,
-      color: colors.textPrimary,
-      fontWeight: "500",
-    },
-    relativeTime: {
-      fontSize: 12,
-      color: colors.textTertiary,
-    },
+    dateValue: { fontSize: 12, fontWeight: "700" },
   });
 
 export default ProcessCard;
