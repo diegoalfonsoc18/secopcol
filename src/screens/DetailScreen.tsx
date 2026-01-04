@@ -310,87 +310,59 @@ _Enviado desde SECOP Colombia App_`;
         </View>
 
         {/* Requisitos */}
-        {(analysis.requisitos.documentos.length > 0 ||
-          analysis.requisitos.experiencia ||
-          analysis.requisitos.capacidad_financiera) && (
+        {(analysis?.requisitos?.otros?.length > 0 ||
+          analysis?.requisitos?.experiencia ||
+          analysis?.requisitos?.capacidad_financiera) && (
           <View style={styles.aiCard}>
-            <View style={styles.aiCardHeader}>
-              <Ionicons
-                name="checkbox-outline"
-                size={16}
-                color={colors.accent}
-              />
-              <Text style={styles.aiCardTitle}>Requisitos</Text>
-            </View>
-
-            {analysis.requisitos.documentos.length > 0 && (
-              <View style={styles.aiList}>
-                <Text style={styles.aiListLabel}>Documentos:</Text>
-                {analysis.requisitos.documentos.map((doc, index) => (
-                  <View key={index} style={styles.aiListItem}>
-                    <Ionicons
-                      name="document"
-                      size={12}
-                      color={colors.textTertiary}
-                    />
-                    <Text style={styles.aiListText}>{doc}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
+            <Text style={styles.aiTitle}>Requisitos Clave</Text>
 
             {analysis.requisitos.experiencia && (
-              <View style={styles.aiList}>
-                <Text style={styles.aiListLabel}>Experiencia:</Text>
-                <Text style={styles.aiCardText}>
-                  {analysis.requisitos.experiencia}
-                </Text>
-              </View>
+              <Text style={styles.aiText}>
+                • {analysis.requisitos.experiencia}
+              </Text>
             )}
 
-            {analysis.requisitos.capacidad_financiera && (
-              <View style={styles.aiList}>
-                <Text style={styles.aiListLabel}>Capacidad financiera:</Text>
-                <Text style={styles.aiCardText}>
-                  {analysis.requisitos.capacidad_financiera}
-                </Text>
-              </View>
-            )}
+            {analysis.requisitos.otros?.map((item, index) => (
+              <Text key={index} style={styles.aiText}>
+                • {item}
+              </Text>
+            ))}
           </View>
         )}
 
         {/* Fechas Clave */}
-        {(analysis.fechas_clave.fecha_limite ||
-          analysis.fechas_clave.otras_fechas.length > 0) && (
-          <View style={styles.aiCard}>
-            <View style={styles.aiCardHeader}>
-              <Ionicons
-                name="calendar-outline"
-                size={16}
-                color={colors.accent}
-              />
-              <Text style={styles.aiCardTitle}>Fechas Clave</Text>
+        {analysis?.fechas_clave &&
+          (analysis.fechas_clave.fecha_limite ||
+            analysis.fechas_clave.otras_fechas?.length > 0) && (
+            <View style={styles.aiCard}>
+              <View style={styles.aiCardHeader}>
+                <Ionicons
+                  name="calendar-outline"
+                  size={16}
+                  color={colors.accent}
+                />
+                <Text style={styles.aiCardTitle}>Fechas Clave</Text>
+              </View>
+
+              {analysis.fechas_clave.fecha_limite && (
+                <View style={styles.aiDateRow}>
+                  <Text style={styles.aiDateLabel}>Fecha límite:</Text>
+                  <Text style={styles.aiDateValue}>
+                    {analysis.fechas_clave.fecha_limite}
+                  </Text>
+                </View>
+              )}
+
+              {analysis.fechas_clave.fecha_visita && (
+                <View style={styles.aiDateRow}>
+                  <Text style={styles.aiDateLabel}>Visita técnica:</Text>
+                  <Text style={styles.aiDateValue}>
+                    {analysis.fechas_clave.fecha_visita}
+                  </Text>
+                </View>
+              )}
             </View>
-
-            {analysis.fechas_clave.fecha_limite && (
-              <View style={styles.aiDateRow}>
-                <Text style={styles.aiDateLabel}>Fecha límite:</Text>
-                <Text style={styles.aiDateValue}>
-                  {analysis.fechas_clave.fecha_limite}
-                </Text>
-              </View>
-            )}
-
-            {analysis.fechas_clave.fecha_visita && (
-              <View style={styles.aiDateRow}>
-                <Text style={styles.aiDateLabel}>Visita técnica:</Text>
-                <Text style={styles.aiDateValue}>
-                  {analysis.fechas_clave.fecha_visita}
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
+          )}
 
         {/* Recomendaciones */}
         {analysis.recomendaciones.length > 0 && (
@@ -887,6 +859,12 @@ const createStyles = (colors: any) =>
       alignItems: "flex-start",
       gap: spacing.xs,
       marginBottom: 4,
+    },
+    aiText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 20,
+      marginBottom: 6,
     },
     aiListText: {
       flex: 1,

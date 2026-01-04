@@ -30,22 +30,28 @@ serve(async (req: Request) => {
             
             Formato de salida requerido (JSON):
             {
-              "resumen": "...",
-              "requisitos": {"experiencia": "...", "otros": []},
-              "recomendaciones": []
+              "resumen": "string",
+              "requisitos": {
+                "experiencia": "string",
+                "otros": ["string"]
+              },
+              "fechas_clave": {
+                "fecha_limite": "string o null",
+                "fecha_visita": "string o null",
+                "otras_fechas": ["string"]
+              },
+              "recomendaciones": ["string"]
             }`,
               },
             ],
           },
         ],
-      }),
+      }), // Aquí faltaba cerrar el stringify y el objeto fetch
     });
 
     const result = await response.json();
 
-    if (!response.ok) {
-      throw new Error("Error en la API de Google");
-    }
+    if (!response.ok) throw new Error("Error en la API de Google");
 
     let aiText = result.candidates[0].content.parts[0].text;
 
@@ -68,7 +74,7 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       {
-        status: 200, // Mantenemos 200 para que la App reciba el JSON de error correctamente
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
