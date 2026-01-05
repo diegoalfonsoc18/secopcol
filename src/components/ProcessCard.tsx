@@ -70,9 +70,9 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
       {/* HEADER: Referencia del Proceso */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.label}>REFERENCIA</Text>
+          <Text style={styles.label}>Proceso</Text>
           <Text style={styles.processId}>
-            {process.referencia_del_proceso || "S/N"}
+            {process.id_del_proceso || "S/N"}
           </Text>
         </View>
         {horasRestantes !== null && horasRestantes < 24 && !estaCerrado && (
