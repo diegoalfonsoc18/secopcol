@@ -7,7 +7,12 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { Ionicons } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
-
+import {
+  HomeIcon,
+  SearchIcon,
+  FavoritesIcon,
+  AlertIcon,
+} from "./src/assets/icons";
 import {
   HomeScreen,
   SearchScreen,
@@ -154,10 +159,11 @@ function TabNavigator() {
         options={{
           tabBarLabel: "Inicio",
           tabBarIcon: ({ focused, color }) => (
-            <Ionicons
-              name={focused ? "home" : "home-outline"}
-              size={24}
-              color={color}
+            <HomeIcon
+              size={22}
+              filled={focused} // 🔥 cambia automáticamente
+              color={colors.textSecondary} // outline
+              activeColor={colors.accent} // solid
             />
           ),
         }}
@@ -168,10 +174,11 @@ function TabNavigator() {
         options={{
           tabBarLabel: "Buscar",
           tabBarIcon: ({ focused, color }) => (
-            <Ionicons
-              name={focused ? "search" : "search-outline"}
-              size={24}
-              color={color}
+            <SearchIcon
+              size={22}
+              filled={focused} // 🔥 cambia automáticamente
+              color={colors.textSecondary} // outline
+              activeColor={colors.accent} // solid
             />
           ),
         }}
@@ -191,10 +198,11 @@ function TabNavigator() {
             lineHeight: 18,
           },
           tabBarIcon: ({ focused, color }) => (
-            <Ionicons
-              name={focused ? "heart" : "heart-outline"}
-              size={24}
-              color={color}
+            <FavoritesIcon
+              size={22}
+              filled={focused} // 🔥 cambia automáticamente
+              color={colors.textSecondary} // outline
+              activeColor={colors.accent} // solid
             />
           ),
         }}
@@ -205,10 +213,11 @@ function TabNavigator() {
         options={{
           tabBarLabel: "Alertas",
           tabBarIcon: ({ focused, color }) => (
-            <Ionicons
-              name={focused ? "notifications" : "notifications-outline"}
-              size={24}
-              color={color}
+            <AlertIcon
+              size={22}
+              filled={focused} // 🔥 cambia automáticamente
+              color={colors.textSecondary} // outline
+              activeColor={colors.accent} // solid
             />
           ),
         }}
