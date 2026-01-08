@@ -40,6 +40,7 @@ import { Alert as AlertType, AlertFilters } from "../types/database";
 import { useHaptics } from "../hooks/useHaptics";
 import { FadeIn, SlideInUp } from "../components/Animations";
 import { getDepartments, getMunicipalities } from "../services/divipola";
+import { AlertIcon } from "../assets/icons";
 
 // ============================================
 // CONSTANTES DE FILTROS
@@ -144,10 +145,10 @@ const AlertCard: React.FC<AlertCardProps> = ({
         <TouchableOpacity
           style={[styles.deleteButton, { backgroundColor: colors.danger }]}
           onPress={() => onDelete(alert.id)}>
-          <Ionicons
-            name="trash-outline"
-            size={24}
-            color={colors.backgroundSecondary}
+          <AlertIcon
+            size={22}
+            filled={true} // Activa la versión SÓLIDA
+            activeColor={colors.backgroundSecondary} // El color que tendrá el relleno
           />
           <Text
             style={[styles.deleteText, { color: colors.backgroundSecondary }]}>
@@ -174,10 +175,10 @@ const AlertCard: React.FC<AlertCardProps> = ({
         activeOpacity={0.7}>
         <View style={styles.alertHeader}>
           <View style={styles.alertTitleRow}>
-            <Ionicons
-              name="notifications"
-              size={20}
-              color={alert.is_active ? colors.accent : colors.textSecondary}
+            <AlertIcon
+              size={22}
+              filled={true} // Activa la versión SÓLIDA
+              activeColor={colors.accent} // El color que tendrá el relleno
             />
             <Text
               style={[styles.alertName, { color: colors.textPrimary }]}

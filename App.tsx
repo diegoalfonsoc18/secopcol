@@ -175,7 +175,7 @@ function TabNavigator() {
           tabBarLabel: "Buscar",
           tabBarIcon: ({ focused, color }) => (
             <SearchIcon
-              size={22}
+              size={25}
               filled={focused} // 🔥 cambia automáticamente
               color={colors.textSecondary} // outline
               activeColor={colors.accent} // solid
@@ -199,7 +199,7 @@ function TabNavigator() {
           },
           tabBarIcon: ({ focused, color }) => (
             <FavoritesIcon
-              size={22}
+              size={24}
               filled={focused} // 🔥 cambia automáticamente
               color={colors.textSecondary} // outline
               activeColor={colors.accent} // solid
@@ -214,7 +214,7 @@ function TabNavigator() {
           tabBarLabel: "Alertas",
           tabBarIcon: ({ focused, color }) => (
             <AlertIcon
-              size={22}
+              size={23}
               filled={focused} // 🔥 cambia automáticamente
               color={colors.textSecondary} // outline
               activeColor={colors.accent} // solid
