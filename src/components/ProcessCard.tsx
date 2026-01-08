@@ -87,17 +87,22 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
       <View
         style={[styles.typeContainer, { backgroundColor: `${mainColor}15` }]}>
         <View style={[styles.iconWrapper, { backgroundColor: mainColor }]}>
-          <Ionicons
-            name={(typeConfig.icon as any) || "document-text-outline"}
-            size={14}
-            color="#FFF"
-          />
+          {typeConfig.CustomIcon ? (
+            /* Renderiza el icono personalizado de CONTRACT_TYPES */
+            <typeConfig.CustomIcon size={14} color="#FFF" />
+          ) : (
+            /* Fallback a Ionicons si no hay CustomIcon */
+            <Ionicons
+              name={(typeConfig.icon as any) || "document-text-outline"}
+              size={14}
+              color="#FFF"
+            />
+          )}
         </View>
         <Text style={[styles.typeText, { color: mainColor }]}>
           {typeConfig.label}
         </Text>
       </View>
-
       {/* TÍTULO */}
       <Text style={styles.title} numberOfLines={3}>
         {process.descripci_n_del_procedimiento || "Sin descripción disponible"}
