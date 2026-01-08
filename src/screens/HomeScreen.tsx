@@ -206,7 +206,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         <View style={styles.sectionHeader}>
           <View style={styles.sectionHeaderLeft}>
             <Ionicons name="grid-outline" size={18} color={colors.accent} />
-            <Text style={styles.sectionTitle}>Por Tipo de Contrato</Text>
+            <Text style={styles.sectionTitle}>Tipo de Contrato</Text>
           </View>
           {/* Botón para editar tipos de contrato */}
           <TouchableOpacity
@@ -218,55 +218,43 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Chips de tipos de contrato */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.typeChips}>
-          {Object.entries(porTipo)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 6)
-            .map(([tipo, count]) => {
-              const config =
-                tipoContratoConfig[tipo] || DEFAULT_CONTRACT_CONFIG;
-              const typeColor = getContractTypeColor(config, colors);
-              return (
-                <View
-                  key={tipo}
-                  style={[styles.typeChip, { borderColor: typeColor }]}>
+        {/* Contenedor de tipos de contrato en Grid */}
+        <View style={styles.gridContainer}>
+          {CONTRACT_TYPES.map((config) => {
+            const typeColor = getContractTypeColor(config, colors);
+            // Buscamos si hay conteo para este tipo en 'porTipo'
+            const count = porTipo[config.id] || 0;
+
+            return (
+              <View key={config.id} style={styles.gridItem}>
+                <View style={[styles.iconCircle, { borderColor: typeColor }]}>
                   {config.CustomIcon ? (
-                    <config.CustomIcon size={14} color={typeColor} />
+                    <config.CustomIcon size={24} color={typeColor} />
                   ) : (
                     <Ionicons
-                      name={config.icon as any}
-                      size={14}
+                      name={(config.icon as any) || "document-text-outline"}
+                      size={24}
                       color={typeColor}
                     />
                   )}
-                  <Text style={styles.typeChipLabel} numberOfLines={1}>
-                    {tipo}
-                  </Text>
-                  <View
-                    style={[
-                      styles.typeChipBadge,
-                      { backgroundColor: typeColor },
-                    ]}>
-                    <Text style={styles.typeChipCount}>{count}</Text>
-                  </View>
+                  {/* Badge de conteo opcional sobre el círculo */}
+                  {count > 0 && (
+                    <View
+                      style={[
+                        styles.badgeFloating,
+                        { backgroundColor: typeColor },
+                      ]}>
+                      <Text style={styles.typeChipCount}>{count}</Text>
+                    </View>
+                  )}
                 </View>
-              );
-            })}
-
-          {/* Chip para agregar más tipos si no hay ninguno o pocos */}
-          {preferences.selectedContractTypes.length === 0 && (
-            <TouchableOpacity
-              style={styles.addTypeChip}
-              onPress={handleOpenTypeSelector}>
-              <Ionicons name="add" size={16} color={colors.accent} />
-              <Text style={styles.addTypeChipText}>Filtrar tipos</Text>
-            </TouchableOpacity>
-          )}
-        </ScrollView>
+                <Text style={styles.gridLabel} numberOfLines={1}>
+                  {config.label}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
       </View>
 
       <View style={styles.recentHeader}>
@@ -569,11 +557,7 @@ const createStyles = (colors: any) =>
       minWidth: 20,
       alignItems: "center",
     },
-    typeChipCount: {
-      fontSize: 10,
-      fontWeight: "700",
-      color: colors.backgroundSecondary,
-    },
+
     addTypeChip: {
       flexDirection: "row",
       alignItems: "center",
@@ -669,6 +653,57 @@ const createStyles = (colors: any) =>
       fontSize: 15,
       fontWeight: "600",
       color: colors.accent,
+    },
+    gridContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-between",
+      paddingHorizontal: 10,
+      marginTop: 15,
+    },
+    gridItem: {
+      width: "25%", // Esto garantiza 4 columnas
+      alignItems: "center",
+      marginBottom: 20,
+    },
+    iconCircle: {
+      width: 54,
+      height: 54,
+      borderRadius: 27, // Círculo perfecto
+      borderWidth: 2,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "#FFF",
+      position: "relative", // Para el badge
+      // Sombra suave (opcional)
+      elevation: 2,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    },
+    gridLabel: {
+      fontSize: 10,
+      marginTop: 8,
+      textAlign: "center",
+      fontWeight: "500",
+      color: "#333",
+    },
+    badgeFloating: {
+      position: "absolute",
+      top: -5,
+      right: -5,
+      minWidth: 18,
+      height: 18,
+      borderRadius: 9,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: 4,
+    },
+    typeChipCount: {
+      color: "#FFF",
+      fontSize: 10,
+      fontWeight: "bold",
     },
   });
 

@@ -103,6 +103,7 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
           {typeConfig.label}
         </Text>
       </View>
+
       {/* TÍTULO */}
       <Text style={styles.title} numberOfLines={3}>
         {process.descripci_n_del_procedimiento || "Sin descripción disponible"}
