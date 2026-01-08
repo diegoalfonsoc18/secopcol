@@ -32,10 +32,9 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     description: "Construcción, infraestructura, obras civiles",
     CustomIcon: ObraIcon,
     icon: null,
-    colorKey: "warning",
-    hexColor: null,
+    colorKey: null,
+    hexColor: "#313647",
   },
-
   {
     id: "Consultoría",
     label: "Consultoría",
@@ -43,7 +42,7 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     CustomIcon: ConsultoriaIcon,
     icon: null,
     colorKey: null,
-    hexColor: "#5856D6",
+    hexColor: "#313647",
   },
   {
     id: "Prestación de servicios",
@@ -51,8 +50,8 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     description: "Servicios profesionales y técnicos",
     CustomIcon: ServiciosIcon,
     icon: null,
-    colorKey: "accent",
-    hexColor: null,
+    colorKey: null,
+    hexColor: "#313647",
   },
   {
     id: "Suministro",
@@ -60,8 +59,8 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     description: "Entrega periódica de bienes",
     CustomIcon: SuministroIcon,
     icon: null,
-    colorKey: "success",
-    hexColor: null,
+    colorKey: null,
+    hexColor: "#313647",
   },
   {
     id: "Compraventa",
@@ -69,8 +68,8 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     description: "Adquisición de bienes muebles",
     CustomIcon: CompraventaIcon,
     icon: null,
-    colorKey: "danger",
-    hexColor: null,
+    colorKey: null,
+    hexColor: "#313647",
   },
   {
     id: "Interventoría",
@@ -79,7 +78,7 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     CustomIcon: InterventoriaIcon,
     icon: null,
     colorKey: null,
-    hexColor: "#AF52DE",
+    hexColor: "#313647",
   },
   {
     id: "Arrendamiento",
@@ -87,8 +86,8 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     description: "Alquiler de bienes muebles e inmuebles",
     CustomIcon: ArrendamientoIcon,
     icon: null,
-    colorKey: "success",
-    hexColor: null,
+    colorKey: null,
+    hexColor: "#313647",
   },
   {
     id: "Concesión",
@@ -96,8 +95,8 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     description: "Explotación de bienes o servicios públicos",
     CustomIcon: ConcesionIcon,
     icon: null,
-    colorKey: "warning",
-    hexColor: null,
+    colorKey: null,
+    hexColor: "#313647",
   },
 ];
 

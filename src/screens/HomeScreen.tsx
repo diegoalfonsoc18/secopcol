@@ -33,7 +33,6 @@ import { useLocation } from "../hooks/useLocation";
 import {
   CONTRACT_TYPES,
   getContractTypeColor,
-  DEFAULT_CONTRACT_CONFIG,
   ContractTypeConfig,
 } from "../constants/contractTypes";
 
