@@ -355,15 +355,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               );
             })}
           </View>
-
-          {/* Indicador de filtros activos */}
-          {someActive && (
-            <View style={styles.activeFiltersIndicator}>
-              <Text style={styles.activeFiltersText}>
-                Mostrando {activeTypes.length} de {CONTRACT_TYPES.length} tipos
-              </Text>
-            </View>
-          )}
         </View>
 
         <View style={styles.recentHeader}>
