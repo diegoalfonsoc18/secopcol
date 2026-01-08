@@ -21,7 +21,6 @@ import {
   ProcessCard,
   DashboardSkeleton,
   StaggeredItem,
-  ContractTypeSelector,
 } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
@@ -33,7 +32,6 @@ import { useLocation } from "../hooks/useLocation";
 import {
   CONTRACT_TYPES,
   getContractTypeColor,
-  ContractTypeConfig,
 } from "../constants/contractTypes";
 
 // ============================================
@@ -54,31 +52,36 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     nearbyDepartamentos,
   } = useLocation();
 
-  // Estado para el modal de tipos de contrato
-  const [showTypeSelector, setShowTypeSelector] = useState(false);
+  // Estado local para tipos activos
+  // Por defecto: los que el usuario eligió en onboarding, o todos si no eligió ninguno
+  const [activeTypes, setActiveTypes] = useState<string[]>(() => {
+    if (preferences.selectedContractTypes.length > 0) {
+      return preferences.selectedContractTypes;
+    }
+    return CONTRACT_TYPES.map((t) => t.id);
+  });
+
+  // Sincronizar cuando el usuario hace login y se cargan sus preferencias
+  useEffect(() => {
+    if (preferences.selectedContractTypes.length > 0) {
+      setActiveTypes(preferences.selectedContractTypes);
+    }
+  }, [preferences.selectedContractTypes]);
 
   const styles = createStyles(colors);
 
-  // Crear mapa de configuración por ID para acceso rápido
-  const tipoContratoConfig = useMemo(() => {
-    const map: Record<string, ContractTypeConfig> = {};
-    CONTRACT_TYPES.forEach((type) => {
-      map[type.id] = type;
-    });
-    return map;
-  }, []);
-
-  // Filtrar procesos por tipo de contrato Y por ubicación cercana
+  // Filtrar procesos por tipos ACTIVOS Y por ubicación cercana
   const filteredProcesses = useMemo(() => {
     let filtered: SecopProcess[] = [...processes];
 
-    // Filtrar por tipos de contrato seleccionados
-    if (preferences.selectedContractTypes.length > 0) {
+    // Filtrar por tipos de contrato ACTIVOS
+    if (activeTypes.length > 0) {
       filtered = filtered.filter((process) =>
-        preferences.selectedContractTypes.includes(
-          process.tipo_de_contrato || ""
-        )
+        activeTypes.includes(process.tipo_de_contrato || "")
       );
+    } else {
+      // Si no hay ninguno activo, no mostrar procesos
+      return [];
     }
 
     // Si no hay ubicación, retornar filtrados solo por tipo
@@ -86,15 +89,12 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       return filtered;
     }
 
-    // Filtrar por departamentos cercanos (priorizar 80km, luego expandir)
-    const RADIUS_CLOSE = 80; // km
-
-    // Departamentos dentro de 80km
+    // Filtrar por departamentos cercanos (priorizar 80km)
+    const RADIUS_CLOSE = 80;
     const closeDepts = nearbyDepartamentos
       .filter((d) => d.distance <= RADIUS_CLOSE)
       .map((d) => d.departamento.toUpperCase());
 
-    // Filtrar por departamentos cercanos (80km)
     const closeProcesses = filtered.filter((process) => {
       const processDept = process.departamento_entidad?.toUpperCase() || "";
       return closeDepts.some(
@@ -102,12 +102,11 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       );
     });
 
-    // Si hay procesos cercanos, retornarlos
     if (closeProcesses.length > 0) {
       return closeProcesses;
     }
 
-    // Si no hay cercanos, buscar en todos los departamentos disponibles
+    // Expandir a todos los departamentos cercanos
     const allNearbyDepts = nearbyDepartamentos.map((d) =>
       d.departamento.toUpperCase()
     );
@@ -119,27 +118,75 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       );
     });
 
-    // Si hay procesos en el rango expandido, retornarlos
     if (expandedProcesses.length > 0) {
       return expandedProcesses;
     }
 
-    // Si no hay nada, retornar todos los filtrados por tipo (sin filtro de ubicación)
     return filtered;
-  }, [processes, preferences.selectedContractTypes, nearbyDepartamentos]);
+  }, [processes, activeTypes, nearbyDepartamentos]);
 
   useEffect(() => {
-    fetchRecentProcesses(100, false, preferences.selectedContractTypes);
-  }, [fetchRecentProcesses, preferences.selectedContractTypes]);
+    fetchRecentProcesses(100, false);
+  }, [fetchRecentProcesses]);
 
+  // Conteo por tipo (de todos los procesos disponibles)
   const porTipo = useMemo(() => {
     const counts: Record<string, number> = {};
-    filteredProcesses.forEach((p) => {
+
+    let processesForCount = [...processes];
+
+    if (nearbyDepartamentos.length > 0) {
+      const RADIUS_CLOSE = 80;
+      const closeDepts = nearbyDepartamentos
+        .filter((d) => d.distance <= RADIUS_CLOSE)
+        .map((d) => d.departamento.toUpperCase());
+
+      const closeProcesses = processesForCount.filter((process) => {
+        const processDept = process.departamento_entidad?.toUpperCase() || "";
+        return closeDepts.some(
+          (dept) => processDept.includes(dept) || dept.includes(processDept)
+        );
+      });
+
+      if (closeProcesses.length > 0) {
+        processesForCount = closeProcesses;
+      }
+    }
+
+    processesForCount.forEach((p) => {
       const tipo = p.tipo_de_contrato || "Otro";
       counts[tipo] = (counts[tipo] || 0) + 1;
     });
+
     return counts;
-  }, [filteredProcesses]);
+  }, [processes, nearbyDepartamentos]);
+
+  // Handler para toggle de tipo de contrato
+  const handleToggleType = useCallback(
+    (typeId: string) => {
+      haptics.light();
+
+      setActiveTypes((prev) => {
+        if (prev.includes(typeId)) {
+          return prev.filter((id) => id !== typeId);
+        } else {
+          return [...prev, typeId];
+        }
+      });
+    },
+    [haptics]
+  );
+
+  // Handler para activar/desactivar todos
+  const handleToggleAll = useCallback(() => {
+    haptics.medium();
+
+    if (activeTypes.length === CONTRACT_TYPES.length) {
+      setActiveTypes([]);
+    } else {
+      setActiveTypes(CONTRACT_TYPES.map((t) => t.id));
+    }
+  }, [haptics, activeTypes]);
 
   const headerHeight = scrollY.interpolate({
     inputRange: [0, 80],
@@ -169,19 +216,13 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const handleRefresh = useCallback(async () => {
     haptics.medium();
-    await fetchRecentProcesses(100, false, preferences.selectedContractTypes);
-  }, [fetchRecentProcesses, haptics, preferences.selectedContractTypes]);
+    await fetchRecentProcesses(100, false);
+  }, [fetchRecentProcesses, haptics]);
 
   const handleViewAll = useCallback(() => {
     haptics.light();
     navigation.navigate("Search");
   }, [navigation, haptics]);
-
-  // Handler para abrir el selector de tipos
-  const handleOpenTypeSelector = useCallback(() => {
-    haptics.light();
-    setShowTypeSelector(true);
-  }, [haptics]);
 
   const renderProcess = useCallback(
     ({ item, index }: { item: SecopProcess; index: number }) => (
@@ -197,99 +238,187 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     []
   );
 
-  const ListHeader = () => (
-    <View style={styles.listHeader}>
-      {/* Por Tipo de Contrato */}
-      <View style={styles.sectionCard}>
-        {/* Header de la sección con botón de editar */}
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionHeaderLeft}>
-            <Ionicons name="grid-outline" size={18} color={colors.accent} />
-            <Text style={styles.sectionTitle}>Tipo de Contrato</Text>
+  const ListHeader = () => {
+    const allActive = activeTypes.length === CONTRACT_TYPES.length;
+    const someActive =
+      activeTypes.length > 0 && activeTypes.length < CONTRACT_TYPES.length;
+
+    return (
+      <View style={styles.listHeader}>
+        {/* Por Tipo de Contrato */}
+        <View style={styles.sectionCard}>
+          {/* Header de la sección */}
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeaderLeft}>
+              <Ionicons name="grid-outline" size={18} color={colors.accent} />
+              <Text style={styles.sectionTitle}>Tipo de Contrato</Text>
+            </View>
+
+            {/* Botón para seleccionar/deseleccionar todos */}
+            <TouchableOpacity
+              onPress={handleToggleAll}
+              style={[
+                styles.toggleAllButton,
+                allActive && styles.toggleAllButtonActive,
+              ]}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons
+                name={
+                  allActive
+                    ? "checkmark-circle"
+                    : someActive
+                    ? "remove-circle-outline"
+                    : "ellipse-outline"
+                }
+                size={14}
+                color={allActive ? colors.success : colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.toggleAllText,
+                  allActive && { color: colors.success },
+                ]}>
+                Todos
+              </Text>
+            </TouchableOpacity>
           </View>
-          {/* Botón para editar tipos de contrato */}
+
+          {/* Grid de todos los tipos de contrato */}
+          <View style={styles.gridContainer}>
+            {CONTRACT_TYPES.map((config) => {
+              const typeColor = getContractTypeColor(config, colors);
+              const count = porTipo[config.id] || 0;
+              const isActive = activeTypes.includes(config.id);
+
+              return (
+                <TouchableOpacity
+                  key={config.id}
+                  style={styles.gridItem}
+                  onPress={() => handleToggleType(config.id)}
+                  activeOpacity={0.7}>
+                  <View
+                    style={[
+                      styles.iconCircle,
+                      {
+                        borderColor: typeColor,
+                        backgroundColor: isActive
+                          ? typeColor
+                          : colors.backgroundSecondary,
+                      },
+                      !isActive && styles.iconCircleInactive,
+                    ]}>
+                    {config.CustomIcon ? (
+                      <config.CustomIcon
+                        size={24}
+                        color={isActive ? "#FFF" : typeColor}
+                      />
+                    ) : (
+                      <Ionicons
+                        name={(config.icon as any) || "document-text-outline"}
+                        size={24}
+                        color={isActive ? "#FFF" : typeColor}
+                      />
+                    )}
+                    {/* Badge de conteo */}
+                    {count > 0 && (
+                      <View
+                        style={[
+                          styles.badgeFloating,
+                          {
+                            backgroundColor: isActive ? "#FFF" : typeColor,
+                          },
+                        ]}>
+                        <Text
+                          style={[
+                            styles.typeChipCount,
+                            { color: isActive ? typeColor : "#FFF" },
+                          ]}>
+                          {count}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text
+                    style={[
+                      styles.gridLabel,
+                      {
+                        color: isActive
+                          ? colors.textPrimary
+                          : colors.textTertiary,
+                        fontWeight: isActive ? "600" : "500",
+                      },
+                    ]}
+                    numberOfLines={1}>
+                    {config.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Indicador de filtros activos */}
+          {someActive && (
+            <View style={styles.activeFiltersIndicator}>
+              <Text style={styles.activeFiltersText}>
+                Mostrando {activeTypes.length} de {CONTRACT_TYPES.length} tipos
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.recentHeader}>
+          <Text style={styles.recentTitle}>
+            Procesos Recientes
+            {filteredProcesses.length > 0 && (
+              <Text style={styles.processCount}>
+                {" "}
+                ({filteredProcesses.length})
+              </Text>
+            )}
+          </Text>
           <TouchableOpacity
-            onPress={handleOpenTypeSelector}
-            style={styles.editButton}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name="pencil" size={14} color={colors.accent} />
-            <Text style={styles.editButtonText}>Editar</Text>
+            onPress={handleViewAll}
+            style={styles.viewAllButton}>
+            <Text style={styles.viewAllText}>Ver todos</Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.accent} />
           </TouchableOpacity>
         </View>
-
-        {/* Contenedor de tipos de contrato en Grid */}
-        <View style={styles.gridContainer}>
-          {CONTRACT_TYPES.map((config) => {
-            const typeColor = getContractTypeColor(config, colors);
-            // Buscamos si hay conteo para este tipo en 'porTipo'
-            const count = porTipo[config.id] || 0;
-
-            return (
-              <View key={config.id} style={styles.gridItem}>
-                <View style={[styles.iconCircle, { borderColor: typeColor }]}>
-                  {config.CustomIcon ? (
-                    <config.CustomIcon size={24} color={typeColor} />
-                  ) : (
-                    <Ionicons
-                      name={(config.icon as any) || "document-text-outline"}
-                      size={24}
-                      color={typeColor}
-                    />
-                  )}
-                  {/* Badge de conteo opcional sobre el círculo */}
-                  {count > 0 && (
-                    <View
-                      style={[
-                        styles.badgeFloating,
-                        { backgroundColor: typeColor },
-                      ]}>
-                      <Text style={styles.typeChipCount}>{count}</Text>
-                    </View>
-                  )}
-                </View>
-                <Text style={styles.gridLabel} numberOfLines={1}>
-                  {config.label}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
       </View>
-
-      <View style={styles.recentHeader}>
-        <Text style={styles.recentTitle}>Procesos Recientes</Text>
-        <TouchableOpacity onPress={handleViewAll} style={styles.viewAllButton}>
-          <Text style={styles.viewAllText}>Ver todos</Text>
-          <Ionicons name="chevron-forward" size={16} color={colors.accent} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    );
+  };
 
   const ListEmpty = () => (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIconContainer}>
         <Ionicons
-          name="document-text-outline"
+          name={
+            activeTypes.length === 0
+              ? "filter-outline"
+              : "document-text-outline"
+          }
           size={48}
           color={colors.textTertiary}
         />
       </View>
-      <Text style={styles.emptyTitle}>Sin procesos</Text>
+      <Text style={styles.emptyTitle}>
+        {activeTypes.length === 0 ? "Sin filtros activos" : "Sin procesos"}
+      </Text>
       <Text style={styles.emptyMessage}>
-        No hay procesos disponibles con los filtros seleccionados
+        {activeTypes.length === 0
+          ? "Selecciona al menos un tipo de contrato para ver procesos"
+          : "No hay procesos disponibles con los filtros seleccionados"}
       </Text>
 
-      {/* Botón para cambiar filtros cuando está vacío */}
-      {preferences.selectedContractTypes.length > 0 && (
+      {/* Botón para activar todos los filtros */}
+      {activeTypes.length === 0 && (
         <Pressable
           style={({ pressed }) => [
-            styles.changeFiltersButton,
+            styles.activateAllButton,
             pressed && { opacity: 0.8 },
           ]}
-          onPress={handleOpenTypeSelector}>
-          <Ionicons name="options-outline" size={18} color={colors.accent} />
-          <Text style={styles.changeFiltersButtonText}>Cambiar filtros</Text>
+          onPress={handleToggleAll}>
+          <Ionicons name="checkmark-done-outline" size={18} color="#FFF" />
+          <Text style={styles.activateAllButtonText}>Activar todos</Text>
         </Pressable>
       )}
 
@@ -328,7 +457,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             </View>
           </Animated.View>
 
-          {/* Solo botón de configuración de la app */}
+          {/* Botón de configuración */}
           <TouchableOpacity
             style={styles.headerButton}
             onPress={() => navigation.navigate("AppSettings")}>
@@ -356,7 +485,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       </Animated.View>
 
       {/* Contenido */}
-      {loading && filteredProcesses.length === 0 ? (
+      {loading && processes.length === 0 ? (
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}>
@@ -371,7 +500,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             styles.listContent,
             { paddingBottom: insets.bottom + 100 },
           ]}
-          ListHeaderComponent={filteredProcesses.length > 0 ? ListHeader : null}
+          ListHeaderComponent={ListHeader}
           ListEmptyComponent={ListEmpty}
           showsVerticalScrollIndicator={false}
           onScroll={Animated.event(
@@ -393,12 +522,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           initialNumToRender={5}
         />
       )}
-
-      {/* Modal para seleccionar tipos de contrato */}
-      <ContractTypeSelector
-        visible={showTypeSelector}
-        onClose={() => setShowTypeSelector(false)}
-      />
     </View>
   );
 };
@@ -515,64 +638,22 @@ const createStyles = (colors: any) =>
       fontWeight: "600",
       color: colors.textPrimary,
     },
-    editButton: {
+    toggleAllButton: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.accentLight,
       paddingHorizontal: spacing.sm,
       paddingVertical: spacing.xs,
       borderRadius: borderRadius.full,
       gap: spacing.xs,
+      backgroundColor: colors.background,
     },
-    editButtonText: {
+    toggleAllButtonActive: {
+      backgroundColor: colors.successLight || "rgba(48, 209, 88, 0.12)",
+    },
+    toggleAllText: {
       fontSize: 12,
-      fontWeight: "600",
-      color: colors.accent,
-    },
-    typeChips: {
-      gap: spacing.sm,
-      paddingVertical: spacing.xs,
-    },
-    typeChip: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: colors.backgroundTertiary,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      borderRadius: borderRadius.full,
-      gap: spacing.xs,
-      borderWidth: 1,
-    },
-    typeChipLabel: {
-      fontSize: 12,
-      color: colors.textPrimary,
       fontWeight: "500",
-      maxWidth: 100,
-    },
-    typeChipBadge: {
-      paddingHorizontal: spacing.xs,
-      paddingVertical: 2,
-      borderRadius: borderRadius.full,
-      minWidth: 20,
-      alignItems: "center",
-    },
-
-    addTypeChip: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: colors.accentLight,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      borderRadius: borderRadius.full,
-      gap: spacing.xs,
-      borderWidth: 1,
-      borderColor: colors.accent,
-      borderStyle: "dashed",
-    },
-    addTypeChipText: {
-      fontSize: 12,
-      color: colors.accent,
-      fontWeight: "600",
+      color: colors.textSecondary,
     },
     recentHeader: {
       flexDirection: "row",
@@ -584,6 +665,11 @@ const createStyles = (colors: any) =>
       fontSize: 20,
       fontWeight: "700",
       color: colors.textPrimary,
+    },
+    processCount: {
+      fontSize: 16,
+      fontWeight: "500",
+      color: colors.textTertiary,
     },
     viewAllButton: {
       flexDirection: "row",
@@ -621,22 +707,20 @@ const createStyles = (colors: any) =>
       textAlign: "center",
       lineHeight: 22,
     },
-    changeFiltersButton: {
+    activateAllButton: {
       flexDirection: "row",
       alignItems: "center",
       marginTop: spacing.lg,
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.md,
-      backgroundColor: colors.backgroundSecondary,
+      backgroundColor: colors.accent,
       borderRadius: borderRadius.full,
       gap: spacing.sm,
-      borderWidth: 1,
-      borderColor: colors.accent,
     },
-    changeFiltersButtonText: {
+    activateAllButtonText: {
       fontSize: 15,
       fontWeight: "600",
-      color: colors.accent,
+      color: "#FFF",
     },
     retryButton: {
       flexDirection: "row",
@@ -661,32 +745,34 @@ const createStyles = (colors: any) =>
       marginTop: 15,
     },
     gridItem: {
-      width: "25%", // Esto garantiza 4 columnas
+      width: "25%",
       alignItems: "center",
       marginBottom: 20,
     },
     iconCircle: {
       width: 54,
       height: 54,
-      borderRadius: 27, // Círculo perfecto
+      borderRadius: 27,
       borderWidth: 2,
       justifyContent: "center",
       alignItems: "center",
-      backgroundColor: "#FFF",
-      position: "relative", // Para el badge
-      // Sombra suave (opcional)
+      position: "relative",
       elevation: 2,
       shadowColor: "#000",
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
       shadowRadius: 4,
     },
+    iconCircleInactive: {
+      opacity: 0.6,
+      elevation: 0,
+      shadowOpacity: 0,
+    },
     gridLabel: {
       fontSize: 10,
       marginTop: 8,
       textAlign: "center",
       fontWeight: "500",
-      color: "#333",
     },
     badgeFloating: {
       position: "absolute",
@@ -700,9 +786,19 @@ const createStyles = (colors: any) =>
       paddingHorizontal: 4,
     },
     typeChipCount: {
-      color: "#FFF",
       fontSize: 10,
       fontWeight: "bold",
+    },
+    activeFiltersIndicator: {
+      alignItems: "center",
+      marginTop: spacing.sm,
+      paddingTop: spacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: colors.separator,
+    },
+    activeFiltersText: {
+      fontSize: 12,
+      color: colors.textTertiary,
     },
   });
 
