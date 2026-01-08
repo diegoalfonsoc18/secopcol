@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { formatDistanceToNow, isAfter, parseISO, format } from "date-fns";
+import { parseISO, format, isAfter } from "date-fns";
 import { es } from "date-fns/locale";
 
 import { SecopProcess } from "../types/index";
@@ -47,21 +47,54 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
     : null;
 
   let colorSemaforo = "#34C759"; // Verde por defecto (+72h)
-  if (horasRestantes !== null && !estaCerrado) {
+  let estadoTiempo = "Abierto";
+
+  if (estaCerrado) {
+    colorSemaforo = "#8E8E93"; // Gris para cerrado
+    estadoTiempo = "Cerrado";
+  } else if (horasRestantes !== null) {
     if (horasRestantes <= 24) {
       colorSemaforo = "#FF3B30"; // Rojo (Menos de 24h)
+      estadoTiempo = "Urgente";
     } else if (horasRestantes <= 72) {
       colorSemaforo = "#FFCC00"; // Amarillo (Entre 24h y 72h)
+      estadoTiempo = "Próximo";
     }
   }
 
-  // Cálculo de progreso para la barra
+  // 4. CÁLCULO DE PROGRESO PARA LA BARRA
   let progreso = 0;
-  if (fechaCierre && !estaCerrado) {
-    const total = fechaCierre.getTime() - fechaPublicacion.getTime();
-    const transcurrido = ahora.getTime() - fechaPublicacion.getTime();
-    progreso = Math.min(Math.max(transcurrido / total, 0), 1);
+  if (fechaCierre) {
+    if (estaCerrado) {
+      progreso = 1;
+    } else {
+      const total = fechaCierre.getTime() - fechaPublicacion.getTime();
+      const transcurrido = ahora.getTime() - fechaPublicacion.getTime();
+      progreso = Math.min(Math.max(transcurrido / total, 0), 1);
+    }
   }
+
+  // 5. FORMATO DE TIEMPO RESTANTE
+  const formatTiempoRestante = (): string => {
+    if (!fechaCierre) return "Sin fecha límite";
+    if (estaCerrado) return "Proceso cerrado";
+
+    if (horasRestantes !== null) {
+      if (horasRestantes < 1) {
+        const minutos = Math.round(horasRestantes * 60);
+        return `${minutos} min restantes`;
+      } else if (horasRestantes < 24) {
+        const horas = Math.round(horasRestantes);
+        return `${horas}h restantes`;
+      } else {
+        const dias = Math.round(horasRestantes / 24);
+        return `${dias} día${dias !== 1 ? "s" : ""} restante${
+          dias !== 1 ? "s" : ""
+        }`;
+      }
+    }
+    return "";
+  };
 
   const styles = createStyles(colors, mainColor);
 
@@ -69,14 +102,14 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
       {/* HEADER: Referencia del Proceso */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.label}>Proceso</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.label}>REFERENCIA</Text>
           <Text style={styles.processId}>
-            {process.id_del_proceso || "S/N"}
+            {process.referencia_del_proceso || "S/N"}
           </Text>
         </View>
         {horasRestantes !== null && horasRestantes < 24 && !estaCerrado && (
-          <View style={[styles.badgeUrgent]}>
+          <View style={styles.badgeUrgent}>
             <Ionicons name="time" size={12} color="#FFF" />
             <Text style={styles.badgeText}>CRÍTICO</Text>
           </View>
@@ -87,17 +120,11 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
       <View
         style={[styles.typeContainer, { backgroundColor: `${mainColor}15` }]}>
         <View style={[styles.iconWrapper, { backgroundColor: mainColor }]}>
-          {typeConfig.CustomIcon ? (
-            /* Renderiza el icono personalizado de CONTRACT_TYPES */
-            <typeConfig.CustomIcon size={14} color="#FFF" />
-          ) : (
-            /* Fallback a Ionicons si no hay CustomIcon */
-            <Ionicons
-              name={(typeConfig.icon as any) || "document-text-outline"}
-              size={14}
-              color="#FFF"
-            />
-          )}
+          <Ionicons
+            name={(typeConfig.icon as any) || "document-text-outline"}
+            size={14}
+            color="#FFF"
+          />
         </View>
         <Text style={[styles.typeText, { color: mainColor }]}>
           {typeConfig.label}
@@ -121,9 +148,23 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
         </Text>
       </View>
 
-      {/* BARRA DE PROGRESO DE TIEMPO (SEMÁFORO) */}
-      {fechaCierre && !estaCerrado && (
+      {/* BARRA DE TIEMPO / PROGRESO */}
+      {fechaCierre && (
         <View style={styles.timeBarContainer}>
+          <View style={styles.timeHeader}>
+            <View style={styles.timeStatusGroup}>
+              <View
+                style={[styles.statusDot, { backgroundColor: colorSemaforo }]}
+              />
+              <Text style={[styles.statusText, { color: colorSemaforo }]}>
+                {estadoTiempo}
+              </Text>
+            </View>
+            <Text style={[styles.timeRemaining, { color: colorSemaforo }]}>
+              {formatTiempoRestante()}
+            </Text>
+          </View>
+
           <View style={styles.timeBarTrack}>
             <View
               style={[
@@ -135,18 +176,13 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
               ]}
             />
           </View>
+
           <View style={styles.timeLabels}>
-            <Text style={styles.timeLabelLeft}>
-              Cierra{" "}
-              {formatDistanceToNow(fechaCierre, {
-                addSuffix: true,
-                locale: es,
-              })}
+            <Text style={styles.timeLabelText}>
+              {format(fechaPublicacion, "dd MMM", { locale: es })}
             </Text>
-            <Text style={[styles.timeLabelRight, { color: colorSemaforo }]}>
-              {horasRestantes && horasRestantes < 24
-                ? "¡CIERRA PRONTO!"
-                : "DISPONIBLE"}
+            <Text style={styles.timeLabelText}>
+              Cierre: {format(fechaCierre, "dd MMM yyyy", { locale: es })}
             </Text>
           </View>
         </View>
@@ -166,7 +202,7 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
         </View>
 
         <View style={{ alignItems: "flex-end" }}>
-          <Text style={styles.label}>FECHA PUBLICACIÓN</Text>
+          <Text style={styles.label}>PUBLICADO</Text>
           <View style={styles.dateContainer}>
             <Ionicons
               name="megaphone-outline"
@@ -197,6 +233,7 @@ const createStyles = (colors: any, mainColor: string) =>
     header: {
       flexDirection: "row",
       justifyContent: "space-between",
+      alignItems: "flex-start",
       marginBottom: spacing.sm,
     },
     label: {
@@ -221,7 +258,11 @@ const createStyles = (colors: any, mainColor: string) =>
       borderRadius: borderRadius.sm,
       gap: 4,
     },
-    badgeText: { color: "#FFF", fontSize: 10, fontWeight: "800" },
+    badgeText: {
+      color: "#FFF",
+      fontSize: 10,
+      fontWeight: "800",
+    },
     typeContainer: {
       flexDirection: "row",
       alignItems: "center",
@@ -239,7 +280,10 @@ const createStyles = (colors: any, mainColor: string) =>
       alignItems: "center",
       justifyContent: "center",
     },
-    typeText: { fontSize: 12, fontWeight: "700" },
+    typeText: {
+      fontSize: 12,
+      fontWeight: "700",
+    },
     title: {
       fontSize: 15,
       fontWeight: "600",
@@ -253,25 +297,63 @@ const createStyles = (colors: any, mainColor: string) =>
       gap: 8,
       marginBottom: spacing.sm,
     },
-    infoText: { fontSize: 13, color: colors.textSecondary, flex: 1 },
-    timeBarContainer: { marginTop: spacing.md, marginBottom: spacing.sm },
+    infoText: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      flex: 1,
+    },
+    // Estilos de la barra de tiempo
+    timeBarContainer: {
+      marginTop: spacing.sm,
+      marginBottom: spacing.sm,
+      padding: spacing.sm,
+      backgroundColor: colors.background,
+      borderRadius: borderRadius.md,
+    },
+    timeHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    timeStatusGroup: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    statusDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    statusText: {
+      fontSize: 12,
+      fontWeight: "700",
+    },
+    timeRemaining: {
+      fontSize: 11,
+      fontWeight: "600",
+    },
     timeBarTrack: {
       height: 6,
-      backgroundColor: colors.background,
+      backgroundColor: colors.separatorLight,
       borderRadius: 3,
       overflow: "hidden",
     },
-    timeBarFill: { height: "100%", borderRadius: 3 },
+    timeBarFill: {
+      height: "100%",
+      borderRadius: 3,
+    },
     timeLabels: {
       flexDirection: "row",
       justifyContent: "space-between",
       marginTop: 6,
     },
-    timeLabelLeft: { fontSize: 11, color: colors.textTertiary },
-    timeLabelRight: {
-      fontSize: 11,
-      fontWeight: "800",
+    timeLabelText: {
+      fontSize: 10,
+      color: colors.textTertiary,
     },
+    // Footer
     footer: {
       flexDirection: "row",
       justifyContent: "space-between",

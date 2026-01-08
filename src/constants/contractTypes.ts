@@ -23,8 +23,20 @@ export interface ContractTypeConfig {
 }
 
 // ============================================
-// TIPOS DE CONTRATO DISPONIBLES
+// PALETA DE COLORES SEMÁNTICOS
 // ============================================
+// Cada color está pensado para representar el tipo de contrato:
+//
+// 🏗️ Obra         → Naranja/Ámbar   - Construcción, energía, trabajo físico
+// 🧠 Consultoría  → Violeta         - Conocimiento, estrategia, pensamiento
+// 👥 Servicios    → Azul            - Profesionalismo, confianza, servicio
+// 📦 Suministro   → Verde Esmeralda - Logística, flujo, entrega
+// 🛒 Compraventa  → Teal/Cyan       - Transacción, intercambio comercial
+// 🔍 Interventoría→ Índigo          - Supervisión, control, autoridad
+// 🏠 Arrendamiento→ Rosa/Magenta    - Propiedad, hogar, bienes raíces
+// 🤝 Concesión    → Oro/Dorado      - Acuerdos importantes, valor, permisos
+// ============================================
+
 export const CONTRACT_TYPES: ContractTypeConfig[] = [
   {
     id: "Obra",
@@ -33,7 +45,7 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     CustomIcon: ObraIcon,
     icon: null,
     colorKey: null,
-    hexColor: "#313647",
+    hexColor: "#F59E0B", // Ámbar - Construcción, energía
   },
   {
     id: "Consultoría",
@@ -42,7 +54,7 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     CustomIcon: ConsultoriaIcon,
     icon: null,
     colorKey: null,
-    hexColor: "#313647",
+    hexColor: "#8B5CF6", // Violeta - Conocimiento, estrategia
   },
   {
     id: "Prestación de servicios",
@@ -51,7 +63,7 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     CustomIcon: ServiciosIcon,
     icon: null,
     colorKey: null,
-    hexColor: "#313647",
+    hexColor: "#3B82F6", // Azul - Profesionalismo, confianza
   },
   {
     id: "Suministro",
@@ -60,7 +72,7 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     CustomIcon: SuministroIcon,
     icon: null,
     colorKey: null,
-    hexColor: "#313647",
+    hexColor: "#10B981", // Esmeralda - Logística, flujo
   },
   {
     id: "Compraventa",
@@ -69,7 +81,7 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     CustomIcon: CompraventaIcon,
     icon: null,
     colorKey: null,
-    hexColor: "#313647",
+    hexColor: "#06B6D4", // Cyan - Transacción, comercio
   },
   {
     id: "Interventoría",
@@ -78,7 +90,7 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     CustomIcon: InterventoriaIcon,
     icon: null,
     colorKey: null,
-    hexColor: "#313647",
+    hexColor: "#6366F1", // Índigo - Supervisión, autoridad
   },
   {
     id: "Arrendamiento",
@@ -87,7 +99,7 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     CustomIcon: ArrendamientoIcon,
     icon: null,
     colorKey: null,
-    hexColor: "#313647",
+    hexColor: "#EC4899", // Rosa - Propiedad, bienes raíces
   },
   {
     id: "Concesión",
@@ -96,7 +108,7 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     CustomIcon: ConcesionIcon,
     icon: null,
     colorKey: null,
-    hexColor: "#313647",
+    hexColor: "#EAB308", // Dorado - Acuerdos, permisos importantes
   },
 ];
 
@@ -133,5 +145,5 @@ export const DEFAULT_CONTRACT_CONFIG: ContractTypeConfig = {
   CustomIcon: null,
   icon: "help-outline",
   colorKey: null,
-  hexColor: "#8E8E93",
+  hexColor: "#6B7280", // Gris neutro
 };
