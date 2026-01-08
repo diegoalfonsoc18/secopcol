@@ -100,12 +100,12 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
-      {/* HEADER: Referencia del Proceso */}
+      {/* HEADER: Número del Proceso */}
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.label}>REFERENCIA</Text>
+          <Text style={styles.label}>N° PROCESO</Text>
           <Text style={styles.processId}>
-            {process.referencia_del_proceso || "S/N"}
+            {process.id_del_proceso || "S/N"}
           </Text>
         </View>
         {horasRestantes !== null && horasRestantes < 24 && !estaCerrado && (
@@ -120,11 +120,15 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
       <View
         style={[styles.typeContainer, { backgroundColor: `${mainColor}15` }]}>
         <View style={[styles.iconWrapper, { backgroundColor: mainColor }]}>
-          <Ionicons
-            name={(typeConfig.icon as any) || "document-text-outline"}
-            size={14}
-            color="#FFF"
-          />
+          {typeConfig.CustomIcon ? (
+            <typeConfig.CustomIcon size={14} color="#FFF" />
+          ) : (
+            <Ionicons
+              name={(typeConfig.icon as any) || "document-text-outline"}
+              size={14}
+              color="#FFF"
+            />
+          )}
         </View>
         <Text style={[styles.typeText, { color: mainColor }]}>
           {typeConfig.label}

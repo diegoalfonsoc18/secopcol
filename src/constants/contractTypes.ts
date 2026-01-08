@@ -22,21 +22,6 @@ export interface ContractTypeConfig {
   hexColor: string | null;
 }
 
-// ============================================
-// PALETA DE COLORES SEMÁNTICOS
-// ============================================
-// Cada color está pensado para representar el tipo de contrato:
-//
-// 🏗️ Obra         → Naranja/Ámbar   - Construcción, energía, trabajo físico
-// 🧠 Consultoría  → Violeta         - Conocimiento, estrategia, pensamiento
-// 👥 Servicios    → Azul            - Profesionalismo, confianza, servicio
-// 📦 Suministro   → Verde Esmeralda - Logística, flujo, entrega
-// 🛒 Compraventa  → Teal/Cyan       - Transacción, intercambio comercial
-// 🔍 Interventoría→ Índigo          - Supervisión, control, autoridad
-// 🏠 Arrendamiento→ Rosa/Magenta    - Propiedad, hogar, bienes raíces
-// 🤝 Concesión    → Oro/Dorado      - Acuerdos importantes, valor, permisos
-// ============================================
-
 export const CONTRACT_TYPES: ContractTypeConfig[] = [
   {
     id: "Obra",
