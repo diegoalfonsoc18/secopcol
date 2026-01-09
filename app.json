@@ -25,7 +25,10 @@
         "backgroundColor": "#000000"
       },
       "package": "com.secopcol.app",
-      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -34,7 +37,8 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Secopcol usa tu ubicación para mostrarte procesos de contratación cercanos a ti."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

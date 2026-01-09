@@ -21,7 +21,6 @@ import { ProcessCard, SearchResultsSkeleton } from "../components/index";
 import { SecopProcess, advancedSearch } from "../api/secop";
 import { spacing, borderRadius } from "../theme";
 import { useTheme } from "../context/ThemeContext";
-
 import { useFiltersStore, SavedFilter } from "../store/filtersStore";
 import { getDepartments, getMunicipalities } from "../services/divipola";
 import {
