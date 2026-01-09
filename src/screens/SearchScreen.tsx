@@ -14,7 +14,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-
+import { AlertIcon, MarcadorIcon } from "../assets/icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ProcessCard, SearchResultsSkeleton } from "../components/index";
@@ -672,21 +672,13 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             <TouchableOpacity
               style={styles.saveFilterButton}
               onPress={handleSaveFilter}>
-              <Ionicons
-                name="bookmark-outline"
-                size={20}
-                color={colors.accent}
-              />
+              <MarcadorIcon size={20} color={colors.accent} />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.alertButton}
               onPress={handleCreateAlert}>
-              <Ionicons
-                name="notifications-outline"
-                size={20}
-                color="#FF9500"
-              />
+              <AlertIcon size={20} color={colors.accent} />
             </TouchableOpacity>
           </View>
         </View>
@@ -1100,7 +1092,7 @@ const createStyles = (colors: any) =>
       width: 48,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: "#FFF3CD",
+      backgroundColor: colors.accentLight,
       borderRadius: borderRadius.md,
     },
     results: {
