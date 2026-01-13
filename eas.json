@@ -36,14 +36,14 @@
   "submit": {
     "testflight": {
       "ios": {
-        "appleId": "docco182@icloud.com",
+        "appleId": "docco182@hotmail.com",
         "ascAppId": "6757728545",
         "appleTeamId": "576347NKG2"
       }
     },
     "production": {
       "ios": {
-        "appleId": "docco182@icloud.com",
+        "appleId": "docco182@hotmail.com",
         "ascAppId": "6757728545",
         "appleTeamId": "576347NKG2"
       }
