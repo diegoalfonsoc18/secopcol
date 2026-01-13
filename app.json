@@ -14,6 +14,11 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.secopcol.app",
+      "icon": {
+        "light": "./assets/images/icon-light.png",
+        "dark": "./assets/images/icon-dark.png",
+        "tinted": "./assets/images/icon-tinted.png"
+      },
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Secopcol usa tu ubicación para mostrarte procesos de contratación cercanos a ti."
       }
