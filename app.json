@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Secopcol",
-    "slug": "Secopcol",
+    "slug": "secopcol",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -25,10 +25,7 @@
         "backgroundColor": "#000000"
       },
       "package": "com.secopcol.app",
-      "permissions": [
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
-      ]
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
     },
     "plugins": [
       "expo-router",
