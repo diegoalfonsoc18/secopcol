@@ -20,8 +20,10 @@ import { useAuth } from "../context/AuthContext";
 import { spacing, borderRadius } from "../theme";
 import { GoogleIcon, SecopcolLogo } from "../assets/icons";
 
+// Necesario para que el auth session se complete correctamente
 WebBrowser.maybeCompleteAuthSession();
 
+// Client IDs de Google Cloud Console
 const GOOGLE_IOS_CLIENT_ID =
   "1081648609668-btjn1qto01u9uqvr25m423b4ughplc6j.apps.googleusercontent.com";
 const GOOGLE_WEB_CLIENT_ID =
@@ -32,7 +34,7 @@ type AuthMode = "login" | "register";
 export const LoginScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { login, register, loginWithGoogle, resetPassword } = useAuth();
+  const { login, register, loginWithGoogle } = useAuth();
 
   const [mode, setMode] = useState<AuthMode>("login");
   const [name, setName] = useState("");
@@ -46,11 +48,14 @@ export const LoginScreen: React.FC = () => {
 
   const styles = createStyles(colors);
 
+  // Configuración de Google Auth
   const [request, response, promptAsync] = Google.useAuthRequest({
     iosClientId: GOOGLE_IOS_CLIENT_ID,
     webClientId: GOOGLE_WEB_CLIENT_ID,
+    redirectUri: "com.secopcol.app:/oauth2redirect",
   });
 
+  // Manejar respuesta de Google
   useEffect(() => {
     const handleGoogleLogin = async (idToken: string) => {
       try {
@@ -91,30 +96,6 @@ export const LoginScreen: React.FC = () => {
     } catch {
       setGoogleLoading(false);
       Alert.alert("Error", "No se pudo iniciar el proceso de autenticación");
-    }
-  };
-
-  const handleForgotPassword = async () => {
-    if (!email.trim()) {
-      Alert.alert(
-        "Correo requerido",
-        "Ingresa tu correo electrónico para restablecer tu contraseña"
-      );
-      return;
-    }
-
-    try {
-      const result = await resetPassword(email);
-      if (result.success) {
-        Alert.alert(
-          "Correo enviado",
-          "Revisa tu bandeja de entrada para restablecer tu contraseña"
-        );
-      } else {
-        Alert.alert("Error", result.error || "No se pudo enviar el correo");
-      }
-    } catch {
-      Alert.alert("Error", "Ocurrió un error inesperado");
     }
   };
 
@@ -185,12 +166,12 @@ export const LoginScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}>
         {/* Logo y título */}
         <View style={styles.header}>
-          <SecopcolLogo size={80} color={colors.accent} />
+          <SecopcolLogo size={100} color="#2E8B2E" />
           <Text style={styles.title}>Secopcol</Text>
           <Text style={styles.subtitle}>
             {mode === "login"
-              ? "Accede a contratos públicos de Colombia"
-              : "Crea tu cuenta gratuita"}
+              ? "Inicia sesión para continuar"
+              : "Crea tu cuenta"}
           </Text>
         </View>
 
@@ -198,8 +179,7 @@ export const LoginScreen: React.FC = () => {
         <TouchableOpacity
           style={styles.googleButton}
           onPress={onGooglePress}
-          disabled={googleLoading || !request}
-          activeOpacity={0.8}>
+          disabled={googleLoading || !request}>
           {googleLoading ? (
             <ActivityIndicator color={colors.textPrimary} />
           ) : (
@@ -213,7 +193,7 @@ export const LoginScreen: React.FC = () => {
         {/* Separador */}
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>o continúa con email</Text>
+          <Text style={styles.dividerText}>o</Text>
           <View style={styles.dividerLine} />
         </View>
 
@@ -222,6 +202,7 @@ export const LoginScreen: React.FC = () => {
           {/* Nombre (solo registro) */}
           {mode === "register" && (
             <View style={styles.inputGroup}>
+              <Text style={styles.label}>Nombre</Text>
               <View
                 style={[
                   styles.inputContainer,
@@ -234,7 +215,7 @@ export const LoginScreen: React.FC = () => {
                 />
                 <TextInput
                   style={styles.input}
-                  placeholder="Nombre completo"
+                  placeholder="Tu nombre"
                   placeholderTextColor={colors.textTertiary}
                   value={name}
                   onChangeText={setName}
@@ -249,6 +230,7 @@ export const LoginScreen: React.FC = () => {
 
           {/* Email */}
           <View style={styles.inputGroup}>
+            <Text style={styles.label}>Correo electrónico</Text>
             <View
               style={[
                 styles.inputContainer,
@@ -261,7 +243,7 @@ export const LoginScreen: React.FC = () => {
               />
               <TextInput
                 style={styles.input}
-                placeholder="Correo electrónico"
+                placeholder="correo@ejemplo.com"
                 placeholderTextColor={colors.textTertiary}
                 value={email}
                 onChangeText={setEmail}
@@ -277,6 +259,7 @@ export const LoginScreen: React.FC = () => {
 
           {/* Contraseña */}
           <View style={styles.inputGroup}>
+            <Text style={styles.label}>Contraseña</Text>
             <View
               style={[
                 styles.inputContainer,
@@ -289,15 +272,13 @@ export const LoginScreen: React.FC = () => {
               />
               <TextInput
                 style={styles.input}
-                placeholder="Contraseña"
+                placeholder="••••••••"
                 placeholderTextColor={colors.textTertiary}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
               />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                 <Ionicons
                   name={showPassword ? "eye-off-outline" : "eye-outline"}
                   size={20}
@@ -310,20 +291,10 @@ export const LoginScreen: React.FC = () => {
             )}
           </View>
 
-          {/* Olvidé mi contraseña (solo login) */}
-          {mode === "login" && (
-            <TouchableOpacity
-              onPress={handleForgotPassword}
-              style={styles.forgotPassword}>
-              <Text style={styles.forgotPasswordText}>
-                ¿Olvidaste tu contraseña?
-              </Text>
-            </TouchableOpacity>
-          )}
-
           {/* Confirmar contraseña (solo registro) */}
           {mode === "register" && (
             <View style={styles.inputGroup}>
+              <Text style={styles.label}>Confirmar contraseña</Text>
               <View
                 style={[
                   styles.inputContainer,
@@ -336,7 +307,7 @@ export const LoginScreen: React.FC = () => {
                 />
                 <TextInput
                   style={styles.input}
-                  placeholder="Confirmar contraseña"
+                  placeholder="••••••••"
                   placeholderTextColor={colors.textTertiary}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
@@ -356,10 +327,9 @@ export const LoginScreen: React.FC = () => {
               loading && styles.submitButtonDisabled,
             ]}
             onPress={handleSubmit}
-            disabled={loading}
-            activeOpacity={0.8}>
+            disabled={loading}>
             {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={colors.backgroundSecondary} />
             ) : (
               <Text style={styles.submitButtonText}>
                 {mode === "login" ? "Iniciar sesión" : "Crear cuenta"}
@@ -384,11 +354,11 @@ export const LoginScreen: React.FC = () => {
         <View style={styles.infoContainer}>
           <Ionicons
             name="shield-checkmark-outline"
-            size={14}
+            size={16}
             color={colors.textTertiary}
           />
           <Text style={styles.infoText}>
-            Tus datos están protegidos de forma segura
+            Tus datos se guardan de forma segura
           </Text>
         </View>
       </ScrollView>
@@ -411,21 +381,27 @@ const createStyles = (colors: any) =>
     // Header
     header: {
       alignItems: "center",
-      marginTop: spacing.xxl,
+      marginTop: spacing.xxl * 2,
       marginBottom: spacing.xl,
     },
+    logoContainer: {
+      width: 100,
+      height: 100,
+      borderRadius: 25,
+      backgroundColor: colors.accentLight,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: spacing.lg,
+    },
     title: {
-      fontSize: 32,
+      fontSize: 28,
       fontWeight: "700",
       color: colors.textPrimary,
-      marginTop: spacing.md,
-      letterSpacing: -0.5,
+      marginBottom: spacing.xs,
     },
     subtitle: {
-      fontSize: 15,
+      fontSize: 16,
       color: colors.textSecondary,
-      marginTop: spacing.xs,
-      textAlign: "center",
     },
 
     // Google Button
@@ -434,11 +410,15 @@ const createStyles = (colors: any) =>
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: colors.backgroundSecondary,
-      borderRadius: borderRadius.lg,
+      borderRadius: borderRadius.md,
       height: 52,
       gap: spacing.sm,
       borderWidth: 1,
-      borderColor: colors.separator,
+      borderColor: colors.separatorLight,
+    },
+    googleIcon: {
+      width: 20,
+      height: 20,
     },
     googleButtonText: {
       fontSize: 16,
@@ -450,36 +430,42 @@ const createStyles = (colors: any) =>
     divider: {
       flexDirection: "row",
       alignItems: "center",
-      marginVertical: spacing.lg,
+      marginVertical: spacing.xl,
     },
     dividerLine: {
       flex: 1,
-      height: StyleSheet.hairlineWidth,
-      backgroundColor: colors.separator,
+      height: 1,
+      backgroundColor: colors.separatorLight,
     },
     dividerText: {
       marginHorizontal: spacing.md,
-      fontSize: 13,
+      fontSize: 14,
       color: colors.textTertiary,
     },
 
     // Form
     form: {
-      marginBottom: spacing.lg,
+      marginBottom: spacing.xl,
     },
     inputGroup: {
-      marginBottom: spacing.md,
+      marginBottom: spacing.lg,
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.textPrimary,
+      marginBottom: spacing.sm,
     },
     inputContainer: {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.backgroundSecondary,
-      borderRadius: borderRadius.lg,
+      borderRadius: borderRadius.md,
       paddingHorizontal: spacing.md,
       height: 52,
       gap: spacing.sm,
       borderWidth: 1,
-      borderColor: colors.separator,
+      borderColor: colors.separatorLight,
     },
     inputError: {
       borderColor: colors.danger,
@@ -493,29 +479,17 @@ const createStyles = (colors: any) =>
       fontSize: 12,
       color: colors.danger,
       marginTop: spacing.xs,
-      marginLeft: spacing.sm,
-    },
-
-    // Forgot password
-    forgotPassword: {
-      alignSelf: "flex-end",
-      marginBottom: spacing.md,
-      marginTop: -spacing.xs,
-    },
-    forgotPasswordText: {
-      fontSize: 14,
-      color: colors.accent,
-      fontWeight: "500",
+      marginLeft: spacing.xs,
     },
 
     // Submit button
     submitButton: {
       backgroundColor: colors.accent,
-      borderRadius: borderRadius.lg,
+      borderRadius: borderRadius.md,
       height: 52,
       justifyContent: "center",
       alignItems: "center",
-      marginTop: spacing.sm,
+      marginTop: spacing.md,
     },
     submitButtonDisabled: {
       opacity: 0.7,
@@ -523,7 +497,7 @@ const createStyles = (colors: any) =>
     submitButtonText: {
       fontSize: 16,
       fontWeight: "600",
-      color: "#FFFFFF",
+      color: colors.backgroundSecondary,
     },
 
     // Toggle
@@ -531,7 +505,7 @@ const createStyles = (colors: any) =>
       flexDirection: "row",
       justifyContent: "center",
       alignItems: "center",
-      marginTop: spacing.lg,
+      marginTop: spacing.xl,
       gap: spacing.xs,
     },
     toggleText: {
@@ -549,9 +523,9 @@ const createStyles = (colors: any) =>
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      gap: spacing.xs,
+      gap: spacing.sm,
       marginTop: "auto",
-      paddingTop: spacing.lg,
+      paddingTop: spacing.xl,
     },
     infoText: {
       fontSize: 12,
