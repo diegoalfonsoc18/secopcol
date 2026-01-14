@@ -56,6 +56,22 @@ export const LoginScreen: React.FC = () => {
 
   // Manejar respuesta de Google
   useEffect(() => {
+    const handleGoogleLogin = async (idToken: string) => {
+      try {
+        const result = await loginWithGoogle(idToken);
+        if (!result.success) {
+          Alert.alert(
+            "Error",
+            result.error || "No se pudo iniciar sesión con Google"
+          );
+        }
+      } catch {
+        Alert.alert("Error", "Ocurrió un error inesperado");
+      } finally {
+        setGoogleLoading(false);
+      }
+    };
+
     if (response?.type === "success") {
       const { id_token } = response.params;
       if (id_token) {
@@ -70,23 +86,7 @@ export const LoginScreen: React.FC = () => {
     } else if (response?.type === "dismiss") {
       setGoogleLoading(false);
     }
-  }, [response]);
-
-  const handleGoogleLogin = async (idToken: string) => {
-    try {
-      const result = await loginWithGoogle(idToken);
-      if (!result.success) {
-        Alert.alert(
-          "Error",
-          result.error || "No se pudo iniciar sesión con Google"
-        );
-      }
-    } catch {
-      Alert.alert("Error", "Ocurrió un error inesperado");
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
+  }, [response, loginWithGoogle]);
 
   const onGooglePress = async () => {
     setGoogleLoading(true);
