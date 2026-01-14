@@ -10,7 +10,6 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
-  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -53,6 +52,7 @@ export const LoginScreen: React.FC = () => {
   const [request, response, promptAsync] = Google.useAuthRequest({
     iosClientId: GOOGLE_IOS_CLIENT_ID,
     webClientId: GOOGLE_WEB_CLIENT_ID,
+    redirectUri: "com.secopcol.app:/oauth2redirect",
   });
 
   // Manejar respuesta de Google
