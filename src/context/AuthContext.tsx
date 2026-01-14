@@ -9,7 +9,7 @@ import React, {
   ReactNode,
 } from "react";
 import { supabase } from "../services/supabase";
-import { Session, User as SupabaseUser } from "@supabase/supabase-js";
+import { User as SupabaseUser } from "@supabase/supabase-js";
 
 // ============================================
 // TIPOS
@@ -82,7 +82,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [preferences, setPreferences] =
     useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [isLoading, setIsLoading] = useState(true);
-  const [session, setSession] = useState<Session | null>(null);
+  // Elimina la línea del useState de session
 
   // ============================================
   // INICIALIZACIÓN
@@ -90,7 +90,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   useEffect(() => {
     // Obtener sesión inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+      // Elimina las líneas setSession(session);
       if (session?.user) {
         loadUserData(session.user);
       } else {
@@ -110,7 +110,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         "User:",
         !!session?.user
       );
-      setSession(session);
 
       if (event === "SIGNED_IN" && session?.user) {
         console.log("Calling loadUserData...");
@@ -181,7 +180,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     password: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
