@@ -4,7 +4,7 @@
     "slug": "secopcol",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets//secopcol Exports/secopcol Exports/secopcol-iOS-Default-1024x1024@1x.png",
+    "icon": "./assets/secopcol-exports/secopcol-iOS-Default-1024x1024@1x.png",
     "scheme": "secopcol",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -15,9 +15,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.secopcol.app",
       "icon": {
-        "light": "./assets/images/icon-light.png",
-        "dark": "./assets/images/icon-dark.png",
-        "tinted": "./assets/images/icon-tinted.png"
+        "light": "./assets/secopcol-exports/secopcol-iOS-Default-1024x1024@1x.png",
+        "dark": "./assets/secopcol-exports/secopcol-iOS-Dark-1024x1024@1x.png",
+        "tinted": "./assets/secopcol-exports/secopcol-iOS-TintedLight-1024x1024@1x.png"
       },
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Secopcol usa tu ubicación para mostrarte procesos de contratación cercanos a ti."
