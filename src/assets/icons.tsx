@@ -1,4 +1,4 @@
-import Svg, { Path, G, Circle } from "react-native-svg";
+import Svg, { Path, G, Circle, Line } from "react-native-svg";
 
 type IconProps = {
   size?: number;
@@ -6,6 +6,13 @@ type IconProps = {
   activeColor?: string; // Para el estado relleno
   filled?: boolean; // Para controlar el estado desde fuera
 };
+interface GoogleIconProps {
+  size?: number;
+}
+interface SecopcolLogoProps {
+  size?: number;
+  color?: string;
+}
 export function HomeIcon({
   size = 22,
   color = "#000",
@@ -221,6 +228,111 @@ export function MarcadorIcon({
       <Path
         d="M20.137 24a2.8 2.8 0 01-1.987-.835L12 17.051l-6.15 6.118a2.8 2.8 0 01-3.095.609A2.8 2.8 0 011 21.154V5a5 5 0 015-5h12a5 5 0 015 5v16.154a2.8 2.8 0 01-1.751 2.624 2.867 2.867 0 01-1.112.222zM6 2a3 3 0 00-3 3v16.154a.843.843 0 001.437.6l6.863-6.821a1 1 0 011.41 0l6.855 6.819a.843.843 0 001.437-.6V5a3 3 0 00-3-3z"
         fill={color}
+      />
+    </Svg>
+  );
+}
+
+// ============================================
+// ICONOS DE GOOGLE
+// ============================================
+
+export function GoogleIcon({ size = 24 }: GoogleIconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+        fill="#4285F4"
+      />
+      <Path
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+        fill="#34A853"
+      />
+      <Path
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+        fill="#FBBC05"
+      />
+      <Path
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+        fill="#EA4335"
+      />
+    </Svg>
+  );
+}
+
+export function SecopcolLogo({
+  size = 100,
+  color = "#2E8B2E",
+}: SecopcolLogoProps) {
+  const center = size / 2;
+  const outerRadius = size * 0.4;
+  const middleRadius = size * 0.25;
+  const innerRadius = size * 0.1;
+  const strokeWidth = size * 0.12;
+  const lineExtend = size * 0.08;
+
+  return (
+    <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {/* Outer ring */}
+      <Circle
+        cx={center}
+        cy={center}
+        r={outerRadius}
+        stroke={color}
+        strokeWidth={strokeWidth}
+        fill="none"
+      />
+      {/* Middle ring */}
+      <Circle
+        cx={center}
+        cy={center}
+        r={middleRadius}
+        stroke={color}
+        strokeWidth={strokeWidth * 0.6}
+        fill="none"
+      />
+      {/* Inner circle (filled) */}
+      <Circle cx={center} cy={center} r={innerRadius} fill={color} />
+      {/* Crosshair lines */}
+      {/* Top */}
+      <Line
+        x1={center}
+        y1={center - outerRadius - lineExtend}
+        x2={center}
+        y2={center - innerRadius - strokeWidth * 0.3}
+        stroke={color}
+        strokeWidth={strokeWidth * 0.5}
+        strokeLinecap="round"
+      />
+      {/* Bottom */}
+      <Line
+        x1={center}
+        y1={center + innerRadius + strokeWidth * 0.3}
+        x2={center}
+        y2={center + outerRadius + lineExtend}
+        stroke={color}
+        strokeWidth={strokeWidth * 0.5}
+        strokeLinecap="round"
+      />
+      {/* Left */}
+      <Line
+        x1={center - outerRadius - lineExtend}
+        y1={center}
+        x2={center - innerRadius - strokeWidth * 0.3}
+        y2={center}
+        stroke={color}
+        strokeWidth={strokeWidth * 0.5}
+        strokeLinecap="round"
+      />
+      {/* Right */}
+      <Line
+        x1={center + innerRadius + strokeWidth * 0.3}
+        y1={center}
+        x2={center + outerRadius + lineExtend}
+        y2={center}
+        stroke={color}
+        strokeWidth={strokeWidth * 0.5}
+        strokeLinecap="round"
       />
     </Svg>
   );

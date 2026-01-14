@@ -19,6 +19,7 @@ import * as WebBrowser from "expo-web-browser";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { spacing, borderRadius } from "../theme";
+import { GoogleIcon, SecopcolLogo } from "../assets/icons";
 
 // Necesario para que el auth session se complete correctamente
 WebBrowser.maybeCompleteAuthSession();
@@ -165,10 +166,8 @@ export const LoginScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}>
         {/* Logo y título */}
         <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Ionicons name="document-text" size={48} color={colors.accent} />
-          </View>
-          <Text style={styles.title}>SECOP Colombia</Text>
+          <SecopcolLogo size={100} color="#2E8B2E" />
+          <Text style={styles.title}>Secopcol</Text>
           <Text style={styles.subtitle}>
             {mode === "login"
               ? "Inicia sesión para continuar"
@@ -185,12 +184,7 @@ export const LoginScreen: React.FC = () => {
             <ActivityIndicator color={colors.textPrimary} />
           ) : (
             <>
-              <Image
-                source={{
-                  uri: "https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg",
-                }}
-                style={styles.googleIcon}
-              />
+              <GoogleIcon size={20} />
               <Text style={styles.googleButtonText}>Continuar con Google</Text>
             </>
           )}
