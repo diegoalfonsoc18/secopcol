@@ -34,6 +34,10 @@ interface AuthContextType {
   preferences: UserPreferences;
   isLoading: boolean;
   isAuthenticated: boolean;
+  loginWithGoogle: (
+    idToken: string
+  ) => Promise<{ success: boolean; error?: string }>;
+
   login: (
     email: string,
     password: string
@@ -251,6 +255,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   // ============================================
+  // LOGIN CON GOOGLE
+  // ============================================
+  const loginWithGoogle = async (
+    idToken: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: "google",
+        token: idToken,
+      });
+
+      if (error) {
+        return { success: false, error: getErrorMessage(error.message) };
+      }
+
+      // Actualizar avatar si viene de Google
+      if (data.user?.user_metadata?.avatar_url) {
+        await supabase
+          .from("profiles")
+          .update({
+            avatar_url: data.user.user_metadata.avatar_url,
+            full_name:
+              data.user.user_metadata.full_name || data.user.user_metadata.name,
+          })
+          .eq("id", data.user.id);
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      console.error("Google login error:", error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // ============================================
   // LOGOUT
   // ============================================
   const logout = async () => {
@@ -386,6 +425,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         login,
         register,
         loginWithMagicLink,
+        loginWithGoogle,
         logout,
         updatePreferences,
         completeOnboarding,

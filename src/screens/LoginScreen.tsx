@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,19 +10,31 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { spacing, borderRadius } from "../theme";
+
+// Necesario para que el auth session se complete correctamente
+WebBrowser.maybeCompleteAuthSession();
+
+// Client IDs de Google Cloud Console
+const GOOGLE_IOS_CLIENT_ID =
+  "1081648609668-btjn1qto01u9uqvr25m423b4ughplc6j.apps.googleusercontent.com";
+const GOOGLE_WEB_CLIENT_ID =
+  "1081648609668-isvpbhqkkpb79m1t8tpqn2jk6sj7d8s2.apps.googleusercontent.com";
 
 type AuthMode = "login" | "register";
 
 export const LoginScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { login, register } = useAuth();
+  const { login, register, loginWithGoogle } = useAuth();
 
   const [mode, setMode] = useState<AuthMode>("login");
   const [name, setName] = useState("");
@@ -31,9 +43,60 @@ export const LoginScreen: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const styles = createStyles(colors);
+
+  // Configuración de Google Auth
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    iosClientId: GOOGLE_IOS_CLIENT_ID,
+    webClientId: GOOGLE_WEB_CLIENT_ID,
+  });
+
+  // Manejar respuesta de Google
+  useEffect(() => {
+    if (response?.type === "success") {
+      const { id_token } = response.params;
+      if (id_token) {
+        handleGoogleLogin(id_token);
+      } else {
+        setGoogleLoading(false);
+        Alert.alert("Error", "No se recibió el token de Google");
+      }
+    } else if (response?.type === "error") {
+      setGoogleLoading(false);
+      Alert.alert("Error", "No se pudo iniciar sesión con Google");
+    } else if (response?.type === "dismiss") {
+      setGoogleLoading(false);
+    }
+  }, [response]);
+
+  const handleGoogleLogin = async (idToken: string) => {
+    try {
+      const result = await loginWithGoogle(idToken);
+      if (!result.success) {
+        Alert.alert(
+          "Error",
+          result.error || "No se pudo iniciar sesión con Google"
+        );
+      }
+    } catch {
+      Alert.alert("Error", "Ocurrió un error inesperado");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const onGooglePress = async () => {
+    setGoogleLoading(true);
+    try {
+      await promptAsync();
+    } catch {
+      setGoogleLoading(false);
+      Alert.alert("Error", "No se pudo iniciar el proceso de autenticación");
+    }
+  };
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -111,6 +174,33 @@ export const LoginScreen: React.FC = () => {
               ? "Inicia sesión para continuar"
               : "Crea tu cuenta"}
           </Text>
+        </View>
+
+        {/* Botón de Google */}
+        <TouchableOpacity
+          style={styles.googleButton}
+          onPress={onGooglePress}
+          disabled={googleLoading || !request}>
+          {googleLoading ? (
+            <ActivityIndicator color={colors.textPrimary} />
+          ) : (
+            <>
+              <Image
+                source={{
+                  uri: "https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg",
+                }}
+                style={styles.googleIcon}
+              />
+              <Text style={styles.googleButtonText}>Continuar con Google</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
+        {/* Separador */}
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>o</Text>
+          <View style={styles.dividerLine} />
         </View>
 
         {/* Formulario */}
@@ -274,7 +364,7 @@ export const LoginScreen: React.FC = () => {
             color={colors.textTertiary}
           />
           <Text style={styles.infoText}>
-            Tus datos se guardan de forma segura en tu dispositivo
+            Tus datos se guardan de forma segura
           </Text>
         </View>
       </ScrollView>
@@ -298,7 +388,7 @@ const createStyles = (colors: any) =>
     header: {
       alignItems: "center",
       marginTop: spacing.xxl * 2,
-      marginBottom: spacing.xxl,
+      marginBottom: spacing.xl,
     },
     logoContainer: {
       width: 100,
@@ -318,6 +408,45 @@ const createStyles = (colors: any) =>
     subtitle: {
       fontSize: 16,
       color: colors.textSecondary,
+    },
+
+    // Google Button
+    googleButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: borderRadius.md,
+      height: 52,
+      gap: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.separatorLight,
+    },
+    googleIcon: {
+      width: 20,
+      height: 20,
+    },
+    googleButtonText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.textPrimary,
+    },
+
+    // Divider
+    divider: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginVertical: spacing.xl,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: colors.separatorLight,
+    },
+    dividerText: {
+      marginHorizontal: spacing.md,
+      fontSize: 14,
+      color: colors.textTertiary,
     },
 
     // Form
