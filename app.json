@@ -2,15 +2,7 @@
   "expo": {
     "name": "Secopcol",
     "slug": "secopcol",
-    "version": "1.0.0",
-    "orientation": "portrait",
     "icon": "./assets/secopcol-exports/secopcol-iOS-Default-1024x1024@1x.png",
-    "scheme": "secopcol",
-    "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/images/splash-icon.png",
-      "resizeMode": "contain"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.secopcol.app",
@@ -34,6 +26,14 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#000000",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200
+        }
+      ],
       [
         "expo-location",
         {
