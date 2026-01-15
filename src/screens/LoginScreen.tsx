@@ -10,6 +10,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,7 +19,7 @@ import * as WebBrowser from "expo-web-browser";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { spacing, borderRadius } from "../theme";
-import { GoogleIcon, SecopcolLogo } from "../assets/icons";
+import { GoogleIcon } from "../assets/icons";
 
 // Necesario para que el auth session se complete correctamente
 WebBrowser.maybeCompleteAuthSession();
@@ -166,7 +167,11 @@ export const LoginScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}>
         {/* Logo y título */}
         <View style={styles.header}>
-          <SecopcolLogo size={100} color="#2E8B2E" />
+          <Image
+            source={require("../assets/icon-login.png")}
+            style={{ width: 100, height: 100 }}
+            resizeMode="contain"
+          />
           <Text style={styles.title}>Secopcol</Text>
           <Text style={styles.subtitle}>
             {mode === "login"

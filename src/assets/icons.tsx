@@ -1,5 +1,4 @@
 import Svg, { Path, G, Circle, Line } from "react-native-svg";
-
 type IconProps = {
   size?: number;
   color?: string;
