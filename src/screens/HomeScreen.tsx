@@ -55,75 +55,81 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   // Estado local para tipos activos
   // Por defecto: los que el usuario eligió en onboarding, o todos si no eligió ninguno
   const [activeTypes, setActiveTypes] = useState<string[]>(() => {
-    if (preferences.selectedContractTypes.length > 0) {
-      return preferences.selectedContractTypes;
-    }
-    return CONTRACT_TYPES.map((t) => t.id);
+    return CONTRACT_TYPES.map((t) => t.id); // Todos activos
   });
-
-  // Sincronizar cuando el usuario hace login y se cargan sus preferencias
-  useEffect(() => {
-    if (preferences.selectedContractTypes.length > 0) {
-      setActiveTypes(preferences.selectedContractTypes);
-    }
-  }, [preferences.selectedContractTypes]);
 
   const styles = createStyles(colors);
 
   // Filtrar procesos por tipos ACTIVOS Y por ubicación cercana
+
+  // ...
+  const normalizeDepartamento = (dept: string): string => {
+    return dept
+      .toUpperCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // Quitar tildes
+      .replace(/DISTRITO CAPITAL DE BOGOTA/g, "BOGOTA")
+      .replace(/BOGOTA D\.?C\.?/g, "BOGOTA")
+      .trim();
+  };
+
   const filteredProcesses = useMemo(() => {
-    let filtered: SecopProcess[] = [...processes];
+    if (activeTypes.length === 0) return [];
 
-    // Filtrar por tipos de contrato ACTIVOS
-    if (activeTypes.length > 0) {
-      filtered = filtered.filter((process) =>
-        activeTypes.includes(process.tipo_de_contrato || "")
-      );
-    } else {
-      // Si no hay ninguno activo, no mostrar procesos
-      return [];
-    }
+    const cutoffDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const favoriteTypesSet = new Set(preferences.selectedContractTypes);
 
-    // Si no hay ubicación, retornar filtrados solo por tipo
-    if (nearbyDepartamentos.length === 0) {
-      return filtered;
-    }
-
-    // Filtrar por departamentos cercanos (priorizar 80km)
-    const RADIUS_CLOSE = 80;
-    const closeDepts = nearbyDepartamentos
-      .filter((d) => d.distance <= RADIUS_CLOSE)
-      .map((d) => d.departamento.toUpperCase());
-
-    const closeProcesses = filtered.filter((process) => {
-      const processDept = process.departamento_entidad?.toUpperCase() || "";
-      return closeDepts.some(
-        (dept) => processDept.includes(dept) || dept.includes(processDept)
-      );
+    const filtered = processes.filter((process) => {
+      // Usar fecha_de_ultima_publicaci en lugar de fecha_de_publicacion
+      const dateStr =
+        process.fecha_de_ultima_publicaci || process.fecha_de_publicacion_del;
+      const processDate = new Date(dateStr || 0);
+      if (processDate < cutoffDate) return false;
+      return activeTypes.includes(process.tipo_de_contrato || "");
     });
 
-    if (closeProcesses.length > 0) {
-      return closeProcesses;
-    }
+    if (filtered.length === 0) return [];
 
-    // Expandir a todos los departamentos cercanos
-    const allNearbyDepts = nearbyDepartamentos.map((d) =>
-      d.departamento.toUpperCase()
+    const deptDistanceMap = new Map(
+      nearbyDepartamentos.map((d) => [
+        normalizeDepartamento(d.departamento),
+        d.distance,
+      ])
     );
 
-    const expandedProcesses = filtered.filter((process) => {
-      const processDept = process.departamento_entidad?.toUpperCase() || "";
-      return allNearbyDepts.some(
-        (dept) => processDept.includes(dept) || dept.includes(processDept)
-      );
+    return filtered.sort((a, b) => {
+      const aType = a.tipo_de_contrato || "";
+      const bType = b.tipo_de_contrato || "";
+      const aIsFavorite = favoriteTypesSet.has(aType);
+      const bIsFavorite = favoriteTypesSet.has(bType);
+
+      if (aIsFavorite !== bIsFavorite) {
+        return aIsFavorite ? -1 : 1;
+      }
+
+      if (nearbyDepartamentos.length > 0) {
+        const aDept = normalizeDepartamento(a.departamento_entidad || "");
+        const bDept = normalizeDepartamento(b.departamento_entidad || "");
+        const distA = deptDistanceMap.get(aDept) ?? Infinity;
+        const distB = deptDistanceMap.get(bDept) ?? Infinity;
+        if (distA !== distB) return distA - distB;
+      }
+
+      // También usar la fecha correcta para ordenar
+      const dateA = new Date(
+        a.fecha_de_ultima_publicaci || a.fecha_de_publicacion_del || 0
+      ).getTime();
+      const dateB = new Date(
+        b.fecha_de_ultima_publicaci || b.fecha_de_publicacion_del || 0
+      ).getTime();
+      return dateB - dateA;
     });
-
-    if (expandedProcesses.length > 0) {
-      return expandedProcesses;
-    }
-
-    return filtered;
-  }, [processes, activeTypes, nearbyDepartamentos]);
+  }, [
+    processes,
+    activeTypes,
+    nearbyDepartamentos,
+    preferences.selectedContractTypes,
+  ]);
 
   useEffect(() => {
     fetchRecentProcesses(100, false);
@@ -132,9 +138,17 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   // Conteo por tipo (de todos los procesos disponibles)
   const porTipo = useMemo(() => {
     const counts: Record<string, number> = {};
+    const cutoffDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    let processesForCount = [...processes];
+    let processesForCount = processes.filter((p) => {
+      const dateStr = p.fecha_de_ultima_publicaci || p.fecha_de_publicacion_del;
+      const processDate = new Date(dateStr || 0);
+      return processDate >= cutoffDate;
+    });
 
+    // ... resto igual
+
+    // Filtrar por ubicación si existe
     if (nearbyDepartamentos.length > 0) {
       const RADIUS_CLOSE = 80;
       const closeDepts = nearbyDepartamentos
