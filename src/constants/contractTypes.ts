@@ -30,7 +30,7 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     CustomIcon: ObraIcon,
     icon: null,
     colorKey: null,
-    hexColor: "#F59E0B", // Ámbar - Construcción, energía
+    hexColor: "#232323", // Ámbar - Construcción, energía
   },
   {
     id: "Consultoría",
@@ -39,7 +39,16 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     CustomIcon: ConsultoriaIcon,
     icon: null,
     colorKey: null,
-    hexColor: "#8B5CF6", // Violeta - Conocimiento, estrategia
+    hexColor: "#212121", // Violeta - Conocimiento, estrategia
+  },
+  {
+    id: "Arrendamiento",
+    label: "Arrendamiento",
+    description: "Alquiler de bienes muebles e inmuebles",
+    CustomIcon: ArrendamientoIcon,
+    icon: null,
+    colorKey: null,
+    hexColor: "#f8faed", // Rosa - Propiedad, bienes raíces
   },
   {
     id: "Prestación de servicios",
@@ -77,15 +86,7 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     colorKey: null,
     hexColor: "#6366F1", // Índigo - Supervisión, autoridad
   },
-  {
-    id: "Arrendamiento",
-    label: "Arrendamiento",
-    description: "Alquiler de bienes muebles e inmuebles",
-    CustomIcon: ArrendamientoIcon,
-    icon: null,
-    colorKey: null,
-    hexColor: "#EC4899", // Rosa - Propiedad, bienes raíces
-  },
+
   {
     id: "Concesión",
     label: "Concesión",

@@ -28,6 +28,8 @@ export const lightColors = {
   background: "#F2F2F7",
   backgroundSecondary: "#FFFFFF",
   backgroundTertiary: "#E5E5EA",
+  backgroundFour: "#232323",
+  backgroundFive: "#f8faed",
 
   // Text
   textPrimary: "#000000",
@@ -63,7 +65,8 @@ export const darkColors = {
   background: "#000000",
   backgroundSecondary: "#1C1C1E",
   backgroundTertiary: "#2C2C2E",
-
+  backgroundFour: "#FFFFFF", // Invertido para modo oscuro
+  backgroundFive: "#1C1C1E",
   // Text
   textPrimary: "#FFFFFF",
   textSecondary: "#A1A1A6",

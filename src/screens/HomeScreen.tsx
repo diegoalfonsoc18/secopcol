@@ -312,46 +312,28 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                   activeOpacity={0.7}>
                   <View
                     style={[
-                      styles.iconCircle,
-                      {
-                        borderColor: typeColor,
-                        backgroundColor: isActive
-                          ? typeColor
-                          : colors.backgroundSecondary,
-                      },
-                      !isActive && styles.iconCircleInactive,
+                      styles.iconContainer,
+                      { opacity: isActive ? 1 : 0.4 },
                     ]}>
-                    {config.CustomIcon ? (
+                    {config.CustomIcon && (
                       <config.CustomIcon
-                        size={24}
-                        color={isActive ? "#FFF" : typeColor}
-                      />
-                    ) : (
-                      <Ionicons
-                        name={(config.icon as any) || "document-text-outline"}
-                        size={24}
-                        color={isActive ? "#FFF" : typeColor}
+                        size={28}
+                        color={colors.backgroundFour}
                       />
                     )}
+
                     {/* Badge de conteo */}
                     {count > 0 && (
                       <View
                         style={[
                           styles.badgeFloating,
-                          {
-                            backgroundColor: isActive ? "#FFF" : typeColor,
-                          },
+                          { backgroundColor: typeColor },
                         ]}>
-                        <Text
-                          style={[
-                            styles.typeChipCount,
-                            { color: isActive ? typeColor : "#FFF" },
-                          ]}>
-                          {count}
-                        </Text>
+                        <Text style={styles.typeChipCount}>{count}</Text>
                       </View>
                     )}
                   </View>
+
                   <Text
                     style={[
                       styles.gridLabel,
@@ -359,7 +341,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                         color: isActive
                           ? colors.textPrimary
                           : colors.textTertiary,
-                        fontWeight: isActive ? "600" : "500",
+                        fontWeight: isActive ? "600" : "400",
                       },
                     ]}
                     numberOfLines={1}>
@@ -372,21 +354,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         </View>
 
         <View style={styles.recentHeader}>
-          <Text style={styles.recentTitle}>
-            Procesos Recientes
-            {filteredProcesses.length > 0 && (
-              <Text style={styles.processCount}>
-                {" "}
-                ({filteredProcesses.length})
-              </Text>
-            )}
-          </Text>
-          <TouchableOpacity
-            onPress={handleViewAll}
-            style={styles.viewAllButton}>
-            <Text style={styles.viewAllText}>Ver todos</Text>
-            <Ionicons name="chevron-forward" size={16} color={colors.accent} />
-          </TouchableOpacity>
+          <Text style={styles.recentTitle}>Procesos Recientes</Text>
         </View>
       </View>
     );
@@ -754,25 +722,7 @@ const createStyles = (colors: any) =>
       alignItems: "center",
       marginBottom: 20,
     },
-    iconCircle: {
-      width: 54,
-      height: 54,
-      borderRadius: 27,
-      borderWidth: 2,
-      justifyContent: "center",
-      alignItems: "center",
-      position: "relative",
-      elevation: 2,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-    },
-    iconCircleInactive: {
-      opacity: 0.6,
-      elevation: 0,
-      shadowOpacity: 0,
-    },
+
     gridLabel: {
       fontSize: 10,
       marginTop: 8,
@@ -781,8 +731,8 @@ const createStyles = (colors: any) =>
     },
     badgeFloating: {
       position: "absolute",
-      top: -5,
-      right: -5,
+      top: 0,
+      right: 0,
       minWidth: 18,
       height: 18,
       borderRadius: 9,
@@ -793,6 +743,7 @@ const createStyles = (colors: any) =>
     typeChipCount: {
       fontSize: 10,
       fontWeight: "bold",
+      color: "#FFF",
     },
     activeFiltersIndicator: {
       alignItems: "center",
@@ -804,6 +755,25 @@ const createStyles = (colors: any) =>
     activeFiltersText: {
       fontSize: 12,
       color: colors.textTertiary,
+    },
+    iconContainer: {
+      width: 54,
+      height: 54,
+      justifyContent: "center",
+      alignItems: "center",
+      position: "relative",
+    },
+
+    favoriteStar: {
+      position: "absolute",
+      bottom: 0,
+      right: 0,
+      width: 16,
+      height: 16,
+      borderRadius: 8,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "transparent",
     },
   });
 
