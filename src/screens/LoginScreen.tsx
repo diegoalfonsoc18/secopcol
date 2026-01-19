@@ -27,6 +27,8 @@ WebBrowser.maybeCompleteAuthSession();
 // Client IDs de Google Cloud Console
 const GOOGLE_IOS_CLIENT_ID =
   "1081648609668-btjn1qto01u9uqvr25m423b4ughplc6j.apps.googleusercontent.com";
+const GOOGLE_ANDROID_CLIENT_ID =
+  "1081648609668-e0fda1efben5ru9accpaeu150ktdbo10.apps.googleusercontent.com";
 const GOOGLE_WEB_CLIENT_ID =
   "1081648609668-isvpbhqkkpb79m1t8tpqn2jk6sj7d8s2.apps.googleusercontent.com";
 
@@ -52,8 +54,8 @@ export const LoginScreen: React.FC = () => {
   // Configuración de Google Auth
   const [request, response, promptAsync] = Google.useAuthRequest({
     iosClientId: GOOGLE_IOS_CLIENT_ID,
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
     webClientId: GOOGLE_WEB_CLIENT_ID,
-    redirectUri: "com.secopcol.app:/oauth2redirect",
   });
 
   // Manejar respuesta de Google
@@ -64,7 +66,7 @@ export const LoginScreen: React.FC = () => {
         if (!result.success) {
           Alert.alert(
             "Error",
-            result.error || "No se pudo iniciar sesión con Google"
+            result.error || "No se pudo iniciar sesión con Google",
           );
         }
       } catch {

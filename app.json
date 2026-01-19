@@ -2,6 +2,8 @@
   "expo": {
     "name": "Secopcol",
     "slug": "secopcol",
+    "scheme": "secopcol",
+
     "icon": "./assets/secopcol-exports/secopcol-iOS-Default-1024x1024@1x.png",
     "ios": {
       "supportsTablet": true,
