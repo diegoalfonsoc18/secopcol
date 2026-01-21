@@ -100,7 +100,7 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
-      {/* HEADER: Número del Proceso */}
+      {/* HEADER: Número del Proceso y Entidad */}
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
           <Text style={styles.label}>N° PROCESO</Text>
@@ -108,6 +108,14 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
             {process.id_del_proceso || "S/N"}
           </Text>
         </View>
+
+        <View style={styles.entidadContainer}>
+          <Text style={styles.label}>ENTIDAD</Text>
+          <Text style={styles.entidadText} numberOfLines={2}>
+            {process.entidad || "Sin entidad"}
+          </Text>
+        </View>
+
         {horasRestantes !== null && horasRestantes < 24 && !estaCerrado && (
           <View style={styles.badgeUrgent}>
             <Ionicons name="time" size={12} color="#FFF" />
@@ -383,5 +391,17 @@ const createStyles = (colors: any, mainColor: string) =>
       fontSize: 13,
       fontWeight: "600",
       color: colors.textSecondary,
+    },
+    entidadContainer: {
+      flex: 1,
+      alignItems: "flex-end",
+      marginLeft: spacing.md,
+    },
+    entidadText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.textSecondary,
+      textAlign: "right",
+      marginTop: 2,
     },
   });
