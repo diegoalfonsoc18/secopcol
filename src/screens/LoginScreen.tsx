@@ -164,7 +164,10 @@ export const LoginScreen: React.FC = () => {
       style={[styles.container, { paddingTop: insets.top }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + 40 },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         {/* Logo y título */}
@@ -382,7 +385,6 @@ const createStyles = (colors: any) =>
     scrollContent: {
       flexGrow: 1,
       paddingHorizontal: spacing.xl,
-      paddingBottom: spacing.xxl,
     },
 
     // Header
