@@ -18,8 +18,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
+        "foregroundImage": "/assets/images/icon-light.png",
+        "backgroundImage": "/assets/images/icon-light.png",
         "backgroundColor": "#000000"
       },
       "package": "com.secopcol.app",
