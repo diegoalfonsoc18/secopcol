@@ -35,18 +35,23 @@ const buildQuery = (params: {
   offset?: number;
   orderBy?: string;
   requireDate?: boolean;
+  recentDays?: number;
 }): string => {
   const conditions: string[] = [];
 
-  // Por defecto, solo traer procesos con fecha de publicación
-  if (params.requireDate !== false) {
-    conditions.push("fecha_de_publicacion_del IS NOT NULL");
+  // Filtrar por fecha reciente (últimos N días)
+  if (params.recentDays) {
+    const date = new Date();
+    date.setDate(date.getDate() - params.recentDays);
+    const dateStr = date.toISOString().split("T")[0];
+    conditions.push(`fecha_de_ultima_publicaci >= '${dateStr}'`);
+  } else if (params.requireDate !== false) {
+    conditions.push("fecha_de_ultima_publicaci IS NOT NULL");
   }
 
   if (params.municipio) {
-    // Limpiar el nombre: quitar ", D.C.", comas, y normalizar espacios
     const cleanMunicipio = params.municipio
-      .replace(/,?\s*D\.?C\.?/gi, "") // Quitar D.C. o DC
+      .replace(/,?\s*D\.?C\.?/gi, "")
       .replace(/,/g, "")
       .replace(/\s+/g, " ")
       .trim();
@@ -54,14 +59,13 @@ const buildQuery = (params: {
   }
 
   if (params.departamento) {
-    // Limpiar el nombre: quitar ", D.C.", comas, y normalizar espacios
     const cleanDepartamento = params.departamento
-      .replace(/,?\s*D\.?C\.?/gi, "") // Quitar D.C. o DC
+      .replace(/,?\s*D\.?C\.?/gi, "")
       .replace(/,/g, "")
       .replace(/\s+/g, " ")
       .trim();
     conditions.push(
-      `upper(departamento_entidad) LIKE upper('%${cleanDepartamento}%')`
+      `upper(departamento_entidad) LIKE upper('%${cleanDepartamento}%')`,
     );
   }
 
@@ -80,7 +84,7 @@ const buildQuery = (params: {
   if (params.keyword) {
     const keyword = params.keyword.replace(/'/g, "''");
     conditions.push(
-      `(upper(descripci_n_del_procedimiento) LIKE upper('%${keyword}%') OR upper(entidad) LIKE upper('%${keyword}%') OR upper(nombre_del_procedimiento) LIKE upper('%${keyword}%'))`
+      `(upper(descripci_n_del_procedimiento) LIKE upper('%${keyword}%') OR upper(entidad) LIKE upper('%${keyword}%') OR upper(nombre_del_procedimiento) LIKE upper('%${keyword}%'))`,
     );
   }
 
@@ -97,7 +101,7 @@ const buildQuery = (params: {
     query += `&$offset=${params.offset}`;
   }
 
-  const orderBy = params.orderBy || "fecha_de_publicacion_del DESC";
+  const orderBy = params.orderBy || "fecha_de_ultima_publicaci DESC";
   query += `&$order=${encodeURIComponent(orderBy)}`;
 
   return query;
@@ -130,7 +134,7 @@ const fetchSecop = async (query: string): Promise<SecopProcess[]> => {
 // ============================================
 
 export const getRecentProcesses = async (
-  limit: number = 50
+  limit: number = 50,
 ): Promise<SecopProcess[]> => {
   const query = buildQuery({
     limit,
@@ -141,7 +145,7 @@ export const getRecentProcesses = async (
 
 export const searchProcesses = async (
   keyword: string,
-  limit: number = 50
+  limit: number = 50,
 ): Promise<SecopProcess[]> => {
   const query = buildQuery({
     keyword,
@@ -153,7 +157,7 @@ export const searchProcesses = async (
 
 export const getProcessesByMunicipality = async (
   municipio: string,
-  limit: number = 50
+  limit: number = 50,
 ): Promise<SecopProcess[]> => {
   const query = buildQuery({
     municipio,
@@ -165,7 +169,7 @@ export const getProcessesByMunicipality = async (
 
 export const getProcessesByDepartment = async (
   departamento: string,
-  limit: number = 50
+  limit: number = 50,
 ): Promise<SecopProcess[]> => {
   const query = buildQuery({
     departamento,
@@ -177,7 +181,7 @@ export const getProcessesByDepartment = async (
 
 export const getProcessesByPhase = async (
   fase: string,
-  limit: number = 50
+  limit: number = 50,
 ): Promise<SecopProcess[]> => {
   const query = buildQuery({
     fase,
@@ -189,7 +193,7 @@ export const getProcessesByPhase = async (
 
 export const getProcessesByModality = async (
   modalidad: string,
-  limit: number = 50
+  limit: number = 50,
 ): Promise<SecopProcess[]> => {
   const query = buildQuery({
     modalidad,
@@ -211,27 +215,28 @@ export const advancedSearch = async (params: {
 }): Promise<SecopProcess[]> => {
   const query = buildQuery({
     ...params,
-    orderBy: "fecha_de_publicacion_del DESC",
+    orderBy: "fecha_de_ultima_publicaci DESC",
+    requireDate: false, // No filtrar por fecha_de_publicacion_del
   });
   return fetchSecop(query);
 };
 
 export const getProcessById = async (
-  id: string
+  id: string,
 ): Promise<SecopProcess | null> => {
   const query = `$where=${encodeURIComponent(
-    `id_del_proceso='${id}'`
+    `id_del_proceso='${id}'`,
   )}&$limit=1`;
   const results = await fetchSecop(query);
   return results.length > 0 ? results[0] : null;
 };
 
 export const getCountByMunicipality = async (
-  municipio: string
+  municipio: string,
 ): Promise<number> => {
   try {
     const url = `${SECOP_API_URL}?$select=count(*)&$where=${encodeURIComponent(
-      `ciudad_entidad='${municipio}'`
+      `ciudad_entidad='${municipio}'`,
     )}`;
     const response = await fetch(url, { headers: getHeaders() });
     const data = await response.json();
