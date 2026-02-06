@@ -1,12 +1,20 @@
 import React, { useEffect } from "react";
 import { StyleSheet, Platform, ActivityIndicator, View } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
+import {
+  NavigationContainer,
+  NavigationContainerRef,
+} from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 
 import * as Linking from "expo-linking";
+import * as Notifications from "expo-notifications";
+
+// Background task: debe importarse a nivel modulo para que
+// TaskManager.defineTask() se ejecute antes del render
+import "./src/services/alertBackgroundService";
 import {
   HomeIcon,
   SearchIcon,
@@ -28,6 +36,7 @@ import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { useProcessesStore } from "./src/store/processesStore";
 import { ErrorBoundary } from "./src/components/ErrorBoundary";
 import { supabase } from "./src/services/supabase";
+import { useNotificationSetup } from "./src/hooks/useNotificationSetup";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -267,6 +276,9 @@ function RootNavigator() {
   const { isAuthenticated, isLoading, preferences } = useAuth();
   const { colors } = useTheme();
 
+  // Inicializar notificaciones cuando el usuario esta autenticado
+  useNotificationSetup();
+
   if (isLoading) {
     return (
       <View
@@ -293,8 +305,23 @@ function RootNavigator() {
 // ============================================
 // APP CONTENT (con manejo de deep links)
 // ============================================
+const navigationRef = React.createRef<NavigationContainerRef<any>>();
+
 function AppContent() {
   const { colors, isDark } = useTheme();
+
+  // Manejar tap en notificacion: navegar al tab Alertas
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const data = response.notification.request.content.data;
+        if (data?.type === "alert_match" && navigationRef.current) {
+          navigationRef.current.navigate("Alerts");
+        }
+      }
+    );
+    return () => subscription.remove();
+  }, []);
 
   // Manejar deep links de Supabase
   useEffect(() => {
@@ -347,6 +374,7 @@ function AppContent() {
 
   return (
     <NavigationContainer
+      ref={navigationRef}
       theme={{
         dark: isDark,
         colors: {

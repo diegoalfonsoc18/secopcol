@@ -143,6 +143,34 @@ export const getAlertHistory = async (
 };
 
 // ============================================
+// ACTUALIZAR RESULTADOS DE ALERTA
+// ============================================
+export const updateAlertResults = async (
+  alertId: string,
+  results: {
+    last_check: string;
+    last_results_count: number;
+    last_results_ids: string[];
+  }
+): Promise<{ error: string | null }> => {
+  try {
+    const { error } = await supabase
+      .from("alerts")
+      .update({
+        last_check: results.last_check,
+        last_results_count: results.last_results_count,
+        last_results_ids: results.last_results_ids,
+      })
+      .eq("id", alertId);
+
+    if (error) throw error;
+    return { error: null };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+};
+
+// ============================================
 // FORMATEAR FILTROS PARA MOSTRAR
 // ============================================
 export const formatAlertFilters = (filters: AlertFilters): string => {
