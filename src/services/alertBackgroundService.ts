@@ -2,7 +2,7 @@
 // Servicio de verificacion automatica de alertas en background
 
 import * as TaskManager from "expo-task-manager";
-import * as BackgroundFetch from "expo-background-fetch";
+import * as BackgroundTask from "expo-background-task";
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getAlerts, updateAlertResults } from "./alertService";
@@ -114,22 +114,22 @@ TaskManager.defineTask(ALERT_CHECK_TASK, async () => {
     const userId = await getUserIdFromStorage();
 
     if (!userId) {
-      return BackgroundFetch.BackgroundFetchResult.NoData;
+      return BackgroundTask.BackgroundTaskResult.Failed;
     }
 
     const sent = await checkAlertsForUser(userId);
 
     return sent > 0
-      ? BackgroundFetch.BackgroundFetchResult.NewData
-      : BackgroundFetch.BackgroundFetchResult.NoData;
+      ? BackgroundTask.BackgroundTaskResult.Success
+      : BackgroundTask.BackgroundTaskResult.Success;
   } catch (error) {
     console.error("Background alert check failed:", error);
-    return BackgroundFetch.BackgroundFetchResult.Failed;
+    return BackgroundTask.BackgroundTaskResult.Failed;
   }
 });
 
 // ============================================
-// REGISTRAR / DESREGISTRAR BACKGROUND FETCH
+// REGISTRAR / DESREGISTRAR BACKGROUND TASK
 // ============================================
 export async function registerBackgroundAlertCheck(): Promise<void> {
   try {
@@ -139,10 +139,8 @@ export async function registerBackgroundAlertCheck(): Promise<void> {
 
     if (isRegistered) return;
 
-    await BackgroundFetch.registerTaskAsync(ALERT_CHECK_TASK, {
-      minimumInterval: 15 * 60, // 15 minutos (minimo en iOS)
-      stopOnTerminate: false,
-      startOnBoot: true,
+    await BackgroundTask.registerTaskAsync(ALERT_CHECK_TASK, {
+      minimumInterval: 15, // minutos (minimo 15 en Android)
     });
 
     console.log("Background alert check registered");
@@ -159,7 +157,7 @@ export async function unregisterBackgroundAlertCheck(): Promise<void> {
 
     if (!isRegistered) return;
 
-    await BackgroundFetch.unregisterTaskAsync(ALERT_CHECK_TASK);
+    await BackgroundTask.unregisterTaskAsync(ALERT_CHECK_TASK);
     console.log("Background alert check unregistered");
   } catch (error) {
     console.error("Error unregistering background alert check:", error);

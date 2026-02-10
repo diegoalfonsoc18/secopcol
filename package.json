@@ -27,7 +27,7 @@
     "date-fns": "^2.30.0",
     "expo": "~54.0.29",
     "expo-auth-session": "~7.0.10",
-    "expo-background-fetch": "~14.0.9",
+    "expo-background-task": "~1.0.10",
     "expo-constants": "~18.0.12",
     "expo-crypto": "~15.0.8",
     "expo-device": "~8.0.10",

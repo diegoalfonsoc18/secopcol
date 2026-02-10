@@ -23,7 +23,11 @@
         "backgroundColor": "#000000"
       },
       "package": "com.secopcol.app",
-      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION", "RECEIVE_BOOT_COMPLETED"]
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "RECEIVE_BOOT_COMPLETED"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -42,7 +46,8 @@
         }
       ],
       "expo-web-browser",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-background-task"
     ],
     "experiments": {
       "typedRoutes": true
