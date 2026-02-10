@@ -5,24 +5,42 @@ import { SecopProcess } from "../types/index";
 
 const SECOP_API_URL = "https://www.datos.gov.co/resource/p6dx-8zbt.json";
 
-// App Token (opcional, aumenta límite de requests)
-const APP_TOKEN = "";
+// App Token (aumenta límite de requests)
+const APP_TOKEN = "1GAPftJcOl9QDpfcWlwFeEqxC";
 
 // Re-exportar SecopProcess
 export type { SecopProcess };
 
 // Headers para la petición
 const getHeaders = (): HeadersInit => {
-  const headers: HeadersInit = {
+  return {
     Accept: "application/json",
     "Content-Type": "application/json",
+    "X-App-Token": APP_TOKEN,
   };
-  if (APP_TOKEN) {
-    headers["X-App-Token"] = APP_TOKEN;
-  }
-  return headers;
 };
 
+// Hacer petición a la API
+const fetchSecop = async (query: string): Promise<SecopProcess[]> => {
+  try {
+    const url = `${SECOP_API_URL}?${query}`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data as SecopProcess[];
+  } catch (error) {
+    console.error("Error fetching SECOP data:", error);
+    throw error;
+  }
+};
 // Construir query SoQL para filtros
 const buildQuery = (params: {
   municipio?: string;
@@ -106,29 +124,6 @@ const buildQuery = (params: {
 
   return query;
 };
-
-// Hacer petición a la API
-const fetchSecop = async (query: string): Promise<SecopProcess[]> => {
-  try {
-    const url = `${SECOP_API_URL}?${query}`;
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: getHeaders(),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data as SecopProcess[];
-  } catch (error) {
-    console.error("Error fetching SECOP data:", error);
-    throw error;
-  }
-};
-
 // ============================================
 // FUNCIONES PÚBLICAS
 // ============================================
