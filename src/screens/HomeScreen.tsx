@@ -1,27 +1,16 @@
-import React, {
-  useEffect,
-  useRef,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import {
   Animated,
   RefreshControl,
   StyleSheet,
   Text,
   View,
-  Pressable,
   ScrollView,
   TouchableOpacity,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  ProcessCard,
-  DashboardSkeleton,
-  StaggeredItem,
-} from "../components/index";
+import { ProcessCard, DashboardSkeleton, StaggeredItem } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
 import { spacing, borderRadius } from "../theme";
@@ -29,10 +18,8 @@ import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { useHaptics } from "../hooks/useHaptics";
 import { useLocation } from "../hooks/useLocation";
-import {
-  CONTRACT_TYPES,
-  getContractTypeColor,
-} from "../constants/contractTypes";
+import { CONTRACT_TYPES } from "../constants/contractTypes";
+import { useDashboardStats } from "../hooks/useDashboardStats";
 
 // ============================================
 // COMPONENTE PRINCIPAL
@@ -45,163 +32,25 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { processes, loading, fetchRecentProcesses } = useProcessesStore();
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  // Ubicación del usuario
   const {
     departamento: userDepartamento,
     municipio: userMunicipio,
     nearbyDepartamentos,
   } = useLocation();
 
-  // Estado local para tipos activos
-  // Por defecto: los que el usuario eligió en onboarding, o todos si no eligió ninguno
-  const [activeTypes, setActiveTypes] = useState<string[]>(() => {
-    return CONTRACT_TYPES.map((t) => t.id); // Todos activos
-  });
+  const stats = useDashboardStats(
+    processes,
+    nearbyDepartamentos,
+    preferences.selectedContractTypes
+  );
 
   const styles = createStyles(colors);
-
-  // Filtrar procesos por tipos ACTIVOS Y por ubicación cercana
-
-  // ...
-  const normalizeDepartamento = (dept: string): string => {
-    return dept
-      .toUpperCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "") // Quitar tildes
-      .replace(/DISTRITO CAPITAL DE BOGOTA/g, "BOGOTA")
-      .replace(/BOGOTA D\.?C\.?/g, "BOGOTA")
-      .trim();
-  };
-
-  const filteredProcesses = useMemo(() => {
-    if (activeTypes.length === 0) return [];
-
-    const cutoffDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const favoriteTypesSet = new Set(preferences.selectedContractTypes);
-
-    const filtered = processes.filter((process) => {
-      // Usar fecha_de_ultima_publicaci en lugar de fecha_de_publicacion
-      const dateStr =
-        process.fecha_de_ultima_publicaci || process.fecha_de_publicacion_del;
-      const processDate = new Date(dateStr || 0);
-      if (processDate < cutoffDate) return false;
-      return activeTypes.includes(process.tipo_de_contrato || "");
-    });
-
-    if (filtered.length === 0) return [];
-
-    const deptDistanceMap = new Map(
-      nearbyDepartamentos.map((d) => [
-        normalizeDepartamento(d.departamento),
-        d.distance,
-      ])
-    );
-
-    return filtered.sort((a, b) => {
-      const aType = a.tipo_de_contrato || "";
-      const bType = b.tipo_de_contrato || "";
-      const aIsFavorite = favoriteTypesSet.has(aType);
-      const bIsFavorite = favoriteTypesSet.has(bType);
-
-      if (aIsFavorite !== bIsFavorite) {
-        return aIsFavorite ? -1 : 1;
-      }
-
-      if (nearbyDepartamentos.length > 0) {
-        const aDept = normalizeDepartamento(a.departamento_entidad || "");
-        const bDept = normalizeDepartamento(b.departamento_entidad || "");
-        const distA = deptDistanceMap.get(aDept) ?? Infinity;
-        const distB = deptDistanceMap.get(bDept) ?? Infinity;
-        if (distA !== distB) return distA - distB;
-      }
-
-      // También usar la fecha correcta para ordenar
-      const dateA = new Date(
-        a.fecha_de_ultima_publicaci || a.fecha_de_publicacion_del || 0
-      ).getTime();
-      const dateB = new Date(
-        b.fecha_de_ultima_publicaci || b.fecha_de_publicacion_del || 0
-      ).getTime();
-      return dateB - dateA;
-    });
-  }, [
-    processes,
-    activeTypes,
-    nearbyDepartamentos,
-    preferences.selectedContractTypes,
-  ]);
 
   useEffect(() => {
     fetchRecentProcesses(100, false);
   }, [fetchRecentProcesses]);
 
-  // Conteo por tipo (de todos los procesos disponibles)
-  const porTipo = useMemo(() => {
-    const counts: Record<string, number> = {};
-    const cutoffDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-
-    let processesForCount = processes.filter((p) => {
-      const dateStr = p.fecha_de_ultima_publicaci || p.fecha_de_publicacion_del;
-      const processDate = new Date(dateStr || 0);
-      return processDate >= cutoffDate;
-    });
-
-    // ... resto igual
-
-    // Filtrar por ubicación si existe
-    if (nearbyDepartamentos.length > 0) {
-      const RADIUS_CLOSE = 80;
-      const closeDepts = nearbyDepartamentos
-        .filter((d) => d.distance <= RADIUS_CLOSE)
-        .map((d) => d.departamento.toUpperCase());
-
-      const closeProcesses = processesForCount.filter((process) => {
-        const processDept = process.departamento_entidad?.toUpperCase() || "";
-        return closeDepts.some(
-          (dept) => processDept.includes(dept) || dept.includes(processDept)
-        );
-      });
-
-      if (closeProcesses.length > 0) {
-        processesForCount = closeProcesses;
-      }
-    }
-
-    processesForCount.forEach((p) => {
-      const tipo = p.tipo_de_contrato || "Otro";
-      counts[tipo] = (counts[tipo] || 0) + 1;
-    });
-
-    return counts;
-  }, [processes, nearbyDepartamentos]);
-
-  // Handler para toggle de tipo de contrato
-  const handleToggleType = useCallback(
-    (typeId: string) => {
-      haptics.light();
-
-      setActiveTypes((prev) => {
-        if (prev.includes(typeId)) {
-          return prev.filter((id) => id !== typeId);
-        } else {
-          return [...prev, typeId];
-        }
-      });
-    },
-    [haptics]
-  );
-
-  // Handler para activar/desactivar todos
-  const handleToggleAll = useCallback(() => {
-    haptics.medium();
-
-    if (activeTypes.length === CONTRACT_TYPES.length) {
-      setActiveTypes([]);
-    } else {
-      setActiveTypes(CONTRACT_TYPES.map((t) => t.id));
-    }
-  }, [haptics, activeTypes]);
-
+  // Animaciones del header
   const headerHeight = scrollY.interpolate({
     inputRange: [0, 80],
     outputRange: [120, 70],
@@ -233,179 +82,56 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     await fetchRecentProcesses(100, false);
   }, [fetchRecentProcesses, haptics]);
 
-  const handleViewAll = useCallback(() => {
-    haptics.light();
-    navigation.navigate("Search");
-  }, [navigation, haptics]);
-
-  const renderProcess = useCallback(
-    ({ item, index }: { item: SecopProcess; index: number }) => (
-      <StaggeredItem index={index} staggerDelay={30}>
-        <ProcessCard process={item} onPress={() => handleProcessPress(item)} />
-      </StaggeredItem>
-    ),
-    [handleProcessPress]
+  const navigateToSearch = useCallback(
+    (params?: Record<string, any>) => {
+      haptics.light();
+      navigation.navigate("Search", {
+        screen: "SearchTab",
+        params,
+      });
+    },
+    [navigation, haptics]
   );
 
-  const keyExtractor = useCallback(
-    (item: SecopProcess, index: number) => `${item.id_del_proceso}-${index}`,
-    []
-  );
+  // ============================================
+  // STATS CARDS
+  // ============================================
+  const statCards = [
+    {
+      key: "today",
+      icon: "calendar-outline" as const,
+      count: stats.todayCount,
+      label: "Hoy",
+      color: colors.accent,
+      bgColor: colors.accentLight,
+      onPress: () => navigateToSearch(),
+      show: true,
+    },
+    {
+      key: "nearby",
+      icon: "location-outline" as const,
+      count: stats.nearbyCount,
+      label: "Cerca de ti",
+      color: colors.success,
+      bgColor: "rgba(52, 199, 89, 0.12)",
+      onPress: () =>
+        navigateToSearch({ departamento: userDepartamento }),
+      show: nearbyDepartamentos.length > 0,
+    },
+    {
+      key: "favorites",
+      icon: "bookmark-outline" as const,
+      count: stats.favoriteTypesCount,
+      label: "Tus tipos",
+      color: "#FF9500",
+      bgColor: "rgba(255, 149, 0, 0.12)",
+      onPress: () =>
+        navigateToSearch({ tipos: preferences.selectedContractTypes }),
+      show: preferences.selectedContractTypes.length > 0,
+    },
+  ];
 
-  const ListHeader = () => {
-    const allActive = activeTypes.length === CONTRACT_TYPES.length;
-    const someActive =
-      activeTypes.length > 0 && activeTypes.length < CONTRACT_TYPES.length;
-
-    return (
-      <View style={styles.listHeader}>
-        {/* Por Tipo de Contrato */}
-        <View style={styles.sectionCard}>
-          {/* Header de la sección */}
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionHeaderLeft}>
-              <Ionicons name="grid-outline" size={18} color={colors.accent} />
-              <Text style={styles.sectionTitle}>Tipo de Contrato</Text>
-            </View>
-
-            {/* Botón para seleccionar/deseleccionar todos */}
-            <TouchableOpacity
-              onPress={handleToggleAll}
-              style={[
-                styles.toggleAllButton,
-                allActive && styles.toggleAllButtonActive,
-              ]}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons
-                name={
-                  allActive
-                    ? "checkmark-circle"
-                    : someActive
-                    ? "remove-circle-outline"
-                    : "ellipse-outline"
-                }
-                size={14}
-                color={allActive ? colors.success : colors.textSecondary}
-              />
-              <Text
-                style={[
-                  styles.toggleAllText,
-                  allActive && { color: colors.success },
-                ]}>
-                Todos
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Grid de todos los tipos de contrato */}
-          <View style={styles.gridContainer}>
-            {CONTRACT_TYPES.map((config) => {
-              const typeColor = getContractTypeColor(config, colors);
-              const count = porTipo[config.id] || 0;
-              const isActive = activeTypes.includes(config.id);
-
-              return (
-                <TouchableOpacity
-                  key={config.id}
-                  style={styles.gridItem}
-                  onPress={() => handleToggleType(config.id)}
-                  activeOpacity={0.7}>
-                  <View
-                    style={[
-                      styles.iconContainer,
-                      { opacity: isActive ? 1 : 0.4 },
-                    ]}>
-                    {config.CustomIcon && (
-                      <config.CustomIcon
-                        size={28}
-                        color={colors.backgroundFour}
-                      />
-                    )}
-
-                    {/* Badge de conteo */}
-                    {count > 0 && (
-                      <View
-                        style={[
-                          styles.badgeFloating,
-                          { backgroundColor: typeColor },
-                        ]}>
-                        <Text style={styles.typeChipCount}>{count}</Text>
-                      </View>
-                    )}
-                  </View>
-
-                  <Text
-                    style={[
-                      styles.gridLabel,
-                      {
-                        color: isActive
-                          ? colors.textPrimary
-                          : colors.textTertiary,
-                        fontWeight: isActive ? "600" : "400",
-                      },
-                    ]}
-                    numberOfLines={1}>
-                    {config.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        <View style={styles.recentHeader}>
-          <Text style={styles.recentTitle}>Procesos Recientes</Text>
-        </View>
-      </View>
-    );
-  };
-
-  const ListEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <View style={styles.emptyIconContainer}>
-        <Ionicons
-          name={
-            activeTypes.length === 0
-              ? "filter-outline"
-              : "document-text-outline"
-          }
-          size={48}
-          color={colors.textTertiary}
-        />
-      </View>
-      <Text style={styles.emptyTitle}>
-        {activeTypes.length === 0 ? "Sin filtros activos" : "Sin procesos"}
-      </Text>
-      <Text style={styles.emptyMessage}>
-        {activeTypes.length === 0
-          ? "Selecciona al menos un tipo de contrato para ver procesos"
-          : "No hay procesos disponibles con los filtros seleccionados"}
-      </Text>
-
-      {/* Botón para activar todos los filtros */}
-      {activeTypes.length === 0 && (
-        <Pressable
-          style={({ pressed }) => [
-            styles.activateAllButton,
-            pressed && { opacity: 0.8 },
-          ]}
-          onPress={handleToggleAll}>
-          <Ionicons name="checkmark-done-outline" size={18} color="#FFF" />
-          <Text style={styles.activateAllButtonText}>Activar todos</Text>
-        </Pressable>
-      )}
-
-      <Pressable
-        style={({ pressed }) => [
-          styles.retryButton,
-          pressed && { opacity: 0.8 },
-        ]}
-        onPress={handleRefresh}>
-        <Ionicons name="refresh-outline" size={18} color={colors.accent} />
-        <Text style={styles.retryButtonText}>Reintentar</Text>
-      </Pressable>
-    </View>
-  );
+  const hasLocation = nearbyDepartamentos.length > 0;
 
   return (
     <View style={styles.container}>
@@ -430,7 +156,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             </View>
           </Animated.View>
 
-          {/* Botón de configuración */}
           <TouchableOpacity
             style={styles.headerButton}
             onPress={() => navigation.navigate("AppSettings")}>
@@ -443,7 +168,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             <Text style={styles.subtitle}>
               {user?.name
                 ? `Hola, ${user.name.split(" ")[0]}`
-                : "Contratación pública"}
+                : "Contratacion publica"}
             </Text>
             {(userMunicipio || userDepartamento) && (
               <View style={styles.locationBadge}>
@@ -465,16 +190,11 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           <DashboardSkeleton />
         </ScrollView>
       ) : (
-        <Animated.FlatList
-          data={filteredProcesses.slice(0, 10)}
-          keyExtractor={keyExtractor}
-          renderItem={renderProcess}
+        <Animated.ScrollView
           contentContainerStyle={[
-            styles.listContent,
+            styles.scrollContent,
             { paddingBottom: insets.bottom + 100 },
           ]}
-          ListHeaderComponent={ListHeader}
-          ListEmptyComponent={ListEmpty}
           showsVerticalScrollIndicator={false}
           onScroll={Animated.event(
             [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -488,12 +208,177 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               tintColor={colors.accent}
               colors={[colors.accent]}
             />
-          }
-          removeClippedSubviews={true}
-          maxToRenderPerBatch={10}
-          windowSize={10}
-          initialNumToRender={5}
-        />
+          }>
+          {/* ================================ */}
+          {/* SECCION 1: Stats Summary        */}
+          {/* ================================ */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.statsRow}>
+            {statCards
+              .filter((s) => s.show)
+              .map((card) => (
+                <TouchableOpacity
+                  key={card.key}
+                  style={[styles.statCard, { backgroundColor: card.bgColor }]}
+                  onPress={card.onPress}
+                  activeOpacity={0.7}>
+                  <View style={styles.statCardHeader}>
+                    <View
+                      style={[
+                        styles.statIconCircle,
+                        { backgroundColor: card.color + "20" },
+                      ]}>
+                      <Ionicons
+                        name={card.icon}
+                        size={18}
+                        color={card.color}
+                      />
+                    </View>
+                  </View>
+                  <Text style={[styles.statCount, { color: card.color }]}>
+                    {card.count}
+                  </Text>
+                  <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                    {card.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+          </ScrollView>
+
+          {/* ================================ */}
+          {/* SECCION 2: Categorias favoritas  */}
+          {/* ================================ */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Categorias</Text>
+            <TouchableOpacity
+              onPress={() => navigateToSearch()}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Text style={styles.viewAllText}>Ver todas</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoriesRow}>
+            {stats.favoriteTypeConfigs.map((config) => (
+              <TouchableOpacity
+                key={config.id}
+                style={styles.categoryItem}
+                onPress={() =>
+                  navigateToSearch({ tipoContrato: config.id })
+                }
+                activeOpacity={0.7}>
+                <View style={styles.categoryIconCircle}>
+                  {config.CustomIcon && (
+                    <config.CustomIcon
+                      size={26}
+                      color={colors.textSecondary}
+                    />
+                  )}
+                </View>
+                <Text
+                  style={[styles.categoryLabel, { color: colors.textPrimary }]}
+                  numberOfLines={1}>
+                  {config.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* ================================ */}
+          {/* SECCION 3: Procesos destacados   */}
+          {/* ================================ */}
+
+          {/* Sub-seccion: Cerca de ti */}
+          {hasLocation && stats.nearbyProcesses.length > 0 && (
+            <View style={styles.processSection}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionHeaderLeft}>
+                  <Ionicons
+                    name="location-outline"
+                    size={18}
+                    color={colors.success}
+                  />
+                  <Text style={styles.sectionTitle}>Cerca de ti</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() =>
+                    navigateToSearch({ departamento: userDepartamento })
+                  }
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Text style={styles.viewAllText}>Ver mas</Text>
+                </TouchableOpacity>
+              </View>
+
+              {stats.nearbyProcesses.slice(0, 3).map((process, index) => (
+                <StaggeredItem key={process.id_del_proceso} index={index} staggerDelay={30}>
+                  <ProcessCard
+                    process={process}
+                    onPress={() => handleProcessPress(process)}
+                  />
+                </StaggeredItem>
+              ))}
+            </View>
+          )}
+
+          {/* Sub-seccion: Publicados hoy */}
+          {stats.todayProcesses.length > 0 && (
+            <View style={styles.processSection}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionHeaderLeft}>
+                  <Ionicons
+                    name="calendar-outline"
+                    size={18}
+                    color={colors.accent}
+                  />
+                  <Text style={styles.sectionTitle}>Publicados hoy</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => navigateToSearch()}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Text style={styles.viewAllText}>Ver mas</Text>
+                </TouchableOpacity>
+              </View>
+
+              {stats.todayProcesses.slice(0, 3).map((process, index) => (
+                <StaggeredItem key={process.id_del_proceso} index={index} staggerDelay={30}>
+                  <ProcessCard
+                    process={process}
+                    onPress={() => handleProcessPress(process)}
+                  />
+                </StaggeredItem>
+              ))}
+            </View>
+          )}
+
+          {/* Estado vacio */}
+          {stats.todayProcesses.length === 0 &&
+            stats.nearbyProcesses.length === 0 && (
+              <View style={styles.emptyContainer}>
+                <View style={styles.emptyIconContainer}>
+                  <Ionicons
+                    name="document-text-outline"
+                    size={48}
+                    color={colors.textTertiary}
+                  />
+                </View>
+                <Text style={styles.emptyTitle}>Sin procesos destacados</Text>
+                <Text style={styles.emptyMessage}>
+                  No hay procesos nuevos en este momento. Desliza hacia abajo
+                  para actualizar.
+                </Text>
+                <TouchableOpacity
+                  style={[styles.searchButton, { backgroundColor: colors.accent }]}
+                  onPress={() => navigateToSearch()}>
+                  <Ionicons name="search" size={18} color="#FFF" />
+                  <Text style={styles.searchButtonText}>Buscar procesos</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+        </Animated.ScrollView>
       )}
     </View>
   );
@@ -571,7 +456,7 @@ const createStyles = (colors: any) =>
     locationBadge: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.successLight || "rgba(48, 209, 88, 0.12)",
+      backgroundColor: "rgba(48, 209, 88, 0.12)",
       paddingHorizontal: spacing.sm,
       paddingVertical: 4,
       borderRadius: borderRadius.full,
@@ -582,23 +467,71 @@ const createStyles = (colors: any) =>
       color: colors.success,
       fontWeight: "600",
     },
-    listContent: {
+    scrollContent: {
       paddingHorizontal: spacing.lg,
       paddingTop: spacing.md,
     },
-    listHeader: {
-      marginBottom: spacing.md,
+
+    // Stats
+    statsRow: {
+      paddingVertical: spacing.sm,
+      gap: spacing.md,
     },
-    sectionCard: {
-      backgroundColor: colors.backgroundSecondary,
+    statCard: {
+      width: 130,
+      padding: spacing.md,
       borderRadius: borderRadius.md,
-      padding: spacing.lg,
-      marginBottom: spacing.lg,
     },
+    statCardHeader: {
+      marginBottom: spacing.sm,
+    },
+    statIconCircle: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    statCount: {
+      fontSize: 28,
+      fontWeight: "700",
+      marginBottom: 2,
+    },
+    statLabel: {
+      fontSize: 13,
+      fontWeight: "500",
+    },
+
+    // Categories
+    categoriesRow: {
+      paddingVertical: spacing.sm,
+      gap: spacing.lg,
+    },
+    categoryItem: {
+      alignItems: "center",
+      width: 70,
+    },
+    categoryIconCircle: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: colors.backgroundSecondary,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: spacing.xs,
+    },
+    categoryLabel: {
+      fontSize: 11,
+      fontWeight: "500",
+      textAlign: "center",
+    },
+
+    // Section headers
     sectionHeader: {
       flexDirection: "row",
-      alignItems: "center",
       justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: spacing.lg,
       marginBottom: spacing.md,
     },
     sectionHeaderLeft: {
@@ -607,53 +540,22 @@ const createStyles = (colors: any) =>
       gap: spacing.sm,
     },
     sectionTitle: {
-      fontSize: 15,
-      fontWeight: "600",
-      color: colors.textPrimary,
-    },
-    toggleAllButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.xs,
-      borderRadius: borderRadius.full,
-      gap: spacing.xs,
-      backgroundColor: colors.background,
-    },
-    toggleAllButtonActive: {
-      backgroundColor: colors.successLight || "rgba(48, 209, 88, 0.12)",
-    },
-    toggleAllText: {
-      fontSize: 12,
-      fontWeight: "500",
-      color: colors.textSecondary,
-    },
-    recentHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: spacing.md,
-    },
-    recentTitle: {
-      fontSize: 20,
+      fontSize: 18,
       fontWeight: "700",
       color: colors.textPrimary,
-    },
-    processCount: {
-      fontSize: 16,
-      fontWeight: "500",
-      color: colors.textTertiary,
-    },
-    viewAllButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.xs,
     },
     viewAllText: {
       fontSize: 14,
       color: colors.accent,
       fontWeight: "600",
     },
+
+    // Process sections
+    processSection: {
+      marginBottom: spacing.md,
+    },
+
+    // Empty state
     emptyContainer: {
       alignItems: "center",
       paddingVertical: spacing.xxl * 2,
@@ -663,7 +565,7 @@ const createStyles = (colors: any) =>
       width: 88,
       height: 88,
       borderRadius: 44,
-      backgroundColor: colors.backgroundTertiary,
+      backgroundColor: colors.backgroundSecondary,
       justifyContent: "center",
       alignItems: "center",
       marginBottom: spacing.lg,
@@ -680,100 +582,19 @@ const createStyles = (colors: any) =>
       textAlign: "center",
       lineHeight: 22,
     },
-    activateAllButton: {
+    searchButton: {
       flexDirection: "row",
       alignItems: "center",
       marginTop: spacing.lg,
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.md,
-      backgroundColor: colors.accent,
       borderRadius: borderRadius.full,
       gap: spacing.sm,
     },
-    activateAllButtonText: {
+    searchButtonText: {
       fontSize: 15,
       fontWeight: "600",
       color: "#FFF",
-    },
-    retryButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginTop: spacing.md,
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.md,
-      backgroundColor: colors.accentLight,
-      borderRadius: borderRadius.full,
-      gap: spacing.sm,
-    },
-    retryButtonText: {
-      fontSize: 15,
-      fontWeight: "600",
-      color: colors.accent,
-    },
-    gridContainer: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      justifyContent: "space-between",
-      paddingHorizontal: 10,
-      marginTop: 15,
-    },
-    gridItem: {
-      width: "25%",
-      alignItems: "center",
-      marginBottom: 20,
-    },
-
-    gridLabel: {
-      fontSize: 10,
-      marginTop: 8,
-      textAlign: "center",
-      fontWeight: "500",
-    },
-    badgeFloating: {
-      position: "absolute",
-      top: 0,
-      right: 0,
-      minWidth: 18,
-      height: 18,
-      borderRadius: 9,
-      justifyContent: "center",
-      alignItems: "center",
-      paddingHorizontal: 4,
-    },
-    typeChipCount: {
-      fontSize: 10,
-      fontWeight: "bold",
-      color: "#FFF",
-    },
-    activeFiltersIndicator: {
-      alignItems: "center",
-      marginTop: spacing.sm,
-      paddingTop: spacing.sm,
-      borderTopWidth: 1,
-      borderTopColor: colors.separator,
-    },
-    activeFiltersText: {
-      fontSize: 12,
-      color: colors.textTertiary,
-    },
-    iconContainer: {
-      width: 54,
-      height: 54,
-      justifyContent: "center",
-      alignItems: "center",
-      position: "relative",
-    },
-
-    favoriteStar: {
-      position: "absolute",
-      bottom: 0,
-      right: 0,
-      width: 16,
-      height: 16,
-      borderRadius: 8,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "transparent",
     },
   });
 
