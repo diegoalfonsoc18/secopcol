@@ -34,7 +34,6 @@ import {
   deleteAlert,
   toggleAlert,
   ALERT_FREQUENCY_HOURS,
-  formatAlertFilters,
 } from "../services/alertService";
 import { Alert as AlertType, AlertFilters } from "../types/database";
 import { useHaptics } from "../hooks/useHaptics";
@@ -119,7 +118,7 @@ const AlertCard: React.FC<AlertCardProps> = ({
 
   const renderRightActions = (
     _progress: Animated.AnimatedInterpolation<number>,
-    dragX: Animated.AnimatedInterpolation<number>
+    dragX: Animated.AnimatedInterpolation<number>,
   ) => {
     const scale = dragX.interpolate({
       inputRange: [-100, 0],
@@ -336,13 +335,13 @@ const AlertModal: React.FC<AlertModalProps> = ({
 
   const filteredDepartments = deptSearchText
     ? departments.filter((d) =>
-        d.toLowerCase().includes(deptSearchText.toLowerCase())
+        d.toLowerCase().includes(deptSearchText.toLowerCase()),
       )
     : departments;
 
   const filteredMunicipalities = muniSearchText
     ? municipalities.filter((m) =>
-        m.toLowerCase().includes(muniSearchText.toLowerCase())
+        m.toLowerCase().includes(muniSearchText.toLowerCase()),
       )
     : municipalities;
 
@@ -597,7 +596,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
                   ]}
                   onPress={() =>
                     setSelectedModalidad(
-                      selectedModalidad === mod.id ? "" : mod.id
+                      selectedModalidad === mod.id ? "" : mod.id,
                     )
                   }>
                   <Text
@@ -904,7 +903,7 @@ const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
     const { error } = await toggleAlert(id, isActive);
     if (!error) {
       setAlerts((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, is_active: isActive } : a))
+        prev.map((a) => (a.id === id ? { ...a, is_active: isActive } : a)),
       );
     }
   };
@@ -934,7 +933,7 @@ const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
         }
       }, 200);
     },
-    [haptics]
+    [haptics],
   );
 
   const handleSave = async (data: { name: string; filters: AlertFilters }) => {
@@ -944,7 +943,7 @@ const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
       const { error } = await updateAlert(editingAlert.id, data);
       if (!error) {
         setAlerts((prev) =>
-          prev.map((a) => (a.id === editingAlert.id ? { ...a, ...data } : a))
+          prev.map((a) => (a.id === editingAlert.id ? { ...a, ...data } : a)),
         );
         haptics.success();
       }
@@ -952,7 +951,7 @@ const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
       const { alert, error } = await createAlert(
         user.id,
         data.name,
-        data.filters
+        data.filters,
       );
       if (alert && !error) {
         setAlerts((prev) => [alert, ...prev]);
