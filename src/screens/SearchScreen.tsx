@@ -51,7 +51,7 @@ const MODALIDADES = [
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
-export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { savedFilters, addFilter, removeFilter } = useFiltersStore();
@@ -101,6 +101,45 @@ export const SearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     };
     loadMunicipalities();
   }, [selectedDepartamento]);
+
+  // Consumir params de navegacion desde HomeScreen
+  const pendingSearchRef = React.useRef<{ tipos: string[] } | null>(null);
+
+  useEffect(() => {
+    if (!route?.params) return;
+    const params = route.params;
+    let changed = false;
+
+    if (params.departamento) {
+      setSelectedDepartamento(params.departamento);
+      changed = true;
+    }
+
+    const tiposToSearch = params.tipoContrato
+      ? [params.tipoContrato]
+      : params.tipos && Array.isArray(params.tipos)
+        ? params.tipos
+        : [];
+
+    if (params.tipoContrato || params.tipos) {
+      setSelectedTipos(tiposToSearch);
+      changed = true;
+    }
+
+    if (changed) {
+      navigation.setParams({ departamento: undefined, tipoContrato: undefined, tipos: undefined });
+      pendingSearchRef.current = { tipos: tiposToSearch };
+    }
+  }, [route?.params]);
+
+  // Ejecutar busqueda pendiente despues de que el estado se actualice
+  useEffect(() => {
+    if (pendingSearchRef.current) {
+      const { tipos } = pendingSearchRef.current;
+      pendingSearchRef.current = null;
+      handleSearchWithTipos(tipos);
+    }
+  }, [selectedDepartamento, selectedTipos]);
 
   const filteredDepartments = deptSearchText
     ? departments.filter((d) =>
