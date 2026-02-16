@@ -16,7 +16,7 @@ import { Swipeable } from "react-native-gesture-handler";
 import { ProcessCard, StaggeredItem } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
-import { spacing, borderRadius } from "../theme";
+import { spacing, borderRadius, scale } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { exportFavorites } from "../services/exportService";
 import { useHaptics } from "../hooks/useHaptics";
@@ -343,15 +343,15 @@ const createStyles = (colors: any) =>
       gap: spacing.md,
     },
     title: {
-      fontSize: 34,
+      fontSize: scale(34),
       fontWeight: "700",
       color: colors.textPrimary,
       letterSpacing: 0.37,
     },
     exportButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: scale(40),
+      height: scale(40),
+      borderRadius: scale(20),
       backgroundColor: colors.backgroundSecondary,
       justifyContent: "center",
       alignItems: "center",
@@ -361,16 +361,16 @@ const createStyles = (colors: any) =>
       paddingHorizontal: spacing.sm,
       paddingVertical: spacing.xs,
       borderRadius: borderRadius.full,
-      minWidth: 28,
+      minWidth: scale(28),
       alignItems: "center",
     },
     countBadgeText: {
-      fontSize: 14,
+      fontSize: scale(14),
       fontWeight: "600",
       color: colors.backgroundSecondary,
     },
     subtitle: {
-      fontSize: 15,
+      fontSize: scale(15),
       color: colors.textSecondary,
       marginTop: spacing.xs,
     },
@@ -395,8 +395,8 @@ const createStyles = (colors: any) =>
       gap: spacing.md,
     },
     infoIconContainer: {
-      width: 40,
-      height: 40,
+      width: scale(40),
+      height: scale(40),
       borderRadius: borderRadius.sm,
       backgroundColor: colors.backgroundSecondary,
       justifyContent: "center",
@@ -406,12 +406,12 @@ const createStyles = (colors: any) =>
       flex: 1,
     },
     infoTitle: {
-      fontSize: 15,
+      fontSize: scale(15),
       fontWeight: "600",
       color: colors.textPrimary,
     },
     infoSubtitle: {
-      fontSize: 13,
+      fontSize: scale(13),
       color: colors.textSecondary,
       marginTop: spacing.xs,
     },
@@ -432,13 +432,13 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.danger,
       justifyContent: "center",
       alignItems: "center",
-      width: 90,
+      width: scale(90),
       height: "100%",
       borderRadius: borderRadius.md,
     },
     deleteText: {
       color: colors.backgroundSecondary,
-      fontSize: 12,
+      fontSize: scale(12),
       fontWeight: "600",
       marginTop: 4,
     },
@@ -451,25 +451,25 @@ const createStyles = (colors: any) =>
       paddingHorizontal: spacing.xl,
     },
     emptyIconContainer: {
-      width: 88,
-      height: 88,
-      borderRadius: 44,
+      width: scale(88),
+      height: scale(88),
+      borderRadius: scale(44),
       backgroundColor: colors.backgroundTertiary,
       justifyContent: "center",
       alignItems: "center",
       marginBottom: spacing.lg,
     },
     emptyTitle: {
-      fontSize: 20,
+      fontSize: scale(20),
       fontWeight: "600",
       color: colors.textPrimary,
       marginBottom: spacing.sm,
     },
     emptyMessage: {
-      fontSize: 15,
+      fontSize: scale(15),
       color: colors.textSecondary,
       textAlign: "center",
-      lineHeight: 22,
+      lineHeight: scale(22),
       marginBottom: spacing.xl,
     },
     tipCard: {
@@ -484,9 +484,9 @@ const createStyles = (colors: any) =>
     },
     tipText: {
       flex: 1,
-      fontSize: 13,
+      fontSize: scale(13),
       color: colors.textSecondary,
-      lineHeight: 18,
+      lineHeight: scale(18),
     },
     exploreButton: {
       flexDirection: "row",
@@ -502,7 +502,7 @@ const createStyles = (colors: any) =>
       transform: [{ scale: 0.98 }],
     },
     exploreButtonText: {
-      fontSize: 15,
+      fontSize: scale(15),
       fontWeight: "600",
       color: colors.backgroundSecondary,
     },
