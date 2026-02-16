@@ -28,7 +28,7 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
   const typeConfig =
     getContractTypeConfig(process.tipo_de_contrato ?? "") ||
     DEFAULT_CONTRACT_CONFIG;
-  const mainColor = getContractTypeColor(typeConfig, colors);
+  const mainColor = getContractTypeColor(typeConfig);
 
   // 2. LÓGICA DE TIEMPO Y FECHAS
   const fechaPubRaw =
@@ -128,15 +128,7 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
       <View
         style={[styles.typeContainer, { backgroundColor: `${mainColor}15` }]}>
         <View style={[styles.iconWrapper, { backgroundColor: mainColor }]}>
-          {typeConfig.CustomIcon ? (
-            <typeConfig.CustomIcon size={14} color="#FFF" />
-          ) : (
-            <Ionicons
-              name={(typeConfig.icon as any) || "document-text-outline"}
-              size={14}
-              color="#FFF"
-            />
-          )}
+          <typeConfig.CustomIcon size={14} color="#FFF" />
         </View>
         <Text style={[styles.typeText, { color: mainColor }]}>
           {typeConfig.label}

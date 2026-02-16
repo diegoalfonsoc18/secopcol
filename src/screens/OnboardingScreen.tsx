@@ -30,7 +30,7 @@ export const OnboardingScreen: React.FC = () => {
 
   // Helper para obtener color del tipo
   const getTypeColor = (type: ContractTypeConfig): string => {
-    return getContractTypeColor(type, colors);
+    return getContractTypeColor(type);
   };
 
   const toggleType = (typeId: string) => {
@@ -125,15 +125,7 @@ export const OnboardingScreen: React.FC = () => {
                   { backgroundColor: `${typeColor}15` },
                   isSelected && { backgroundColor: `${typeColor}25` },
                 ]}>
-                {type.CustomIcon ? (
-                  <type.CustomIcon size={24} color={typeColor} />
-                ) : (
-                  <Ionicons
-                    name={type.icon as any}
-                    size={24}
-                    color={typeColor}
-                  />
-                )}
+                <type.CustomIcon size={24} color={typeColor} />
               </View>
 
               <View style={styles.typeInfo}>
