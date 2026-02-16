@@ -54,7 +54,7 @@ const MODALIDADES = [
 export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { savedFilters, addFilter, removeFilter } = useFiltersStore();
+  const { savedFilters, addFilter } = useFiltersStore();
   const styles = createStyles(colors);
 
   // Estados
