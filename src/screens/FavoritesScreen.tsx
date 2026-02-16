@@ -246,7 +246,6 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
           styles.header,
           {
             paddingTop: insets.top + spacing.md,
-            height: Animated.add(headerHeight, insets.top),
           },
         ]}>
         <View style={styles.headerRow}>
@@ -330,7 +329,6 @@ const createStyles = (colors: any) =>
     header: {
       backgroundColor: colors.background,
       paddingHorizontal: spacing.lg,
-      justifyContent: "flex-end",
       paddingBottom: spacing.sm,
     },
     headerRow: {

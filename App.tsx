@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { StyleSheet, Platform, ActivityIndicator, View } from "react-native";
+import { StyleSheet, Platform, ActivityIndicator, View, StatusBar } from "react-native";
 import {
   NavigationContainer,
   NavigationContainerRef,
@@ -375,6 +375,8 @@ function AppContent() {
   }, []);
 
   return (
+    <>
+    <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
     <NavigationContainer
       ref={navigationRef}
       theme={{
@@ -408,6 +410,7 @@ function AppContent() {
       }}>
       <RootNavigator />
     </NavigationContainer>
+    </>
   );
 }
 
