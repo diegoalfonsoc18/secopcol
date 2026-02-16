@@ -7,6 +7,7 @@ import {
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 
 import * as Linking from "expo-linking";
@@ -119,6 +120,7 @@ function TabNavigator() {
   const { colors } = useTheme();
   const { favorites } = useProcessesStore();
   const favoritesCount = favorites.length;
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
@@ -131,17 +133,17 @@ function TabNavigator() {
           borderTopWidth: 0,
           borderTopColor: colors.tabBarBorder,
           paddingTop: 8,
-          paddingBottom: Platform.OS === "ios" ? 24 : 12,
-          height: Platform.OS === "ios" ? 88 : 70,
+          paddingBottom: Platform.OS === "ios" ? 24 : insets.bottom + 12,
+          height: Platform.OS === "ios" ? 88 : 70 + insets.bottom,
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
           overflow: "hidden",
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
           ...Platform.select({
             ios: {
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
               shadowColor: "#000",
               shadowOffset: { width: 0, height: -4 },
               shadowOpacity: 0.15,
@@ -416,13 +418,15 @@ export default function App() {
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={styles.container}>
-        <ThemeProvider>
-          <AuthProvider>
-            <BottomSheetModalProvider>
-              <AppContent />
-            </BottomSheetModalProvider>
-          </AuthProvider>
-        </ThemeProvider>
+        <SafeAreaProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <BottomSheetModalProvider>
+                <AppContent />
+              </BottomSheetModalProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </SafeAreaProvider>
       </GestureHandlerRootView>
     </ErrorBoundary>
   );

@@ -5,7 +5,7 @@ import { parseISO, format, isAfter } from "date-fns";
 import { es } from "date-fns/locale";
 
 import { SecopProcess } from "../types/index";
-import { spacing, borderRadius } from "../theme";
+import { spacing, borderRadius, scale } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import {
   getContractTypeConfig,
@@ -249,14 +249,14 @@ const createStyles = (colors: any, mainColor: string) =>
       marginBottom: spacing.sm,
     },
     label: {
-      fontSize: 10,
+      fontSize: scale(10),
       fontWeight: "700",
       color: colors.textTertiary,
       letterSpacing: 0.5,
       textTransform: "uppercase",
     },
     processId: {
-      fontSize: 14,
+      fontSize: scale(14),
       fontWeight: "700",
       color: colors.textPrimary,
       marginTop: 2,
@@ -265,52 +265,52 @@ const createStyles = (colors: any, mainColor: string) =>
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: "#FF3B30",
-      paddingHorizontal: 8,
-      paddingVertical: 4,
+      paddingHorizontal: scale(8),
+      paddingVertical: scale(4),
       borderRadius: borderRadius.sm,
-      gap: 4,
+      gap: scale(4),
     },
     badgeText: {
       color: "#FFF",
-      fontSize: 10,
+      fontSize: scale(10),
       fontWeight: "800",
     },
     typeContainer: {
       flexDirection: "row",
       alignItems: "center",
       alignSelf: "flex-start",
-      paddingHorizontal: 10,
-      paddingVertical: 4,
+      paddingHorizontal: scale(10),
+      paddingVertical: scale(4),
       borderRadius: 100,
       marginBottom: spacing.md,
-      gap: 6,
+      gap: scale(6),
     },
     iconWrapper: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
+      width: scale(24),
+      height: scale(24),
+      borderRadius: scale(12),
       alignItems: "center",
       justifyContent: "center",
     },
     typeText: {
-      fontSize: 12,
+      fontSize: scale(12),
       fontWeight: "700",
     },
     title: {
-      fontSize: 15,
+      fontSize: scale(15),
       fontWeight: "600",
       color: colors.textPrimary,
-      lineHeight: 22,
+      lineHeight: scale(22),
       marginBottom: spacing.md,
     },
     infoRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: scale(8),
       marginBottom: spacing.sm,
     },
     infoText: {
-      fontSize: 13,
+      fontSize: scale(13),
       color: colors.textSecondary,
       flex: 1,
     },
@@ -334,22 +334,22 @@ const createStyles = (colors: any, mainColor: string) =>
       gap: 6,
     },
     statusDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
+      width: scale(8),
+      height: scale(8),
+      borderRadius: scale(4),
     },
     statusText: {
-      fontSize: 12,
+      fontSize: scale(12),
       fontWeight: "700",
     },
     timeRemaining: {
-      fontSize: 11,
+      fontSize: scale(11),
       fontWeight: "600",
     },
     timeBarTrack: {
-      height: 6,
+      height: scale(6),
       backgroundColor: colors.separatorLight,
-      borderRadius: 3,
+      borderRadius: scale(3),
       overflow: "hidden",
     },
     timeBarFill: {
@@ -362,7 +362,7 @@ const createStyles = (colors: any, mainColor: string) =>
       marginTop: 6,
     },
     timeLabelText: {
-      fontSize: 10,
+      fontSize: scale(10),
       color: colors.textTertiary,
     },
     // Footer
@@ -376,7 +376,7 @@ const createStyles = (colors: any, mainColor: string) =>
       borderTopColor: colors.separatorLight,
     },
     priceText: {
-      fontSize: 18,
+      fontSize: scale(18),
       fontWeight: "800",
       color: colors.textPrimary,
       marginTop: 2,
@@ -384,11 +384,11 @@ const createStyles = (colors: any, mainColor: string) =>
     dateContainer: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 4,
-      marginTop: 4,
+      gap: scale(4),
+      marginTop: scale(4),
     },
     dateText: {
-      fontSize: 13,
+      fontSize: scale(13),
       fontWeight: "600",
       color: colors.textSecondary,
     },
@@ -398,7 +398,7 @@ const createStyles = (colors: any, mainColor: string) =>
       marginLeft: spacing.md,
     },
     entidadText: {
-      fontSize: 12,
+      fontSize: scale(12),
       fontWeight: "600",
       color: colors.textSecondary,
       textAlign: "right",

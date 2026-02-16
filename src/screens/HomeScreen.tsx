@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ProcessCard, DashboardSkeleton, StaggeredItem } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
-import { spacing, borderRadius } from "../theme";
+import { spacing, borderRadius, scale } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { useHaptics } from "../hooks/useHaptics";
@@ -404,9 +404,9 @@ const createStyles = (colors: any) =>
       alignItems: "center",
     },
     headerButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: scale(40),
+      height: scale(40),
+      borderRadius: scale(20),
       backgroundColor: colors.backgroundSecondary,
       justifyContent: "center",
       alignItems: "center",
@@ -417,7 +417,7 @@ const createStyles = (colors: any) =>
       gap: spacing.md,
     },
     title: {
-      fontSize: 34,
+      fontSize: scale(34),
       fontWeight: "700",
       color: colors.textPrimary,
       letterSpacing: 0.37,
@@ -432,19 +432,19 @@ const createStyles = (colors: any) =>
       gap: spacing.xs,
     },
     liveDot: {
-      width: 6,
-      height: 6,
-      borderRadius: 3,
+      width: scale(6),
+      height: scale(6),
+      borderRadius: scale(3),
       backgroundColor: colors.accent,
     },
     liveText: {
-      fontSize: 11,
+      fontSize: scale(11),
       fontWeight: "600",
       color: colors.accent,
       letterSpacing: 0.5,
     },
     subtitle: {
-      fontSize: 15,
+      fontSize: scale(15),
       color: colors.textSecondary,
     },
     subtitleRow: {
@@ -463,7 +463,7 @@ const createStyles = (colors: any) =>
       gap: 4,
     },
     locationText: {
-      fontSize: 12,
+      fontSize: scale(12),
       color: colors.success,
       fontWeight: "600",
     },
@@ -478,7 +478,7 @@ const createStyles = (colors: any) =>
       gap: spacing.md,
     },
     statCard: {
-      width: 130,
+      width: scale(130),
       padding: spacing.md,
       borderRadius: borderRadius.md,
     },
@@ -486,19 +486,19 @@ const createStyles = (colors: any) =>
       marginBottom: spacing.sm,
     },
     statIconCircle: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
+      width: scale(36),
+      height: scale(36),
+      borderRadius: scale(18),
       justifyContent: "center",
       alignItems: "center",
     },
     statCount: {
-      fontSize: 28,
+      fontSize: scale(28),
       fontWeight: "700",
       marginBottom: 2,
     },
     statLabel: {
-      fontSize: 13,
+      fontSize: scale(13),
       fontWeight: "500",
     },
 
@@ -509,19 +509,19 @@ const createStyles = (colors: any) =>
     },
     categoryItem: {
       alignItems: "center",
-      width: 70,
+      width: scale(70),
     },
     categoryIconCircle: {
-      width: 52,
-      height: 52,
-      borderRadius: 26,
+      width: scale(52),
+      height: scale(52),
+      borderRadius: scale(26),
       backgroundColor: colors.backgroundSecondary,
       justifyContent: "center",
       alignItems: "center",
       marginBottom: spacing.xs,
     },
     categoryLabel: {
-      fontSize: 11,
+      fontSize: scale(11),
       fontWeight: "500",
       textAlign: "center",
     },
@@ -540,12 +540,12 @@ const createStyles = (colors: any) =>
       gap: spacing.sm,
     },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: scale(18),
       fontWeight: "700",
       color: colors.textPrimary,
     },
     viewAllText: {
-      fontSize: 14,
+      fontSize: scale(14),
       color: colors.accent,
       fontWeight: "600",
     },
@@ -562,25 +562,25 @@ const createStyles = (colors: any) =>
       paddingHorizontal: spacing.xl,
     },
     emptyIconContainer: {
-      width: 88,
-      height: 88,
-      borderRadius: 44,
+      width: scale(88),
+      height: scale(88),
+      borderRadius: scale(44),
       backgroundColor: colors.backgroundSecondary,
       justifyContent: "center",
       alignItems: "center",
       marginBottom: spacing.lg,
     },
     emptyTitle: {
-      fontSize: 20,
+      fontSize: scale(20),
       fontWeight: "600",
       color: colors.textPrimary,
       marginBottom: spacing.sm,
     },
     emptyMessage: {
-      fontSize: 15,
+      fontSize: scale(15),
       color: colors.textSecondary,
       textAlign: "center",
-      lineHeight: 22,
+      lineHeight: scale(22),
     },
     searchButton: {
       flexDirection: "row",
@@ -592,7 +592,7 @@ const createStyles = (colors: any) =>
       gap: spacing.sm,
     },
     searchButtonText: {
-      fontSize: 15,
+      fontSize: scale(15),
       fontWeight: "600",
       color: "#FFF",
     },

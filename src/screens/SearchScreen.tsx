@@ -19,7 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ProcessCard, SearchResultsSkeleton } from "../components/index";
 import { SecopProcess, advancedSearch } from "../api/secop";
-import { spacing, borderRadius } from "../theme";
+import { spacing, borderRadius, scale } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { useFiltersStore, SavedFilter } from "../store/filtersStore";
 import { getDepartments, getMunicipalities } from "../services/divipola";
@@ -938,13 +938,13 @@ const createStyles = (colors: any) =>
       alignItems: "center",
       marginBottom: spacing.md,
     },
-    title: { fontSize: 34, fontWeight: "700", color: colors.textPrimary },
+    title: { fontSize: scale(34), fontWeight: "700", color: colors.textPrimary },
     clearButton: {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.xs,
     },
     clearButtonText: {
-      fontSize: 14,
+      fontSize: scale(14),
       fontWeight: "600",
       color: colors.accent,
     },
@@ -959,10 +959,10 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.backgroundSecondary,
       borderRadius: borderRadius.md,
       paddingHorizontal: spacing.md,
-      height: 44,
+      height: scale(44),
       gap: spacing.sm,
     },
-    searchInput: { flex: 1, fontSize: 16, color: colors.textPrimary },
+    searchInput: { flex: 1, fontSize: scale(16), color: colors.textPrimary },
     suggestionsContainer: {
       position: "absolute",
       top: 48,
@@ -987,7 +987,7 @@ const createStyles = (colors: any) =>
     },
     suggestionsTitle: {
       flex: 1,
-      fontSize: 12,
+      fontSize: scale(12),
       fontWeight: "600",
       color: colors.textTertiary,
       textTransform: "uppercase",
@@ -1003,16 +1003,16 @@ const createStyles = (colors: any) =>
     },
     suggestionContent: { flex: 1 },
     suggestionName: {
-      fontSize: 15,
+      fontSize: scale(15),
       fontWeight: "500",
       color: colors.textPrimary,
     },
     suggestionDetails: {
-      fontSize: 12,
+      fontSize: scale(12),
       color: colors.textSecondary,
       marginTop: 2,
     },
-    suggestionText: { flex: 1, fontSize: 15, color: colors.textPrimary },
+    suggestionText: { flex: 1, fontSize: scale(15), color: colors.textPrimary },
     locationRow: {
       flexDirection: "row",
       gap: spacing.sm,
@@ -1028,7 +1028,7 @@ const createStyles = (colors: any) =>
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       gap: spacing.xs,
-      minHeight: 40,
+      minHeight: scale(40),
     },
     locationButtonActive: {
       backgroundColor: colors.accentLight,
@@ -1036,7 +1036,7 @@ const createStyles = (colors: any) =>
       borderColor: colors.accent,
     },
     locationButtonDisabled: { opacity: 0.5 },
-    locationText: { flex: 1, fontSize: 14, color: colors.textSecondary },
+    locationText: { flex: 1, fontSize: scale(14), color: colors.textSecondary },
     locationTextActive: { color: colors.accent, fontWeight: "500" },
     sectionContainer: {
       marginBottom: spacing.md,
@@ -1048,13 +1048,13 @@ const createStyles = (colors: any) =>
       marginBottom: spacing.sm,
     },
     sectionLabel: {
-      fontSize: 13,
+      fontSize: scale(13),
       fontWeight: "600",
       color: colors.textSecondary,
       marginBottom: spacing.sm,
     },
     clearSectionText: {
-      fontSize: 12,
+      fontSize: scale(12),
       fontWeight: "600",
       color: colors.accent,
     },
@@ -1067,7 +1067,7 @@ const createStyles = (colors: any) =>
       marginRight: spacing.sm,
     },
     chipActive: { backgroundColor: colors.accent },
-    chipText: { fontSize: 13, color: colors.textSecondary, fontWeight: "500" },
+    chipText: { fontSize: scale(13), color: colors.textSecondary, fontWeight: "500" },
     chipTextActive: { color: "#FFFFFF" },
     tiposGrid: {
       flexDirection: "row",
@@ -1081,9 +1081,9 @@ const createStyles = (colors: any) =>
       marginBottom: spacing.md,
     },
     tipoIconCircle: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
+      width: scale(44),
+      height: scale(44),
+      borderRadius: scale(22),
       borderWidth: 2,
       justifyContent: "center",
       alignItems: "center",
@@ -1099,7 +1099,7 @@ const createStyles = (colors: any) =>
       shadowOpacity: 0,
     },
     tipoLabel: {
-      fontSize: 9,
+      fontSize: scale(9),
       marginTop: 4,
       textAlign: "center",
     },
@@ -1118,16 +1118,16 @@ const createStyles = (colors: any) =>
       paddingVertical: spacing.md,
       gap: spacing.sm,
     },
-    searchButtonText: { fontSize: 16, fontWeight: "600", color: "#FFFFFF" },
+    searchButtonText: { fontSize: scale(16), fontWeight: "600", color: "#FFFFFF" },
     saveFilterButton: {
-      width: 48,
+      width: scale(48),
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: colors.accentLight,
       borderRadius: borderRadius.md,
     },
     alertButton: {
-      width: 48,
+      width: scale(48),
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: colors.accentLight,
@@ -1144,7 +1144,7 @@ const createStyles = (colors: any) =>
       marginBottom: spacing.md,
     },
     resultsCount: {
-      fontSize: 15,
+      fontSize: scale(15),
       fontWeight: "600",
       color: colors.textPrimary,
     },
@@ -1154,14 +1154,14 @@ const createStyles = (colors: any) =>
       gap: spacing.xs,
     },
     activeTypeBadge: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
+      width: scale(24),
+      height: scale(24),
+      borderRadius: scale(12),
       justifyContent: "center",
       alignItems: "center",
     },
     moreTypesText: {
-      fontSize: 11,
+      fontSize: scale(11),
       fontWeight: "600",
       color: colors.textTertiary,
     },
@@ -1174,17 +1174,17 @@ const createStyles = (colors: any) =>
       gap: spacing.md,
       marginBottom: spacing.md,
     },
-    errorText: { flex: 1, fontSize: 14, color: colors.danger },
-    retryText: { fontSize: 14, fontWeight: "600", color: colors.accent },
+    errorText: { flex: 1, fontSize: scale(14), color: colors.danger },
+    retryText: { fontSize: scale(14), fontWeight: "600", color: colors.accent },
     emptyContainer: { alignItems: "center", paddingVertical: spacing.xxl * 2 },
     emptyTitle: {
-      fontSize: 18,
+      fontSize: scale(18),
       fontWeight: "600",
       color: colors.textPrimary,
       marginTop: spacing.md,
     },
     emptyMessage: {
-      fontSize: 14,
+      fontSize: scale(14),
       color: colors.textSecondary,
       marginTop: spacing.xs,
     },
@@ -1207,7 +1207,7 @@ const createStyles = (colors: any) =>
       borderBottomWidth: 1,
       borderBottomColor: colors.separatorLight,
     },
-    modalTitle: { fontSize: 18, fontWeight: "700", color: colors.textPrimary },
+    modalTitle: { fontSize: scale(18), fontWeight: "700", color: colors.textPrimary },
     modalSearchBar: {
       flexDirection: "row",
       alignItems: "center",
@@ -1216,10 +1216,10 @@ const createStyles = (colors: any) =>
       marginHorizontal: spacing.lg,
       marginVertical: spacing.md,
       paddingHorizontal: spacing.md,
-      height: 40,
+      height: scale(40),
       gap: spacing.sm,
     },
-    modalSearchInput: { flex: 1, fontSize: 16, color: colors.textPrimary },
+    modalSearchInput: { flex: 1, fontSize: scale(16), color: colors.textPrimary },
     modalItem: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -1228,7 +1228,7 @@ const createStyles = (colors: any) =>
       borderBottomWidth: 1,
       borderBottomColor: colors.separatorLight,
     },
-    modalItemText: { fontSize: 16, color: colors.textPrimary },
+    modalItemText: { fontSize: scale(16), color: colors.textPrimary },
   });
 
 export default SearchScreen;

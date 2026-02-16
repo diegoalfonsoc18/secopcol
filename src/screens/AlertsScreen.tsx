@@ -40,6 +40,7 @@ import { useHaptics } from "../hooks/useHaptics";
 import { FadeIn, SlideInUp } from "../components/Animations";
 import { getDepartments, getMunicipalities } from "../services/divipola";
 import { AlertIcon } from "../assets/icons";
+import { scale } from "../theme";
 
 // ============================================
 // CONSTANTES DE FILTROS
@@ -1078,11 +1079,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
-  title: { fontSize: 34, fontWeight: "700" },
+  title: { fontSize: scale(34), fontWeight: "700" },
   addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: scale(40),
+    height: scale(40),
+    borderRadius: scale(20),
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1090,7 +1091,7 @@ const styles = StyleSheet.create({
   contentContainer: { padding: 20 },
 
   // Alert Card
-  alertCard: { padding: 16, borderRadius: 12, marginBottom: 12 },
+  alertCard: { padding: 16, borderRadius: scale(12), marginBottom: 12 },
   alertHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1100,14 +1101,14 @@ const styles = StyleSheet.create({
   alertTitleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: scale(8),
     flex: 1,
   },
-  alertName: { fontSize: 16, fontWeight: "600", flex: 1 },
-  alertFilters: { fontSize: 14, marginBottom: 12, lineHeight: 20 },
-  alertFooter: { flexDirection: "row", alignItems: "center", gap: 16 },
-  alertMeta: { flexDirection: "row", alignItems: "center", gap: 4 },
-  alertMetaText: { fontSize: 12 },
+  alertName: { fontSize: scale(16), fontWeight: "600", flex: 1 },
+  alertFilters: { fontSize: scale(14), marginBottom: 12, lineHeight: scale(20) },
+  alertFooter: { flexDirection: "row", alignItems: "center", gap: scale(16) },
+  alertMeta: { flexDirection: "row", alignItems: "center", gap: scale(4) },
+  alertMetaText: { fontSize: scale(12) },
 
   // Delete action (mismo estilo que FavoritesScreen)
   deleteAction: {
@@ -1118,12 +1119,12 @@ const styles = StyleSheet.create({
   deleteButton: {
     justifyContent: "center",
     alignItems: "center",
-    width: 90,
+    width: scale(90),
     height: "100%",
-    borderRadius: 12,
+    borderRadius: scale(12),
   },
   deleteText: {
-    fontSize: 12,
+    fontSize: scale(12),
     fontWeight: "600",
     marginTop: 4,
   },
@@ -1135,27 +1136,27 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: scale(20),
     fontWeight: "600",
     marginTop: 16,
     marginBottom: 8,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: scale(14),
     textAlign: "center",
     paddingHorizontal: 40,
-    lineHeight: 20,
+    lineHeight: scale(20),
   },
   emptyButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: scale(8),
     paddingHorizontal: 20,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: scale(12),
     marginTop: 24,
   },
-  emptyButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
+  emptyButtonText: { color: "#FFFFFF", fontSize: scale(16), fontWeight: "600" },
 
   // Modal
   modalOverlay: {
@@ -1164,8 +1165,8 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: scale(20),
+    borderTopRightRadius: scale(20),
     maxHeight: "95%",
   },
   modalHeader: {
@@ -1176,68 +1177,68 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0,0,0,0.1)",
   },
-  modalCancel: { fontSize: 16 },
-  modalTitle: { fontSize: 17, fontWeight: "600" },
-  modalSave: { fontSize: 16, fontWeight: "600" },
+  modalCancel: { fontSize: scale(16) },
+  modalTitle: { fontSize: scale(17), fontWeight: "600" },
+  modalSave: { fontSize: scale(16), fontWeight: "600" },
   modalBody: { padding: 20 },
 
   // Inputs
   inputGroup: { marginBottom: 20 },
-  inputLabel: { fontSize: 14, marginBottom: 8, fontWeight: "500" },
+  inputLabel: { fontSize: scale(14), marginBottom: 8, fontWeight: "500" },
   input: {
-    height: 48,
-    borderRadius: 10,
+    height: scale(48),
+    borderRadius: scale(10),
     paddingHorizontal: 16,
-    fontSize: 16,
+    fontSize: scale(16),
     borderWidth: 1,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: scale(18),
     fontWeight: "600",
     marginBottom: 12,
     marginTop: 8,
   },
 
   // Location
-  locationRow: { flexDirection: "row", gap: 10, marginBottom: 8 },
+  locationRow: { flexDirection: "row", gap: scale(10), marginBottom: 8 },
   locationButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 10,
+    borderRadius: scale(10),
     paddingHorizontal: 12,
     paddingVertical: 12,
-    gap: 6,
+    gap: scale(6),
     borderWidth: 1,
   },
-  locationText: { flex: 1, fontSize: 14 },
+  locationText: { flex: 1, fontSize: scale(14) },
 
   // Chips
   chipsScroll: { marginBottom: 8 },
   chip: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: scale(20),
     marginRight: 8,
   },
-  chipText: { fontSize: 13, fontWeight: "500" },
+  chipText: { fontSize: scale(13), fontWeight: "500" },
 
   // Info
   infoBox: {
     flexDirection: "row",
-    gap: 12,
+    gap: scale(12),
     padding: 16,
-    borderRadius: 12,
+    borderRadius: scale(12),
     marginTop: 24,
     marginBottom: 20,
   },
-  infoText: { flex: 1, fontSize: 14, lineHeight: 20 },
+  infoText: { flex: 1, fontSize: scale(14), lineHeight: scale(20) },
 
   // Sub Modal
   subModalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: scale(20),
+    borderTopRightRadius: scale(20),
     flex: 1,
     maxHeight: "80%",
     marginTop: "auto",
@@ -1248,11 +1249,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginVertical: 12,
     paddingHorizontal: 12,
-    height: 40,
-    borderRadius: 10,
-    gap: 8,
+    height: scale(40),
+    borderRadius: scale(10),
+    gap: scale(8),
   },
-  searchInputSmall: { flex: 1, fontSize: 16 },
+  searchInputSmall: { flex: 1, fontSize: scale(16) },
   listItem: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1260,10 +1261,10 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
   },
-  listItemText: { fontSize: 16 },
+  listItemText: { fontSize: scale(16) },
   listContainer: {
     flex: 1,
-    minHeight: 200,
+    minHeight: scale(200),
   },
   emptyList: {
     padding: 20,
