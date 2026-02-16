@@ -215,7 +215,7 @@ export const ContractTypeSelector: React.FC<ContractTypeSelectorProps> = ({
             showsVerticalScrollIndicator={false}>
             {CONTRACT_TYPES.map((type) => {
               const isSelected = selectedTypes.includes(type.id);
-              const typeColor = getContractTypeColor(type, colors);
+              const typeColor = getContractTypeColor(type);
 
               return (
                 <TouchableOpacity
@@ -233,15 +233,7 @@ export const ContractTypeSelector: React.FC<ContractTypeSelectorProps> = ({
                       { backgroundColor: `${typeColor}15` },
                       isSelected && { backgroundColor: `${typeColor}25` },
                     ]}>
-                    {type.CustomIcon ? (
-                      <type.CustomIcon size={20} color={typeColor} />
-                    ) : (
-                      <Ionicons
-                        name={type.icon as any}
-                        size={20}
-                        color={typeColor}
-                      />
-                    )}
+                    <type.CustomIcon size={20} color={typeColor} />
                   </View>
 
                   <View style={styles.typeInfo}>

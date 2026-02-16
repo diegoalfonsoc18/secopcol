@@ -643,7 +643,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
             </View>
             <View style={styles.tiposGrid}>
               {CONTRACT_TYPES.map((config) => {
-                const typeColor = getContractTypeColor(config, colors);
+                const typeColor = getContractTypeColor(config);
                 const isActive = selectedTipos.includes(config.id);
 
                 return (
@@ -663,18 +663,10 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
                         },
                         !isActive && styles.tipoIconInactive,
                       ]}>
-                      {config.CustomIcon ? (
-                        <config.CustomIcon
-                          size={20}
-                          color={isActive ? "#FFF" : typeColor}
-                        />
-                      ) : (
-                        <Ionicons
-                          name={(config.icon as any) || "document-text-outline"}
-                          size={20}
-                          color={isActive ? "#FFF" : typeColor}
-                        />
-                      )}
+                      <config.CustomIcon
+                        size={20}
+                        color={isActive ? "#FFF" : typeColor}
+                      />
                     </View>
                     <Text
                       style={[
@@ -752,7 +744,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
                         (t) => t.id === tipoId
                       );
                       if (!config) return null;
-                      const typeColor = getContractTypeColor(config, colors);
+                      const typeColor = getContractTypeColor(config);
                       return (
                         <View
                           key={tipoId}
@@ -760,17 +752,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
                             styles.activeTypeBadge,
                             { backgroundColor: `${typeColor}20` },
                           ]}>
-                          {config.CustomIcon ? (
-                            <config.CustomIcon size={12} color={typeColor} />
-                          ) : (
-                            <Ionicons
-                              name={
-                                (config.icon as any) || "document-text-outline"
-                              }
-                              size={12}
-                              color={typeColor}
-                            />
-                          )}
+                          <config.CustomIcon size={12} color={typeColor} />
                         </View>
                       );
                     })}

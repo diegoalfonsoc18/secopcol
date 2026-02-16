@@ -212,10 +212,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           {/* ================================ */}
           {/* SECCION 1: Stats Summary        */}
           {/* ================================ */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.statsRow}>
+          <View style={styles.statsRow}>
             {statCards
               .filter((s) => s.show)
               .map((card) => (
@@ -245,7 +242,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                   </Text>
                 </TouchableOpacity>
               ))}
-          </ScrollView>
+          </View>
 
           {/* ================================ */}
           {/* SECCION 2: Categorias favoritas  */}
@@ -474,11 +471,12 @@ const createStyles = (colors: any) =>
 
     // Stats
     statsRow: {
+      flexDirection: "row",
       paddingVertical: spacing.sm,
-      gap: spacing.md,
+      gap: spacing.sm,
     },
     statCard: {
-      width: scale(130),
+      flex: 1,
       padding: spacing.md,
       borderRadius: borderRadius.md,
     },
