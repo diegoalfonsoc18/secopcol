@@ -147,13 +147,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         <View style={styles.headerRow}>
           <Animated.View
             style={{ transform: [{ scale: titleScale }], flex: 1 }}>
-            <View style={styles.titleRow}>
-              <Text style={styles.title}>Inicio</Text>
-              <View style={styles.liveBadge}>
-                <View style={styles.liveDot} />
-                <Text style={styles.liveText}>SECOP II</Text>
-              </View>
-            </View>
+            <Text style={styles.title}>Inicio</Text>
           </Animated.View>
 
           <TouchableOpacity
@@ -411,37 +405,11 @@ const createStyles = (colors: any) =>
       justifyContent: "center",
       alignItems: "center",
     },
-    titleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.md,
-    },
     title: {
       fontSize: scale(34),
       fontWeight: "700",
       color: colors.textPrimary,
       letterSpacing: 0.37,
-    },
-    liveBadge: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: colors.accentLight,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.xs,
-      borderRadius: borderRadius.full,
-      gap: spacing.xs,
-    },
-    liveDot: {
-      width: scale(6),
-      height: scale(6),
-      borderRadius: scale(3),
-      backgroundColor: colors.accent,
-    },
-    liveText: {
-      fontSize: scale(11),
-      fontWeight: "600",
-      color: colors.accent,
-      letterSpacing: 0.5,
     },
     subtitle: {
       fontSize: scale(15),

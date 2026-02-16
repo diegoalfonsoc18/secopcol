@@ -145,7 +145,9 @@ export async function registerBackgroundAlertCheck(): Promise<void> {
 
     console.log("Background alert check registered");
   } catch (error) {
-    console.error("Error registering background alert check:", error);
+    // Background tasks are not supported in Expo Go — warn instead of error
+    // to avoid triggering the red error overlay in dev mode
+    console.warn("Background alert check not available:", error);
   }
 }
 
