@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Animated,
   RefreshControl,
@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { ProcessCard, DashboardSkeleton, StaggeredItem } from "../components/index";
+import { ProcessCard, DashboardSkeleton, StaggeredItem, ContractTypeSelector } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
 import { spacing, borderRadius, scale } from "../theme";
@@ -31,6 +31,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { user, preferences } = useAuth();
   const { processes, loading, fetchRecentProcesses } = useProcessesStore();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const [showCategorySelector, setShowCategorySelector] = useState(false);
 
   const {
     departamento: userDepartamento,
@@ -141,7 +142,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           styles.header,
           {
             paddingTop: insets.top + spacing.md,
-            height: Animated.add(headerHeight, insets.top),
           },
         ]}>
         <View style={styles.headerRow}>
@@ -250,9 +250,9 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Categorias</Text>
             <TouchableOpacity
-              onPress={() => navigateToSearch()}
+              onPress={() => setShowCategorySelector(true)}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Text style={styles.viewAllText}>Ver todas</Text>
+              <Text style={styles.viewAllText}>Editar</Text>
             </TouchableOpacity>
           </View>
 
@@ -377,6 +377,10 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             )}
         </Animated.ScrollView>
       )}
+      <ContractTypeSelector
+        visible={showCategorySelector}
+        onClose={() => setShowCategorySelector(false)}
+      />
     </View>
   );
 };
@@ -393,7 +397,6 @@ const createStyles = (colors: any) =>
     header: {
       backgroundColor: colors.background,
       paddingHorizontal: spacing.lg,
-      justifyContent: "flex-end",
       paddingBottom: spacing.sm,
     },
     headerRow: {

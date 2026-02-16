@@ -40,7 +40,7 @@ import { useHaptics } from "../hooks/useHaptics";
 import { FadeIn, SlideInUp } from "../components/Animations";
 import { getDepartments, getMunicipalities } from "../services/divipola";
 import { AlertIcon } from "../assets/icons";
-import { scale } from "../theme";
+import { spacing, scale } from "../theme";
 
 // ============================================
 // CONSTANTES DE FILTROS
@@ -973,11 +973,10 @@ const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
   };
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      edges={["top"]}>
+    <View
+      style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <Text style={[styles.title, { color: colors.textPrimary }]}>
           Alertas
         </Text>
@@ -1063,7 +1062,7 @@ const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
         onSave={handleSave}
         colors={colors}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -1076,8 +1075,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
   },
   title: { fontSize: scale(34), fontWeight: "700" },
   addButton: {
