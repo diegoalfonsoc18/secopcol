@@ -7,19 +7,6 @@ import {
   CONTRACT_TYPES,
   ContractTypeConfig,
 } from "../constants/contractTypes";
-import { NearbyDepartamento } from "./useLocation";
-
-const CLOSE_RADIUS_KM = 80;
-
-const normalizeDepartamento = (dept: string): string => {
-  return dept
-    .toUpperCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/DISTRITO CAPITAL DE BOGOTA/g, "BOGOTA")
-    .replace(/BOGOTA D\.?C\.?/g, "BOGOTA")
-    .trim();
-};
 
 export interface DashboardStats {
   recentCount: number;
@@ -32,56 +19,52 @@ export interface DashboardStats {
 
 export function useDashboardStats(
   processes: SecopProcess[],
-  nearbyDepartamentos: NearbyDepartamento[],
+  municipioProcesses: SecopProcess[],
   selectedContractTypes: string[]
 ): DashboardStats {
   return useMemo(() => {
+    const MIN_RECENT = 20;
     const eightDaysAgo = new Date();
     eightDaysAgo.setDate(eightDaysAgo.getDate() - 8);
     eightDaysAgo.setHours(0, 0, 0, 0);
 
-    // Procesos publicados en los ultimos 8 dias (recientes primero)
-    const recentProcesses = processes
-      .filter((p) => {
-        const dateStr =
-          p.fecha_de_ultima_publicaci || p.fecha_de_publicacion_del;
-        if (!dateStr) return false;
-        const d = new Date(dateStr);
-        return d >= eightDaysAgo;
-      })
-      .sort((a, b) => {
-        const dateA = new Date(
-          a.fecha_de_ultima_publicaci || a.fecha_de_publicacion_del || 0
-        ).getTime();
-        const dateB = new Date(
-          b.fecha_de_ultima_publicaci || b.fecha_de_publicacion_del || 0
-        ).getTime();
-        return dateB - dateA;
-      });
-
-    // Departamentos cercanos (80km)
-    const closeDepts = nearbyDepartamentos
-      .filter((d) => d.distance <= CLOSE_RADIUS_KM)
-      .map((d) => normalizeDepartamento(d.departamento));
-
-    const nearbyProcesses =
-      closeDepts.length > 0
-        ? processes.filter((p) => {
-            const dept = normalizeDepartamento(
-              p.departamento_entidad || ""
-            );
-            return closeDepts.some(
-              (cd) => dept.includes(cd) || cd.includes(dept)
-            );
-          })
-        : [];
-
-    // Procesos de tipos favoritos
+    // Filtro por tipos favoritos (aplica a todas las secciones)
     const favoriteSet = new Set(selectedContractTypes);
-    const favoriteProcesses =
+    const filterByFavorites = (list: SecopProcess[]) =>
       favoriteSet.size > 0
-        ? processes.filter((p) => favoriteSet.has(p.tipo_de_contrato || ""))
-        : [];
+        ? list.filter((p) => favoriteSet.has(p.tipo_de_contrato || ""))
+        : list;
+
+    const baseProcesses = filterByFavorites(processes);
+    const baseNearby = filterByFavorites(municipioProcesses);
+
+    // Utilidad para obtener fecha de un proceso
+    const getProcessDate = (p: SecopProcess): number =>
+      new Date(
+        p.fecha_de_ultima_publicaci || p.fecha_de_publicacion_del || 0
+      ).getTime();
+
+    const sortedProcesses = [...baseProcesses].sort(
+      (a, b) => getProcessDate(b) - getProcessDate(a)
+    );
+
+    // Procesos recientes (minimo 20, amplia rango si faltan)
+    const recentFromLastDays = sortedProcesses.filter((p) => {
+      const dateStr =
+        p.fecha_de_ultima_publicaci || p.fecha_de_publicacion_del;
+      if (!dateStr) return false;
+      return new Date(dateStr) >= eightDaysAgo;
+    });
+
+    const recentProcesses =
+      recentFromLastDays.length >= MIN_RECENT
+        ? recentFromLastDays
+        : sortedProcesses.slice(0, Math.max(MIN_RECENT, recentFromLastDays.length));
+
+    // Procesos del municipio del usuario (ya vienen de la API, solo ordenar)
+    const nearbyProcesses = [...baseNearby].sort(
+      (a, b) => getProcessDate(b) - getProcessDate(a)
+    );
 
     // Configs de tipos favoritos
     const favoriteTypeConfigs =
@@ -94,10 +77,10 @@ export function useDashboardStats(
     return {
       recentCount: recentProcesses.length,
       nearbyCount: nearbyProcesses.length,
-      favoriteTypesCount: favoriteProcesses.length,
-      recentProcesses: recentProcesses.slice(0, 5),
-      nearbyProcesses: nearbyProcesses.slice(0, 5),
+      favoriteTypesCount: baseProcesses.length,
+      recentProcesses: recentProcesses.slice(0, MIN_RECENT),
+      nearbyProcesses: nearbyProcesses.slice(0, MIN_RECENT),
       favoriteTypeConfigs,
     };
-  }, [processes, nearbyDepartamentos, selectedContractTypes]);
+  }, [processes, municipioProcesses, selectedContractTypes]);
 }

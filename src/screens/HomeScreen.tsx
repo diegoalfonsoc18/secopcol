@@ -12,13 +12,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ProcessCard, DashboardSkeleton, StaggeredItem, ContractTypeSelector } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
-import { SecopProcess } from "../types/index";
+import { SecopProcess, advancedSearch } from "../api/secop";
 import { spacing, borderRadius, scale } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { useHaptics } from "../hooks/useHaptics";
 import { useLocation } from "../hooks/useLocation";
-import { CONTRACT_TYPES } from "../constants/contractTypes";
+import { CONTRACT_TYPES, getContractTypeColor } from "../constants/contractTypes";
 import { useDashboardStats } from "../hooks/useDashboardStats";
 
 // ============================================
@@ -36,12 +36,13 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const {
     departamento: userDepartamento,
     municipio: userMunicipio,
-    nearbyDepartamentos,
   } = useLocation();
+
+  const [nearbyProcesses, setNearbyProcesses] = useState<SecopProcess[]>([]);
 
   const stats = useDashboardStats(
     processes,
-    nearbyDepartamentos,
+    nearbyProcesses,
     preferences.selectedContractTypes
   );
 
@@ -50,6 +51,14 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   useEffect(() => {
     fetchRecentProcesses(100, false);
   }, [fetchRecentProcesses]);
+
+  // Fetch procesos del municipio del usuario
+  useEffect(() => {
+    if (!userMunicipio) return;
+    advancedSearch({ municipio: userMunicipio, limit: 50 })
+      .then(setNearbyProcesses)
+      .catch(() => setNearbyProcesses([]));
+  }, [userMunicipio]);
 
   // Animaciones del header
   const headerHeight = scrollY.interpolate({
@@ -117,7 +126,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       bgColor: "rgba(52, 199, 89, 0.12)",
       onPress: () =>
         navigateToSearch({ departamento: userDepartamento }),
-      show: nearbyDepartamentos.length > 0,
+      show: !!userMunicipio,
     },
     {
       key: "favorites",
@@ -132,7 +141,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     },
   ];
 
-  const hasLocation = nearbyDepartamentos.length > 0;
+  const hasLocation = !!userMunicipio;
 
   return (
     <View style={styles.container}>
@@ -266,7 +275,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                   {config.CustomIcon && (
                     <config.CustomIcon
                       size={26}
-                      color={colors.textSecondary}
+                      color={getContractTypeColor(config)}
                     />
                   )}
                 </View>
@@ -293,18 +302,20 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                     size={18}
                     color={colors.success}
                   />
-                  <Text style={styles.sectionTitle}>Cerca de ti</Text>
+                  <Text style={styles.sectionTitle}>
+                    {userMunicipio || "Cerca de ti"}
+                  </Text>
                 </View>
                 <TouchableOpacity
                   onPress={() =>
-                    navigateToSearch({ departamento: userDepartamento })
+                    navigateToSearch({ municipio: userMunicipio })
                   }
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                   <Text style={styles.viewAllText}>Ver mas</Text>
                 </TouchableOpacity>
               </View>
 
-              {stats.nearbyProcesses.slice(0, 5).map((process, index) => (
+              {stats.nearbyProcesses.map((process, index) => (
                 <StaggeredItem key={process.id_del_proceso} index={index} staggerDelay={30}>
                   <ProcessCard
                     process={process}
@@ -318,7 +329,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           {/* Sub-seccion: Recientes */}
           {stats.recentProcesses.length > 0 && (
             <View style={styles.processSection}>
-              {stats.recentProcesses.slice(0, 5).map((process, index) => (
+              {stats.recentProcesses.map((process, index) => (
                 <StaggeredItem key={process.id_del_proceso} index={index} staggerDelay={30}>
                   <ProcessCard
                     process={process}
