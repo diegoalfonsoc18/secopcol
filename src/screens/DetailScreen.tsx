@@ -615,6 +615,11 @@ _Enviado desde SECOP Colombia App_`;
             icon="calendar-outline"
             label="Fecha Publicación"
             value={formatDateTime(process.fecha_de_publicacion_del)}
+          />
+          <InfoRow
+            icon="close-circle-outline"
+            label="Fecha de Cierre"
+            value={formatDateTime(process.fecha_de_recepcion_de)}
             isLast
           />
         </Section>

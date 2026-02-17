@@ -99,10 +99,10 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   // ============================================
   const statCards = [
     {
-      key: "today",
+      key: "recent",
       icon: "calendar-outline" as const,
-      count: stats.todayCount,
-      label: "Hoy",
+      count: stats.recentCount,
+      label: "Recientes",
       color: colors.accent,
       bgColor: colors.accentLight,
       onPress: () => navigateToSearch(),
@@ -147,13 +147,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         <View style={styles.headerRow}>
           <Animated.View
             style={{ transform: [{ scale: titleScale }], flex: 1 }}>
-            <View style={styles.titleRow}>
-              <Text style={styles.title}>Inicio</Text>
-              <View style={styles.liveBadge}>
-                <View style={styles.liveDot} />
-                <Text style={styles.liveText}>SECOP II</Text>
-              </View>
-            </View>
+            <Text style={styles.title}>Inicio</Text>
           </Animated.View>
 
           <TouchableOpacity
@@ -310,7 +304,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 </TouchableOpacity>
               </View>
 
-              {stats.nearbyProcesses.slice(0, 3).map((process, index) => (
+              {stats.nearbyProcesses.slice(0, 5).map((process, index) => (
                 <StaggeredItem key={process.id_del_proceso} index={index} staggerDelay={30}>
                   <ProcessCard
                     process={process}
@@ -321,26 +315,10 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             </View>
           )}
 
-          {/* Sub-seccion: Publicados hoy */}
-          {stats.todayProcesses.length > 0 && (
+          {/* Sub-seccion: Recientes */}
+          {stats.recentProcesses.length > 0 && (
             <View style={styles.processSection}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeaderLeft}>
-                  <Ionicons
-                    name="calendar-outline"
-                    size={18}
-                    color={colors.accent}
-                  />
-                  <Text style={styles.sectionTitle}>Publicados hoy</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => navigateToSearch()}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  <Text style={styles.viewAllText}>Ver mas</Text>
-                </TouchableOpacity>
-              </View>
-
-              {stats.todayProcesses.slice(0, 3).map((process, index) => (
+              {stats.recentProcesses.slice(0, 5).map((process, index) => (
                 <StaggeredItem key={process.id_del_proceso} index={index} staggerDelay={30}>
                   <ProcessCard
                     process={process}
@@ -352,7 +330,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           )}
 
           {/* Estado vacio */}
-          {stats.todayProcesses.length === 0 &&
+          {stats.recentProcesses.length === 0 &&
             stats.nearbyProcesses.length === 0 && (
               <View style={styles.emptyContainer}>
                 <View style={styles.emptyIconContainer}>
@@ -411,37 +389,11 @@ const createStyles = (colors: any) =>
       justifyContent: "center",
       alignItems: "center",
     },
-    titleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.md,
-    },
     title: {
       fontSize: scale(34),
       fontWeight: "700",
       color: colors.textPrimary,
       letterSpacing: 0.37,
-    },
-    liveBadge: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: colors.accentLight,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.xs,
-      borderRadius: borderRadius.full,
-      gap: spacing.xs,
-    },
-    liveDot: {
-      width: scale(6),
-      height: scale(6),
-      borderRadius: scale(3),
-      backgroundColor: colors.accent,
-    },
-    liveText: {
-      fontSize: scale(11),
-      fontWeight: "600",
-      color: colors.accent,
-      letterSpacing: 0.5,
     },
     subtitle: {
       fontSize: scale(15),
