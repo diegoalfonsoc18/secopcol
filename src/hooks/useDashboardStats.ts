@@ -22,10 +22,10 @@ const normalizeDepartamento = (dept: string): string => {
 };
 
 export interface DashboardStats {
-  todayCount: number;
+  recentCount: number;
   nearbyCount: number;
   favoriteTypesCount: number;
-  todayProcesses: SecopProcess[];
+  recentProcesses: SecopProcess[];
   nearbyProcesses: SecopProcess[];
   favoriteTypeConfigs: ContractTypeConfig[];
 }
@@ -36,17 +36,28 @@ export function useDashboardStats(
   selectedContractTypes: string[]
 ): DashboardStats {
   return useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const eightDaysAgo = new Date();
+    eightDaysAgo.setDate(eightDaysAgo.getDate() - 8);
+    eightDaysAgo.setHours(0, 0, 0, 0);
 
-    // Procesos publicados hoy
-    const todayProcesses = processes.filter((p) => {
-      const dateStr =
-        p.fecha_de_ultima_publicaci || p.fecha_de_publicacion_del;
-      if (!dateStr) return false;
-      const d = new Date(dateStr);
-      return d >= today;
-    });
+    // Procesos publicados en los ultimos 8 dias (recientes primero)
+    const recentProcesses = processes
+      .filter((p) => {
+        const dateStr =
+          p.fecha_de_ultima_publicaci || p.fecha_de_publicacion_del;
+        if (!dateStr) return false;
+        const d = new Date(dateStr);
+        return d >= eightDaysAgo;
+      })
+      .sort((a, b) => {
+        const dateA = new Date(
+          a.fecha_de_ultima_publicaci || a.fecha_de_publicacion_del || 0
+        ).getTime();
+        const dateB = new Date(
+          b.fecha_de_ultima_publicaci || b.fecha_de_publicacion_del || 0
+        ).getTime();
+        return dateB - dateA;
+      });
 
     // Departamentos cercanos (80km)
     const closeDepts = nearbyDepartamentos
@@ -81,10 +92,10 @@ export function useDashboardStats(
         : CONTRACT_TYPES;
 
     return {
-      todayCount: todayProcesses.length,
+      recentCount: recentProcesses.length,
       nearbyCount: nearbyProcesses.length,
       favoriteTypesCount: favoriteProcesses.length,
-      todayProcesses: todayProcesses.slice(0, 5),
+      recentProcesses: recentProcesses.slice(0, 5),
       nearbyProcesses: nearbyProcesses.slice(0, 5),
       favoriteTypeConfigs,
     };

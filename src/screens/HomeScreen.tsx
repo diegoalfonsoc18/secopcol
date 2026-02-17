@@ -99,10 +99,10 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   // ============================================
   const statCards = [
     {
-      key: "today",
+      key: "recent",
       icon: "calendar-outline" as const,
-      count: stats.todayCount,
-      label: "Hoy",
+      count: stats.recentCount,
+      label: "Recientes",
       color: colors.accent,
       bgColor: colors.accentLight,
       onPress: () => navigateToSearch(),
@@ -304,7 +304,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 </TouchableOpacity>
               </View>
 
-              {stats.nearbyProcesses.slice(0, 3).map((process, index) => (
+              {stats.nearbyProcesses.slice(0, 5).map((process, index) => (
                 <StaggeredItem key={process.id_del_proceso} index={index} staggerDelay={30}>
                   <ProcessCard
                     process={process}
@@ -315,26 +315,10 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             </View>
           )}
 
-          {/* Sub-seccion: Publicados hoy */}
-          {stats.todayProcesses.length > 0 && (
+          {/* Sub-seccion: Recientes */}
+          {stats.recentProcesses.length > 0 && (
             <View style={styles.processSection}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeaderLeft}>
-                  <Ionicons
-                    name="calendar-outline"
-                    size={18}
-                    color={colors.accent}
-                  />
-                  <Text style={styles.sectionTitle}>Publicados hoy</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => navigateToSearch()}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  <Text style={styles.viewAllText}>Ver mas</Text>
-                </TouchableOpacity>
-              </View>
-
-              {stats.todayProcesses.slice(0, 3).map((process, index) => (
+              {stats.recentProcesses.slice(0, 5).map((process, index) => (
                 <StaggeredItem key={process.id_del_proceso} index={index} staggerDelay={30}>
                   <ProcessCard
                     process={process}
@@ -346,7 +330,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           )}
 
           {/* Estado vacio */}
-          {stats.todayProcesses.length === 0 &&
+          {stats.recentProcesses.length === 0 &&
             stats.nearbyProcesses.length === 0 && (
               <View style={styles.emptyContainer}>
                 <View style={styles.emptyIconContainer}>

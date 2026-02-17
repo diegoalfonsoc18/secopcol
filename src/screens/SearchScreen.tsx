@@ -625,7 +625,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
             </ScrollView>
           </View>
 
-          {/* Tipos de Contrato con iconos */}
+          {/* Tipos de Contrato */}
           <View style={styles.sectionContainer}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionLabel}>Tipo de Contrato</Text>
@@ -641,7 +641,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
                 </TouchableOpacity>
               )}
             </View>
-            <View style={styles.tiposGrid}>
+            <View style={styles.tiposChipsWrap}>
               {CONTRACT_TYPES.map((config) => {
                 const typeColor = getContractTypeColor(config);
                 const isActive = selectedTipos.includes(config.id);
@@ -649,36 +649,25 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
                 return (
                   <TouchableOpacity
                     key={config.id}
-                    style={styles.tipoItem}
+                    style={[
+                      styles.tipoChip,
+                      {
+                        backgroundColor: isActive
+                          ? typeColor
+                          : colors.backgroundSecondary,
+                      },
+                    ]}
                     onPress={() => handleToggleTipo(config.id)}
                     activeOpacity={0.7}>
-                    <View
-                      style={[
-                        styles.tipoIconCircle,
-                        {
-                          borderColor: typeColor,
-                          backgroundColor: isActive
-                            ? typeColor
-                            : colors.backgroundSecondary,
-                        },
-                        !isActive && styles.tipoIconInactive,
-                      ]}>
-                      <config.CustomIcon
-                        size={20}
-                        color={isActive ? "#FFF" : typeColor}
-                      />
-                    </View>
+                    <config.CustomIcon
+                      size={14}
+                      color={isActive ? "#FFF" : typeColor}
+                    />
                     <Text
                       style={[
-                        styles.tipoLabel,
-                        {
-                          color: isActive
-                            ? colors.textPrimary
-                            : colors.textTertiary,
-                          fontWeight: isActive ? "600" : "500",
-                        },
-                      ]}
-                      numberOfLines={1}>
+                        styles.tipoChipText,
+                        { color: isActive ? "#FFF" : colors.textSecondary },
+                      ]}>
                       {config.label}
                     </Text>
                   </TouchableOpacity>
@@ -1051,39 +1040,22 @@ const createStyles = (colors: any) =>
     chipActive: { backgroundColor: colors.accent },
     chipText: { fontSize: scale(13), color: colors.textSecondary, fontWeight: "500" },
     chipTextActive: { color: "#FFFFFF" },
-    tiposGrid: {
+    tiposChipsWrap: {
       flexDirection: "row",
       flexWrap: "wrap",
-      marginHorizontal: -spacing.xs,
+      gap: spacing.sm,
     },
-    tipoItem: {
-      width: "25%",
+    tipoChip: {
+      flexDirection: "row",
       alignItems: "center",
-      paddingHorizontal: spacing.xs,
-      marginBottom: spacing.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.full,
+      gap: spacing.xs,
     },
-    tipoIconCircle: {
-      width: scale(44),
-      height: scale(44),
-      borderRadius: scale(22),
-      borderWidth: 2,
-      justifyContent: "center",
-      alignItems: "center",
-      elevation: 2,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-    },
-    tipoIconInactive: {
-      opacity: 0.6,
-      elevation: 0,
-      shadowOpacity: 0,
-    },
-    tipoLabel: {
-      fontSize: scale(9),
-      marginTop: 4,
-      textAlign: "center",
+    tipoChipText: {
+      fontSize: scale(13),
+      fontWeight: "500",
     },
     buttonsRow: {
       flexDirection: "row",
@@ -1186,8 +1158,6 @@ const createStyles = (colors: any) =>
       justifyContent: "space-between",
       alignItems: "center",
       padding: spacing.lg,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.separatorLight,
     },
     modalTitle: { fontSize: scale(18), fontWeight: "700", color: colors.textPrimary },
     modalSearchBar: {
@@ -1207,8 +1177,6 @@ const createStyles = (colors: any) =>
       justifyContent: "space-between",
       alignItems: "center",
       padding: spacing.lg,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.separatorLight,
     },
     modalItemText: { fontSize: scale(16), color: colors.textPrimary },
   });
