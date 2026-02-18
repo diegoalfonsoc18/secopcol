@@ -10,10 +10,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { ProcessCard, DashboardSkeleton, StaggeredItem, ContractTypeSelector } from "../components/index";
+import { ProcessCard, DashboardSkeleton, StaggeredItem, ContractTypeSelector, AnimatedPressable, ScaleIn, SlideInRight } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess, advancedSearch } from "../api/secop";
-import { spacing, borderRadius, scale } from "../theme";
+import { spacing, borderRadius, scale, shadows } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { useHaptics } from "../hooks/useHaptics";
@@ -160,7 +160,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </Animated.View>
 
           <TouchableOpacity
-            style={styles.headerButton}
+            style={[styles.headerButton, { borderWidth: 1.5, borderColor: colors.accent + "30" }]}
             onPress={() => navigation.navigate("AppSettings")}>
             <Ionicons name="settings-outline" size={22} color={colors.accent} />
           </TouchableOpacity>
@@ -218,38 +218,41 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           <View style={styles.statsRow}>
             {statCards
               .filter((s) => s.show)
-              .map((card) => (
-                <TouchableOpacity
-                  key={card.key}
-                  style={[styles.statCard, { backgroundColor: card.bgColor }]}
-                  onPress={card.onPress}
-                  activeOpacity={0.7}>
-                  <View style={styles.statCardHeader}>
-                    <View
-                      style={[
-                        styles.statIconCircle,
-                        { backgroundColor: card.color + "20" },
-                      ]}>
+              .map((card, index) => (
+                <ScaleIn key={card.key} delay={index * 80} style={{ flex: 1 }}>
+                  <AnimatedPressable
+                    style={[
+                      styles.statCard,
+                      {
+                        backgroundColor: card.bgColor,
+                        borderLeftWidth: 3,
+                        borderLeftColor: card.color,
+                      },
+                    ]}
+                    onPress={card.onPress}
+                    scaleValue={0.95}>
+                    <Text style={[styles.statCount, { color: card.color }]}>
+                      {card.count}
+                    </Text>
+                    <View style={styles.statCardFooter}>
                       <Ionicons
                         name={card.icon}
-                        size={18}
-                        color={card.color}
+                        size={14}
+                        color={colors.textTertiary}
                       />
+                      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                        {card.label}
+                      </Text>
                     </View>
-                  </View>
-                  <Text style={[styles.statCount, { color: card.color }]}>
-                    {card.count}
-                  </Text>
-                  <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                    {card.label}
-                  </Text>
-                </TouchableOpacity>
+                  </AnimatedPressable>
+                </ScaleIn>
               ))}
           </View>
 
           {/* ================================ */}
           {/* SECCION 2: Categorias favoritas  */}
           {/* ================================ */}
+          <View style={styles.sectionSeparator} />
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Categorias</Text>
             <TouchableOpacity
@@ -263,29 +266,42 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.categoriesRow}>
-            {stats.favoriteTypeConfigs.map((config) => (
-              <TouchableOpacity
-                key={config.id}
-                style={styles.categoryItem}
-                onPress={() =>
-                  navigateToSearch({ tipoContrato: config.id })
-                }
-                activeOpacity={0.7}>
-                <View style={styles.categoryIconCircle}>
-                  {config.CustomIcon && (
-                    <config.CustomIcon
-                      size={26}
-                      color={getContractTypeColor(config)}
-                    />
-                  )}
-                </View>
-                <Text
-                  style={[styles.categoryLabel, { color: colors.textPrimary }]}
-                  numberOfLines={1}>
-                  {config.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {stats.favoriteTypeConfigs.map((config, index) => {
+              const typeColor = getContractTypeColor(config);
+              return (
+                <SlideInRight key={config.id} delay={index * 60}>
+                  <AnimatedPressable
+                    style={styles.categoryItem}
+                    onPress={() =>
+                      navigateToSearch({ tipoContrato: config.id })
+                    }
+                    scaleValue={0.92}
+                    hapticType="selection">
+                    <View
+                      style={[
+                        styles.categoryIconCircle,
+                        {
+                          backgroundColor: typeColor + "15",
+                          borderWidth: 1,
+                          borderColor: typeColor + "25",
+                        },
+                      ]}>
+                      {config.CustomIcon && (
+                        <config.CustomIcon
+                          size={26}
+                          color={typeColor}
+                        />
+                      )}
+                    </View>
+                    <Text
+                      style={[styles.categoryLabel, { color: colors.textPrimary }]}
+                      numberOfLines={1}>
+                      {config.label}
+                    </Text>
+                  </AnimatedPressable>
+                </SlideInRight>
+              );
+            })}
           </ScrollView>
 
           {/* ================================ */}
@@ -295,6 +311,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           {/* Sub-seccion: Cerca de ti */}
           {hasLocation && stats.nearbyProcesses.length > 0 && (
             <View style={styles.processSection}>
+              <View style={styles.sectionSeparator} />
               <View style={styles.sectionHeader}>
                 <View style={styles.sectionHeaderLeft}>
                   <Ionicons
@@ -347,7 +364,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 <View style={styles.emptyIconContainer}>
                   <Ionicons
                     name="document-text-outline"
-                    size={48}
+                    size={52}
                     color={colors.textTertiary}
                   />
                 </View>
@@ -356,12 +373,12 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                   No hay procesos nuevos en este momento. Desliza hacia abajo
                   para actualizar.
                 </Text>
-                <TouchableOpacity
-                  style={[styles.searchButton, { backgroundColor: colors.accent }]}
+                <AnimatedPressable
+                  style={[styles.searchButton, { backgroundColor: colors.accent, ...shadows.card }]}
                   onPress={() => navigateToSearch()}>
                   <Ionicons name="search" size={18} color="#FFF" />
                   <Text style={styles.searchButtonText}>Buscar procesos</Text>
-                </TouchableOpacity>
+                </AnimatedPressable>
               </View>
             )}
         </Animated.ScrollView>
@@ -396,15 +413,15 @@ const createStyles = (colors: any) =>
       width: scale(40),
       height: scale(40),
       borderRadius: scale(20),
-      backgroundColor: colors.backgroundSecondary,
+      backgroundColor: "transparent",
       justifyContent: "center",
       alignItems: "center",
     },
     title: {
       fontSize: scale(34),
-      fontWeight: "700",
+      fontWeight: "800",
       color: colors.textPrimary,
-      letterSpacing: 0.37,
+      letterSpacing: -0.5,
     },
     subtitle: {
       fontSize: scale(15),
@@ -446,23 +463,20 @@ const createStyles = (colors: any) =>
       padding: spacing.md,
       borderRadius: borderRadius.md,
     },
-    statCardHeader: {
-      marginBottom: spacing.sm,
-    },
-    statIconCircle: {
-      width: scale(36),
-      height: scale(36),
-      borderRadius: scale(18),
-      justifyContent: "center",
+    statCardFooter: {
+      flexDirection: "row",
       alignItems: "center",
+      gap: 4,
+      marginTop: spacing.xs,
     },
     statCount: {
-      fontSize: scale(28),
-      fontWeight: "700",
+      fontSize: scale(32),
+      fontWeight: "800",
+      letterSpacing: -1,
       marginBottom: 2,
     },
     statLabel: {
-      fontSize: scale(13),
+      fontSize: scale(12),
       fontWeight: "500",
     },
 
@@ -473,29 +487,33 @@ const createStyles = (colors: any) =>
     },
     categoryItem: {
       alignItems: "center",
-      width: scale(70),
+      width: scale(72),
     },
     categoryIconCircle: {
-      width: scale(52),
-      height: scale(52),
-      borderRadius: scale(26),
-      backgroundColor: colors.backgroundSecondary,
+      width: scale(56),
+      height: scale(56),
+      borderRadius: scale(28),
       justifyContent: "center",
       alignItems: "center",
       marginBottom: spacing.xs,
     },
     categoryLabel: {
       fontSize: scale(11),
-      fontWeight: "500",
+      fontWeight: "600",
       textAlign: "center",
     },
 
-    // Section headers
+    // Section separators & headers
+    sectionSeparator: {
+      height: 1,
+      backgroundColor: colors.separatorLight,
+      marginTop: spacing.lg,
+    },
     sectionHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginTop: spacing.lg,
+      marginTop: spacing.md,
       marginBottom: spacing.md,
     },
     sectionHeaderLeft: {
@@ -522,13 +540,13 @@ const createStyles = (colors: any) =>
     // Empty state
     emptyContainer: {
       alignItems: "center",
-      paddingVertical: spacing.xxl * 2,
+      paddingVertical: spacing.xxl * 3,
       paddingHorizontal: spacing.xl,
     },
     emptyIconContainer: {
-      width: scale(88),
-      height: scale(88),
-      borderRadius: scale(44),
+      width: scale(96),
+      height: scale(96),
+      borderRadius: scale(48),
       backgroundColor: colors.backgroundSecondary,
       justifyContent: "center",
       alignItems: "center",
@@ -536,7 +554,7 @@ const createStyles = (colors: any) =>
     },
     emptyTitle: {
       fontSize: scale(20),
-      fontWeight: "600",
+      fontWeight: "700",
       color: colors.textPrimary,
       marginBottom: spacing.sm,
     },
@@ -545,6 +563,7 @@ const createStyles = (colors: any) =>
       color: colors.textSecondary,
       textAlign: "center",
       lineHeight: scale(22),
+      maxWidth: scale(280),
     },
     searchButton: {
       flexDirection: "row",

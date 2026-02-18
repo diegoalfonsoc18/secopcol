@@ -1,11 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { parseISO, format, isAfter } from "date-fns";
 import { es } from "date-fns/locale";
 
 import { SecopProcess } from "../types/index";
-import { spacing, borderRadius, scale } from "../theme";
+import { spacing, borderRadius, scale, typography } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import {
   getContractTypeConfig,
@@ -46,18 +46,18 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
     ? (fechaCierre.getTime() - ahora.getTime()) / (1000 * 60 * 60)
     : null;
 
-  let colorSemaforo = "#34C759"; // Verde por defecto (+72h)
+  let colorSemaforo = colors.success; // Verde por defecto (+72h)
   let estadoTiempo = "Abierto";
 
   if (estaCerrado) {
-    colorSemaforo = "#8E8E93"; // Gris para cerrado
+    colorSemaforo = colors.textTertiary; // Gris para cerrado
     estadoTiempo = "Cerrado";
   } else if (horasRestantes !== null) {
     if (horasRestantes <= 24) {
-      colorSemaforo = "#FF3B30"; // Rojo (Menos de 24h)
+      colorSemaforo = colors.danger; // Rojo (Menos de 24h)
       estadoTiempo = "Urgente";
     } else if (horasRestantes <= 72) {
-      colorSemaforo = "#FFCC00"; // Amarillo (Entre 24h y 72h)
+      colorSemaforo = colors.warning; // Amarillo (Entre 24h y 72h)
       estadoTiempo = "Próximo";
     }
   }
@@ -229,10 +229,19 @@ const createStyles = (colors: any, mainColor: string) =>
       backgroundColor: colors.backgroundSecondary,
       borderRadius: borderRadius.lg,
       padding: spacing.lg,
-      marginBottom: spacing.md,
-      borderWidth: 1,
-      borderColor: colors.separatorLight,
-      elevation: 3,
+      marginBottom: spacing.lg,
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.04,
+          shadowRadius: 8,
+        },
+        android: {
+          borderWidth: 1,
+          borderColor: colors.separatorLight,
+        },
+      }),
     },
     header: {
       flexDirection: "row",
@@ -241,22 +250,22 @@ const createStyles = (colors: any, mainColor: string) =>
       marginBottom: spacing.sm,
     },
     label: {
-      fontSize: scale(10),
-      fontWeight: "700",
+      ...typography.caption2,
+      fontWeight: "600",
       color: colors.textTertiary,
       letterSpacing: 0.5,
       textTransform: "uppercase",
     },
     processId: {
-      fontSize: scale(14),
+      ...typography.subhead,
       fontWeight: "700",
       color: colors.textPrimary,
-      marginTop: 2,
+      marginTop: scale(2),
     },
     badgeUrgent: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "#FF3B30",
+      backgroundColor: colors.danger,
       paddingHorizontal: scale(8),
       paddingVertical: scale(4),
       borderRadius: borderRadius.sm,
@@ -264,18 +273,18 @@ const createStyles = (colors: any, mainColor: string) =>
     },
     badgeText: {
       color: "#FFF",
-      fontSize: scale(10),
-      fontWeight: "800",
+      fontSize: scale(11),
+      fontWeight: "700",
     },
     typeContainer: {
       flexDirection: "row",
       alignItems: "center",
       alignSelf: "flex-start",
-      paddingHorizontal: scale(10),
-      paddingVertical: scale(4),
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
       borderRadius: 100,
-      marginBottom: spacing.md,
-      gap: scale(6),
+      marginBottom: spacing.sm,
+      gap: spacing.sm,
     },
     iconWrapper: {
       width: scale(24),
@@ -285,15 +294,15 @@ const createStyles = (colors: any, mainColor: string) =>
       justifyContent: "center",
     },
     typeText: {
-      fontSize: scale(12),
-      fontWeight: "700",
+      ...typography.caption1,
+      fontWeight: "600",
     },
     title: {
-      fontSize: scale(15),
+      ...typography.callout,
       fontWeight: "600",
       color: colors.textPrimary,
-      lineHeight: scale(22),
-      marginBottom: spacing.md,
+      letterSpacing: -0.3,
+      marginBottom: spacing.sm,
     },
     infoRow: {
       flexDirection: "row",
@@ -302,7 +311,7 @@ const createStyles = (colors: any, mainColor: string) =>
       marginBottom: spacing.sm,
     },
     infoText: {
-      fontSize: scale(13),
+      ...typography.footnote,
       color: colors.textSecondary,
       flex: 1,
     },
@@ -310,20 +319,17 @@ const createStyles = (colors: any, mainColor: string) =>
     timeBarContainer: {
       marginTop: spacing.sm,
       marginBottom: spacing.sm,
-      padding: spacing.sm,
-      backgroundColor: colors.background,
-      borderRadius: borderRadius.md,
     },
     timeHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 8,
+      marginBottom: spacing.sm,
     },
     timeStatusGroup: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
+      gap: spacing.sm,
     },
     statusDot: {
       width: scale(8),
@@ -331,17 +337,17 @@ const createStyles = (colors: any, mainColor: string) =>
       borderRadius: scale(4),
     },
     statusText: {
-      fontSize: scale(12),
-      fontWeight: "700",
+      ...typography.caption1,
+      fontWeight: "600",
     },
     timeRemaining: {
-      fontSize: scale(11),
+      ...typography.caption2,
       fontWeight: "600",
     },
     timeBarTrack: {
-      height: scale(6),
+      height: scale(4),
       backgroundColor: colors.separatorLight,
-      borderRadius: scale(3),
+      borderRadius: scale(2),
       overflow: "hidden",
     },
     timeBarFill: {
@@ -351,10 +357,10 @@ const createStyles = (colors: any, mainColor: string) =>
     timeLabels: {
       flexDirection: "row",
       justifyContent: "space-between",
-      marginTop: 6,
+      marginTop: spacing.sm,
     },
     timeLabelText: {
-      fontSize: scale(10),
+      ...typography.caption2,
       color: colors.textTertiary,
     },
     // Footer
@@ -362,16 +368,14 @@ const createStyles = (colors: any, mainColor: string) =>
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-end",
-      marginTop: spacing.sm,
-      paddingTop: spacing.md,
-      borderTopWidth: 1,
-      borderTopColor: colors.separatorLight,
+      marginTop: spacing.lg,
     },
     priceText: {
-      fontSize: scale(18),
-      fontWeight: "800",
+      ...typography.headline,
+      fontWeight: "700",
       color: colors.textPrimary,
-      marginTop: 2,
+      letterSpacing: -0.5,
+      marginTop: scale(2),
     },
     dateContainer: {
       flexDirection: "row",
@@ -380,8 +384,8 @@ const createStyles = (colors: any, mainColor: string) =>
       marginTop: scale(4),
     },
     dateText: {
-      fontSize: scale(13),
-      fontWeight: "600",
+      ...typography.footnote,
+      fontWeight: "500",
       color: colors.textSecondary,
     },
     entidadContainer: {
@@ -390,10 +394,10 @@ const createStyles = (colors: any, mainColor: string) =>
       marginLeft: spacing.md,
     },
     entidadText: {
-      fontSize: scale(12),
-      fontWeight: "600",
+      ...typography.caption1,
+      fontWeight: "500",
       color: colors.textSecondary,
       textAlign: "right",
-      marginTop: 2,
+      marginTop: scale(2),
     },
   });
