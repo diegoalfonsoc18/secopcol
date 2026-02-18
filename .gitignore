@@ -1,3 +1,7 @@
+# Native (CNG/Prebuild)
+/android
+/ios
+
 # Expo
 .expo/
 .expo-shared/
