@@ -40,7 +40,7 @@ import { useHaptics } from "../hooks/useHaptics";
 import { FadeIn, SlideInUp } from "../components/Animations";
 import { getDepartments, getMunicipalities } from "../services/divipola";
 import { AlertIcon } from "../assets/icons";
-import { spacing, scale } from "../theme";
+import { spacing, scale, borderRadius, typography } from "../theme";
 
 // ============================================
 // CONSTANTES DE FILTROS
@@ -472,7 +472,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
             <Text
               style={[
                 styles.inputLabel,
-                { color: colors.textSecondary, marginBottom: 8 },
+                { color: colors.textSecondary },
               ]}>
               Ubicación
             </Text>
@@ -577,7 +577,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
             <Text
               style={[
                 styles.inputLabel,
-                { color: colors.textSecondary, marginTop: 16, marginBottom: 8 },
+                { color: colors.textSecondary, marginTop: spacing.lg },
               ]}>
               Modalidad de contratación
             </Text>
@@ -616,7 +616,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
             <Text
               style={[
                 styles.inputLabel,
-                { color: colors.textSecondary, marginTop: 16, marginBottom: 8 },
+                { color: colors.textSecondary, marginTop: spacing.lg },
               ]}>
               Tipo de contrato
             </Text>
@@ -982,7 +982,9 @@ const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
         </Text>
         <TouchableOpacity
           style={[styles.addButton, { backgroundColor: colors.accent }]}
-          onPress={handleNewAlert}>
+          onPress={handleNewAlert}
+          accessibilityLabel="Crear nueva alerta"
+          accessibilityRole="button">
           <Ionicons name="add" size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
@@ -1009,11 +1011,17 @@ const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
         ) : alerts.length === 0 ? (
           <FadeIn>
             <View style={styles.emptyState}>
-              <Ionicons
-                name="notifications-off-outline"
-                size={64}
-                color={colors.textTertiary}
-              />
+              <View
+                style={[
+                  styles.emptyIconContainer,
+                  { backgroundColor: colors.accentLight },
+                ]}>
+                <Ionicons
+                  name="notifications-off-outline"
+                  size={scale(72)}
+                  color={colors.accent}
+                />
+              </View>
               <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
                 Sin alertas
               </Text>
@@ -1023,7 +1031,9 @@ const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
               </Text>
               <TouchableOpacity
                 style={[styles.emptyButton, { backgroundColor: colors.accent }]}
-                onPress={handleNewAlert}>
+                onPress={handleNewAlert}
+                accessibilityLabel="Crear primera alerta"
+                accessibilityRole="button">
                 <Ionicons name="add" size={20} color="#FFFFFF" />
                 <Text style={styles.emptyButtonText}>Crear alerta</Text>
               </TouchableOpacity>
@@ -1078,84 +1088,106 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
   },
-  title: { fontSize: scale(34), fontWeight: "700" },
+  title: { ...typography.largeTitle, fontWeight: "800", letterSpacing: -0.5 },
   addButton: {
     width: scale(40),
     height: scale(40),
-    borderRadius: scale(20),
+    borderRadius: borderRadius.full,
     justifyContent: "center",
     alignItems: "center",
   },
   content: { flex: 1 },
-  contentContainer: { padding: 20 },
+  contentContainer: { padding: spacing.lg },
 
   // Alert Card
-  alertCard: { padding: 16, borderRadius: scale(12), marginBottom: 12 },
+  alertCard: {
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.lg,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+      },
+      android: {
+        borderWidth: 1,
+        borderColor: "rgba(0,0,0,0.06)",
+      },
+    }),
+  },
   alertHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   alertTitleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: scale(8),
+    gap: spacing.sm,
     flex: 1,
   },
-  alertName: { fontSize: scale(16), fontWeight: "600", flex: 1 },
-  alertFilters: { fontSize: scale(14), marginBottom: 12, lineHeight: scale(20) },
-  alertFooter: { flexDirection: "row", alignItems: "center", gap: scale(16) },
-  alertMeta: { flexDirection: "row", alignItems: "center", gap: scale(4) },
-  alertMetaText: { fontSize: scale(12) },
+  alertName: { ...typography.callout, fontWeight: "600", flex: 1 },
+  alertFilters: { ...typography.subhead, marginBottom: spacing.sm },
+  alertFooter: { flexDirection: "row", alignItems: "center", gap: spacing.lg },
+  alertMeta: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  alertMetaText: { ...typography.caption1 },
 
-  // Delete action (mismo estilo que FavoritesScreen)
+  // Delete action
   deleteAction: {
     justifyContent: "center",
     alignItems: "flex-end",
-    marginBottom: 12,
+    marginBottom: spacing.lg,
   },
   deleteButton: {
     justifyContent: "center",
     alignItems: "center",
     width: scale(90),
     height: "100%",
-    borderRadius: scale(12),
+    borderRadius: borderRadius.lg,
   },
   deleteText: {
-    fontSize: scale(12),
+    ...typography.caption1,
     fontWeight: "600",
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
 
   // Empty State
   emptyState: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 60,
+    paddingVertical: scale(80),
+  },
+  emptyIconContainer: {
+    width: scale(96),
+    height: scale(96),
+    borderRadius: scale(48),
+    alignItems: "center",
+    justifyContent: "center",
   },
   emptyTitle: {
-    fontSize: scale(20),
-    fontWeight: "600",
-    marginTop: 16,
-    marginBottom: 8,
+    ...typography.title3,
+    fontWeight: "700",
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
   },
   emptyText: {
-    fontSize: scale(14),
+    ...typography.subhead,
     textAlign: "center",
-    paddingHorizontal: 40,
-    lineHeight: scale(20),
+    maxWidth: scale(280),
   },
   emptyButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: scale(8),
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: scale(12),
-    marginTop: 24,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
+    marginTop: spacing.xxl,
   },
-  emptyButtonText: { color: "#FFFFFF", fontSize: scale(16), fontWeight: "600" },
+  emptyButtonText: { color: "#FFFFFF", ...typography.callout, fontWeight: "600" },
 
   // Modal
   modalOverlay: {
@@ -1164,80 +1196,80 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalContent: {
-    borderTopLeftRadius: scale(20),
-    borderTopRightRadius: scale(20),
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
     maxHeight: "95%",
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
+    padding: spacing.lg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "rgba(0,0,0,0.1)",
   },
-  modalCancel: { fontSize: scale(16) },
-  modalTitle: { fontSize: scale(17), fontWeight: "600" },
-  modalSave: { fontSize: scale(16), fontWeight: "600" },
-  modalBody: { padding: 20 },
+  modalCancel: { ...typography.callout },
+  modalTitle: { ...typography.headline },
+  modalSave: { ...typography.callout, fontWeight: "600" },
+  modalBody: { padding: spacing.lg },
 
   // Inputs
-  inputGroup: { marginBottom: 20 },
-  inputLabel: { fontSize: scale(14), marginBottom: 8, fontWeight: "500" },
+  inputGroup: { marginBottom: spacing.xl },
+  inputLabel: { ...typography.subhead, fontWeight: "500", marginBottom: spacing.sm },
   input: {
-    height: scale(48),
-    borderRadius: scale(10),
-    paddingHorizontal: 16,
-    fontSize: scale(16),
+    height: 42,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.lg,
+    ...typography.callout,
     borderWidth: 1,
   },
   sectionTitle: {
-    fontSize: scale(18),
+    ...typography.title3,
     fontWeight: "600",
-    marginBottom: 12,
-    marginTop: 8,
+    marginBottom: spacing.md,
+    marginTop: spacing.sm,
   },
 
   // Location
-  locationRow: { flexDirection: "row", gap: scale(10), marginBottom: 8 },
+  locationRow: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.sm },
   locationButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: scale(10),
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    gap: scale(6),
+    height: 42,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
     borderWidth: 1,
   },
-  locationText: { flex: 1, fontSize: scale(14) },
+  locationText: { ...typography.subhead, flex: 1 },
 
   // Chips
-  chipsScroll: { marginBottom: 8 },
+  chipsScroll: { marginBottom: spacing.sm },
   chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: scale(20),
-    marginRight: 8,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    marginRight: spacing.sm,
   },
-  chipText: { fontSize: scale(13), fontWeight: "500" },
+  chipText: { ...typography.footnote, fontWeight: "500" },
 
   // Info
   infoBox: {
     flexDirection: "row",
-    gap: scale(12),
-    padding: 16,
-    borderRadius: scale(12),
-    marginTop: 24,
-    marginBottom: 20,
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    marginTop: spacing.xxl,
+    marginBottom: spacing.xl,
   },
-  infoText: { flex: 1, fontSize: scale(14), lineHeight: scale(20) },
+  infoText: { ...typography.subhead, flex: 1 },
 
   // Sub Modal
   subModalContent: {
-    borderTopLeftRadius: scale(20),
-    borderTopRightRadius: scale(20),
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
     flex: 1,
     maxHeight: "80%",
     marginTop: "auto",
@@ -1245,28 +1277,28 @@ const styles = StyleSheet.create({
   searchBarSmall: {
     flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: 16,
-    marginVertical: 12,
-    paddingHorizontal: 12,
-    height: scale(40),
-    borderRadius: scale(10),
-    gap: scale(8),
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    height: 42,
+    borderRadius: borderRadius.md,
+    gap: spacing.sm,
   },
-  searchInputSmall: { flex: 1, fontSize: scale(16) },
+  searchInputSmall: { ...typography.callout, flex: 1 },
   listItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
+    padding: spacing.lg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  listItemText: { fontSize: scale(16) },
+  listItemText: { ...typography.callout },
   listContainer: {
     flex: 1,
     minHeight: scale(200),
   },
   emptyList: {
-    padding: 20,
+    padding: spacing.xl,
     alignItems: "center",
   },
 });

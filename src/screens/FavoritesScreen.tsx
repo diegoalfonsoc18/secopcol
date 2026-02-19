@@ -16,7 +16,7 @@ import { Swipeable } from "react-native-gesture-handler";
 import { ProcessCard, StaggeredItem } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
-import { spacing, borderRadius, scale } from "../theme";
+import { spacing, borderRadius, scale, typography } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { exportFavorites } from "../services/exportService";
 import { useHaptics } from "../hooks/useHaptics";
@@ -227,7 +227,9 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
           styles.exploreButton,
           pressed && styles.exploreButtonPressed,
         ]}
-        onPress={() => navigation.navigate("Search")}>
+        onPress={() => navigation.navigate("Search")}
+        accessibilityLabel="Buscar procesos"
+        accessibilityRole="button">
         <Ionicons
           name="search-outline"
           size={18}
@@ -269,7 +271,9 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
             <TouchableOpacity
               style={styles.exportButton}
               onPress={handleExport}
-              disabled={exporting}>
+              disabled={exporting}
+              accessibilityLabel="Exportar favoritos"
+              accessibilityRole="button">
               {exporting ? (
                 <ActivityIndicator size="small" color={colors.accent} />
               ) : (
@@ -341,15 +345,15 @@ const createStyles = (colors: any) =>
       gap: spacing.md,
     },
     title: {
-      fontSize: scale(34),
-      fontWeight: "700",
+      ...typography.largeTitle,
+      fontWeight: "800",
       color: colors.textPrimary,
-      letterSpacing: 0.37,
+      letterSpacing: -0.5,
     },
     exportButton: {
       width: scale(40),
       height: scale(40),
-      borderRadius: scale(20),
+      borderRadius: borderRadius.full,
       backgroundColor: colors.backgroundSecondary,
       justifyContent: "center",
       alignItems: "center",
@@ -363,12 +367,12 @@ const createStyles = (colors: any) =>
       alignItems: "center",
     },
     countBadgeText: {
-      fontSize: scale(14),
+      ...typography.subhead,
       fontWeight: "600",
       color: colors.backgroundSecondary,
     },
     subtitle: {
-      fontSize: scale(15),
+      ...typography.subhead,
       color: colors.textSecondary,
       marginTop: spacing.xs,
     },
@@ -404,12 +408,12 @@ const createStyles = (colors: any) =>
       flex: 1,
     },
     infoTitle: {
-      fontSize: scale(15),
+      ...typography.subhead,
       fontWeight: "600",
       color: colors.textPrimary,
     },
     infoSubtitle: {
-      fontSize: scale(13),
+      ...typography.footnote,
       color: colors.textSecondary,
       marginTop: spacing.xs,
     },
@@ -435,10 +439,10 @@ const createStyles = (colors: any) =>
       borderRadius: borderRadius.md,
     },
     deleteText: {
+      ...typography.caption1,
       color: colors.backgroundSecondary,
-      fontSize: scale(12),
       fontWeight: "600",
-      marginTop: 4,
+      marginTop: spacing.xs,
     },
 
     // Empty state
@@ -449,25 +453,25 @@ const createStyles = (colors: any) =>
       paddingHorizontal: spacing.xl,
     },
     emptyIconContainer: {
-      width: scale(88),
-      height: scale(88),
-      borderRadius: scale(44),
+      width: scale(96),
+      height: scale(96),
+      borderRadius: scale(48),
       backgroundColor: colors.backgroundTertiary,
       justifyContent: "center",
       alignItems: "center",
       marginBottom: spacing.lg,
     },
     emptyTitle: {
-      fontSize: scale(20),
-      fontWeight: "600",
+      ...typography.title3,
+      fontWeight: "700",
       color: colors.textPrimary,
       marginBottom: spacing.sm,
     },
     emptyMessage: {
-      fontSize: scale(15),
+      ...typography.subhead,
       color: colors.textSecondary,
       textAlign: "center",
-      lineHeight: scale(22),
+      maxWidth: scale(280),
       marginBottom: spacing.xl,
     },
     tipCard: {
@@ -481,10 +485,9 @@ const createStyles = (colors: any) =>
       marginBottom: spacing.xl,
     },
     tipText: {
+      ...typography.footnote,
       flex: 1,
-      fontSize: scale(13),
       color: colors.textSecondary,
-      lineHeight: scale(18),
     },
     exploreButton: {
       flexDirection: "row",
@@ -500,7 +503,7 @@ const createStyles = (colors: any) =>
       transform: [{ scale: 0.98 }],
     },
     exploreButtonText: {
-      fontSize: scale(15),
+      ...typography.subhead,
       fontWeight: "600",
       color: colors.backgroundSecondary,
     },

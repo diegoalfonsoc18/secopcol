@@ -17,9 +17,9 @@ import {
 import { AlertIcon, MarcadorIcon } from "../assets/icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { ProcessCard, SearchResultsSkeleton } from "../components/index";
+import { ProcessCard, SearchResultsSkeleton, AnimatedPressable } from "../components/index";
 import { SecopProcess, advancedSearch } from "../api/secop";
-import { spacing, borderRadius, scale } from "../theme";
+import { spacing, borderRadius, scale, shadows } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { useFiltersStore, SavedFilter } from "../store/filtersStore";
 import { getDepartments, getMunicipalities } from "../services/divipola";
@@ -429,7 +429,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
           {/* Barra de búsqueda */}
           <View style={styles.searchBarContainer}>
             <View style={styles.searchBar}>
-              <Ionicons name="search" size={20} color={colors.textTertiary} />
+              <Ionicons name="search" size={22} color={colors.textTertiary} />
               <TextInput
                 style={styles.searchInput}
                 placeholder="Palabra clave, entidad..."
@@ -654,7 +654,11 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
                       {
                         backgroundColor: isActive
                           ? typeColor
-                          : colors.backgroundSecondary,
+                          : "transparent",
+                        borderWidth: 1,
+                        borderColor: isActive
+                          ? typeColor
+                          : typeColor + "30",
                       },
                     ]}
                     onPress={() => handleToggleTipo(config.id)}
@@ -679,24 +683,27 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
           {/* Botones */}
           <View style={styles.buttonsRow}>
             <TouchableOpacity
-              style={styles.searchButton}
+              style={[styles.searchButton, shadows.card]}
               onPress={() => {
                 setShowSuggestions(false);
                 handleSearch();
-              }}>
+              }}
+              activeOpacity={0.8}>
               <Ionicons name="search" size={18} color="#FFFFFF" />
               <Text style={styles.searchButtonText}>Buscar</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.saveFilterButton}
-              onPress={handleSaveFilter}>
+              onPress={handleSaveFilter}
+              activeOpacity={0.7}>
               <MarcadorIcon size={20} color={colors.accent} />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.alertButton}
-              onPress={handleCreateAlert}>
+              onPress={handleCreateAlert}
+              activeOpacity={0.7}>
               <AlertIcon size={20} color={colors.accent} />
             </TouchableOpacity>
           </View>
@@ -765,11 +772,13 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
 
           {!loading && hasSearched && processes.length === 0 && !error && (
             <View style={styles.emptyContainer}>
-              <Ionicons
-                name="search-outline"
-                size={48}
-                color={colors.textTertiary}
-              />
+              <View style={styles.emptyIconContainer}>
+                <Ionicons
+                  name="search-outline"
+                  size={44}
+                  color={colors.textTertiary}
+                />
+              </View>
               <Text style={styles.emptyTitle}>Sin resultados</Text>
               <Text style={styles.emptyMessage}>Prueba con otros filtros</Text>
             </View>
@@ -777,11 +786,13 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
 
           {!hasSearched && !loading && (
             <View style={styles.emptyContainer}>
-              <Ionicons
-                name="filter-outline"
-                size={48}
-                color={colors.textTertiary}
-              />
+              <View style={styles.emptyIconContainer}>
+                <Ionicons
+                  name="filter-outline"
+                  size={44}
+                  color={colors.textTertiary}
+                />
+              </View>
               <Text style={styles.emptyTitle}>Buscar procesos</Text>
               <Text style={styles.emptyMessage}>
                 Usa los filtros y presiona Buscar
@@ -909,7 +920,7 @@ const createStyles = (colors: any) =>
       alignItems: "center",
       marginBottom: spacing.md,
     },
-    title: { fontSize: scale(34), fontWeight: "700", color: colors.textPrimary },
+    title: { fontSize: scale(34), fontWeight: "800", color: colors.textPrimary, letterSpacing: -0.5 },
     clearButton: {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.xs,
@@ -927,11 +938,13 @@ const createStyles = (colors: any) =>
     searchBar: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.backgroundSecondary,
+      backgroundColor: "transparent",
       borderRadius: borderRadius.md,
       paddingHorizontal: spacing.md,
-      height: scale(44),
+      height: 42,
       gap: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.separatorLight,
     },
     searchInput: { flex: 1, fontSize: scale(16), color: colors.textPrimary },
     suggestionsContainer: {
@@ -994,16 +1007,16 @@ const createStyles = (colors: any) =>
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: colors.backgroundSecondary,
+      backgroundColor: "transparent",
       borderRadius: borderRadius.md,
       paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
       gap: spacing.xs,
-      minHeight: scale(40),
+      height: 42,
+      borderWidth: 1,
+      borderColor: colors.separatorLight,
     },
     locationButtonActive: {
       backgroundColor: colors.accentLight,
-      borderWidth: 1,
       borderColor: colors.accent,
     },
     locationButtonDisabled: { opacity: 0.5 },
@@ -1033,11 +1046,13 @@ const createStyles = (colors: any) =>
     chip: {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
-      backgroundColor: colors.backgroundSecondary,
+      backgroundColor: "transparent",
       borderRadius: borderRadius.full,
       marginRight: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.separatorLight,
     },
-    chipActive: { backgroundColor: colors.accent },
+    chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
     chipText: { fontSize: scale(13), color: colors.textSecondary, fontWeight: "500" },
     chipTextActive: { color: "#FFFFFF" },
     tiposChipsWrap: {
@@ -1068,7 +1083,7 @@ const createStyles = (colors: any) =>
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: colors.accent,
-      borderRadius: borderRadius.md,
+      borderRadius: borderRadius.lg,
       paddingVertical: spacing.md,
       gap: spacing.sm,
     },
@@ -1078,14 +1093,14 @@ const createStyles = (colors: any) =>
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: colors.accentLight,
-      borderRadius: borderRadius.md,
+      borderRadius: borderRadius.lg,
     },
     alertButton: {
       width: scale(48),
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: colors.accentLight,
-      borderRadius: borderRadius.md,
+      borderRadius: borderRadius.lg,
     },
     results: {
       paddingHorizontal: spacing.lg,
@@ -1099,7 +1114,7 @@ const createStyles = (colors: any) =>
     },
     resultsCount: {
       fontSize: scale(15),
-      fontWeight: "600",
+      fontWeight: "700",
       color: colors.textPrimary,
     },
     activeTypesRow: {
@@ -1131,9 +1146,17 @@ const createStyles = (colors: any) =>
     errorText: { flex: 1, fontSize: scale(14), color: colors.danger },
     retryText: { fontSize: scale(14), fontWeight: "600", color: colors.accent },
     emptyContainer: { alignItems: "center", paddingVertical: spacing.xxl * 2 },
+    emptyIconContainer: {
+      width: scale(88),
+      height: scale(88),
+      borderRadius: scale(44),
+      backgroundColor: colors.backgroundSecondary,
+      justifyContent: "center",
+      alignItems: "center",
+    },
     emptyTitle: {
       fontSize: scale(18),
-      fontWeight: "600",
+      fontWeight: "700",
       color: colors.textPrimary,
       marginTop: spacing.md,
     },
@@ -1141,6 +1164,8 @@ const createStyles = (colors: any) =>
       fontSize: scale(14),
       color: colors.textSecondary,
       marginTop: spacing.xs,
+      maxWidth: scale(240),
+      textAlign: "center",
     },
     modalOverlay: {
       flex: 1,
@@ -1168,7 +1193,7 @@ const createStyles = (colors: any) =>
       marginHorizontal: spacing.lg,
       marginVertical: spacing.md,
       paddingHorizontal: spacing.md,
-      height: scale(40),
+      height: 42,
       gap: spacing.sm,
     },
     modalSearchInput: { flex: 1, fontSize: scale(16), color: colors.textPrimary },
