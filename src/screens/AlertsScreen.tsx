@@ -19,6 +19,7 @@ import {
   ActivityIndicator,
   Animated,
 } from "react-native";
+import * as Notifications from "expo-notifications";
 import { Swipeable } from "react-native-gesture-handler";
 import {
   SafeAreaView,
@@ -868,10 +869,13 @@ const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
 
   const swipeableRefs = useRef<Map<string, Swipeable>>(new Map());
 
-  // Cargar alertas
+  // Cargar alertas y limpiar badge
   const loadAlerts = useCallback(async () => {
     if (!user) return;
     try {
+      // Limpiar badge al abrir la pantalla de alertas
+      Notifications.setBadgeCountAsync(0);
+
       const data = await getAlerts(user.id);
       setAlerts(data);
     } catch (error) {

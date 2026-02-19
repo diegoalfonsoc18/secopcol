@@ -16,12 +16,27 @@ interface SecopProcess {
 // CONFIGURACIÓN
 // ============================================
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
+  handleNotification: async (notification) => {
+    const data = notification.request.content.data;
+
+    // alert_match: sonido + badge (procesos nuevos detectados)
+    if (data?.type === "alert_match") {
+      return {
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      };
+    }
+
+    // daily_reminder y otros: sin sonido, mas discreto
+    return {
+      shouldPlaySound: false,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    };
+  },
 });
 
 // ============================================
