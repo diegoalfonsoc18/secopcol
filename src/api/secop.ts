@@ -6,7 +6,8 @@ import { SecopProcess } from "../types/index";
 const SECOP_API_URL = "https://www.datos.gov.co/resource/p6dx-8zbt.json";
 
 // App Token (aumenta límite de requests)
-const APP_TOKEN = "1GAPftJcOl9QDpfcWlwFeEqxC";
+// Se lee de variable de entorno para no exponer el token en el código fuente
+const APP_TOKEN = process.env.EXPO_PUBLIC_SECOP_APP_TOKEN || "";
 
 // Re-exportar SecopProcess
 export type { SecopProcess };
