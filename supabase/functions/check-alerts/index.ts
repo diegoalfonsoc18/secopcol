@@ -10,8 +10,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // CONSTANTES
 // ============================================
 const SECOP_API_URL = "https://www.datos.gov.co/resource/p6dx-8zbt.json";
-const SECOP_APP_TOKEN =
-  Deno.env.get("SECOP_APP_TOKEN") || "1GAPftJcOl9QDpfcWlwFeEqxC";
+const SECOP_APP_TOKEN = Deno.env.get("SECOP_APP_TOKEN") || "";
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -86,9 +85,17 @@ function buildSecopUrl(filters: AlertFilters, limit = 20): string {
 // ============================================
 // CONSULTAR SECOP API
 // ============================================
+interface SecopResult {
+  id_del_proceso: string;
+  nombre_del_procedimiento?: string;
+  entidad?: string;
+  precio_base?: string | number;
+  fase?: string;
+}
+
 async function querySecop(
   filters: AlertFilters
-): Promise<{ id_del_proceso: string }[]> {
+): Promise<SecopResult[]> {
   try {
     const url = buildSecopUrl(filters);
     const response = await fetch(url, {
@@ -228,10 +235,34 @@ serve(async (req: Request) => {
         if (newIds.length > 0 && alert.profiles?.push_token) {
           const pushToken = alert.profiles.push_token;
 
+          // Obtener detalles de los procesos nuevos para el body
+          const newProcesses = processes.filter(
+            (p) => p.id_del_proceso && newIds.includes(p.id_del_proceso)
+          );
+          const processLines = newProcesses.slice(0, 3).map(
+            (p) => `• ${(p.nombre_del_procedimiento || p.entidad || "").substring(0, 60)}`
+          );
+          const extra = newIds.length > 3 ? `\n...y ${newIds.length - 3} más` : "";
+          const body = processLines.join("\n") + extra;
+
+          // Resumen compacto para el data payload (max ~4KB para APNs)
+          const processSummaries = newProcesses.slice(0, 5).map((p) => ({
+            id: p.id_del_proceso,
+            nombre: (p.nombre_del_procedimiento || "").substring(0, 100),
+            entidad: (p.entidad || "").substring(0, 80),
+            precio: p.precio_base || null,
+            fase: p.fase || null,
+          }));
+
           const sent = await sendExpoPush(pushToken, {
-            title: alert.name,
-            body: `${newIds.length} nuevo${newIds.length > 1 ? "s" : ""} proceso${newIds.length > 1 ? "s" : ""} encontrado${newIds.length > 1 ? "s" : ""}`,
-            data: { type: "alert_match", alertId: alert.id },
+            title: `${alert.name} — ${newIds.length} nuevo${newIds.length > 1 ? "s" : ""}`,
+            body,
+            data: {
+              type: "alert_match",
+              alertId: alert.id,
+              newProcessIds: newIds.slice(0, 10),
+              processSummaries,
+            },
           });
 
           if (sent) {

@@ -25,6 +25,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
@@ -36,12 +37,24 @@ import {
   toggleAlert,
   ALERT_FREQUENCY_HOURS,
 } from "../services/alertService";
+import { getProcessById } from "../api/secop";
 import { Alert as AlertType, AlertFilters } from "../types/database";
 import { useHaptics } from "../hooks/useHaptics";
 import { FadeIn, SlideInUp } from "../components/Animations";
 import { getDepartments, getMunicipalities } from "../services/divipola";
 import { AlertIcon } from "../assets/icons";
 import { spacing, scale, borderRadius, typography } from "../theme";
+
+// ============================================
+// TIPOS PARA PROCESOS DE NOTIFICACIÓN
+// ============================================
+interface ProcessSummary {
+  id: string;
+  nombre: string;
+  entidad: string;
+  precio: string | number | null;
+  fase: string | null;
+}
 
 // ============================================
 // CONSTANTES DE FILTROS
@@ -850,13 +863,199 @@ const AlertModal: React.FC<AlertModalProps> = ({
 };
 
 // ============================================
+// COMPONENTE: MODAL DE PROCESOS NUEVOS DETECTADOS
+// ============================================
+interface NewProcessesModalProps {
+  visible: boolean;
+  processes: ProcessSummary[];
+  onClose: () => void;
+  onViewProcess: (processId: string) => void;
+  colors: any;
+}
+
+const formatPrice = (price: string | number | null): string => {
+  if (!price) return "";
+  const num = typeof price === "string" ? parseFloat(price) : price;
+  if (isNaN(num)) return "";
+  return `$${num.toLocaleString("es-CO", { maximumFractionDigits: 0 })}`;
+};
+
+const NewProcessesModal: React.FC<NewProcessesModalProps> = ({
+  visible,
+  processes,
+  onClose,
+  onViewProcess,
+  colors,
+}) => {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent>
+      <View style={styles.modalOverlay}>
+        <View
+          style={[
+            styles.newProcessesModalContent,
+            {
+              backgroundColor: colors.background,
+              paddingBottom: insets.bottom + spacing.lg,
+            },
+          ]}>
+          {/* Header */}
+          <View style={styles.newProcessesHeader}>
+            <View style={styles.newProcessesTitleRow}>
+              <View
+                style={[
+                  styles.newProcessesIconBg,
+                  { backgroundColor: colors.accentLight },
+                ]}>
+                <Ionicons
+                  name="notifications"
+                  size={20}
+                  color={colors.accent}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[
+                    styles.newProcessesTitle,
+                    { color: colors.textPrimary },
+                  ]}>
+                  Procesos detectados
+                </Text>
+                <Text
+                  style={[
+                    styles.newProcessesSubtitle,
+                    { color: colors.textSecondary },
+                  ]}>
+                  {processes.length} nuevo
+                  {processes.length > 1 ? "s" : ""} proceso
+                  {processes.length > 1 ? "s" : ""}
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              onPress={onClose}
+              style={[
+                styles.newProcessesCloseButton,
+                { backgroundColor: colors.backgroundSecondary },
+              ]}>
+              <Ionicons name="close" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Lista de procesos */}
+          <ScrollView
+            style={styles.newProcessesList}
+            showsVerticalScrollIndicator={false}>
+            {processes.map((process, index) => (
+              <TouchableOpacity
+                key={process.id || index}
+                style={[
+                  styles.newProcessCard,
+                  { backgroundColor: colors.backgroundSecondary },
+                  Platform.select({
+                    ios: {
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.04,
+                      shadowRadius: 8,
+                    },
+                    android: {
+                      borderWidth: 1,
+                      borderColor: "rgba(0,0,0,0.06)",
+                    },
+                  }),
+                ]}
+                onPress={() => onViewProcess(process.id)}
+                activeOpacity={0.7}>
+                <View style={styles.newProcessCardHeader}>
+                  <View
+                    style={[
+                      styles.newProcessNumber,
+                      { backgroundColor: colors.accentLight },
+                    ]}>
+                    <Text
+                      style={[
+                        styles.newProcessNumberText,
+                        { color: colors.accent },
+                      ]}>
+                      {index + 1}
+                    </Text>
+                  </View>
+                  {process.fase && (
+                    <View
+                      style={[
+                        styles.newProcessFaseBadge,
+                        { backgroundColor: colors.accentLight },
+                      ]}>
+                      <Text
+                        style={[
+                          styles.newProcessFaseText,
+                          { color: colors.accent },
+                        ]}>
+                        {process.fase}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <Text
+                  style={[
+                    styles.newProcessName,
+                    { color: colors.textPrimary },
+                  ]}
+                  numberOfLines={2}>
+                  {process.nombre || "Sin nombre"}
+                </Text>
+                <Text
+                  style={[
+                    styles.newProcessEntity,
+                    { color: colors.textSecondary },
+                  ]}
+                  numberOfLines={1}>
+                  {process.entidad || "Entidad no especificada"}
+                </Text>
+                {process.precio && (
+                  <Text
+                    style={[
+                      styles.newProcessPrice,
+                      { color: colors.accent },
+                    ]}>
+                    {formatPrice(process.precio)}
+                  </Text>
+                )}
+                <View style={styles.newProcessFooter}>
+                  <Text
+                    style={[
+                      styles.newProcessViewText,
+                      { color: colors.accent },
+                    ]}>
+                    Ver detalle
+                  </Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={14}
+                    color={colors.accent}
+                  />
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+// ============================================
 // PANTALLA PRINCIPAL
 // ============================================
-const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
+const AlertsScreen: React.FC<{ route?: any; navigation?: any }> = ({ route, navigation: navProp }) => {
   const { colors } = useTheme();
   const { user } = useAuth();
   const haptics = useHaptics();
   const insets = useSafeAreaInsets();
+
+  const navigation = navProp || useNavigation();
 
   const [alerts, setAlerts] = useState<AlertType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -866,6 +1065,8 @@ const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
   const [initialFilters, setInitialFilters] = useState<
     AlertFilters | undefined
   >();
+  const [newProcesses, setNewProcesses] = useState<ProcessSummary[]>([]);
+  const [showNewProcesses, setShowNewProcesses] = useState(false);
 
   const swipeableRefs = useRef<Map<string, Swipeable>>(new Map());
 
@@ -898,6 +1099,32 @@ const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
       setModalVisible(true);
     }
   }, [route?.params?.createWithFilters]);
+
+  // Mostrar procesos detectados desde notificación
+  useEffect(() => {
+    if (route?.params?.newProcesses && route.params.newProcesses.length > 0) {
+      setNewProcesses(route.params.newProcesses);
+      setShowNewProcesses(true);
+    }
+  }, [route?.params?.newProcesses]);
+
+  // Navegar a detalle de un proceso detectado
+  const handleViewProcess = useCallback(
+    async (processId: string) => {
+      try {
+        const process = await getProcessById(processId);
+        if (process) {
+          setShowNewProcesses(false);
+          navigation.navigate("Detail", { process });
+        } else {
+          Alert.alert("Error", "No se pudo cargar el proceso");
+        }
+      } catch {
+        Alert.alert("Error", "Error al cargar el proceso");
+      }
+    },
+    [navigation],
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -1063,7 +1290,7 @@ const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
         )}
       </ScrollView>
 
-      {/* Modal */}
+      {/* Modal crear/editar alerta */}
       <AlertModal
         visible={modalVisible}
         alert={editingAlert}
@@ -1074,6 +1301,15 @@ const AlertsScreen: React.FC<{ route?: any }> = ({ route }) => {
           setInitialFilters(undefined);
         }}
         onSave={handleSave}
+        colors={colors}
+      />
+
+      {/* Modal procesos nuevos detectados */}
+      <NewProcessesModal
+        visible={showNewProcesses}
+        processes={newProcesses}
+        onClose={() => setShowNewProcesses(false)}
+        onViewProcess={handleViewProcess}
         colors={colors}
       />
     </View>
@@ -1304,6 +1540,106 @@ const styles = StyleSheet.create({
   emptyList: {
     padding: spacing.xl,
     alignItems: "center",
+  },
+
+  // New Processes Modal
+  newProcessesModalContent: {
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    maxHeight: "85%",
+  },
+  newProcessesHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: spacing.lg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(0,0,0,0.1)",
+  },
+  newProcessesTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    flex: 1,
+  },
+  newProcessesIconBg: {
+    width: scale(40),
+    height: scale(40),
+    borderRadius: borderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  newProcessesTitle: {
+    ...typography.headline,
+  },
+  newProcessesSubtitle: {
+    ...typography.caption1,
+    marginTop: 2,
+  },
+  newProcessesCloseButton: {
+    width: scale(32),
+    height: scale(32),
+    borderRadius: borderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  newProcessesList: {
+    padding: spacing.lg,
+  },
+  newProcessCard: {
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
+  },
+  newProcessCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  newProcessNumber: {
+    width: scale(24),
+    height: scale(24),
+    borderRadius: borderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  newProcessNumberText: {
+    ...typography.caption2,
+    fontWeight: "700",
+  },
+  newProcessFaseBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.full,
+  },
+  newProcessFaseText: {
+    ...typography.caption2,
+    fontWeight: "600",
+  },
+  newProcessName: {
+    ...typography.subhead,
+    fontWeight: "600",
+    marginBottom: spacing.xs,
+  },
+  newProcessEntity: {
+    ...typography.caption1,
+    marginBottom: spacing.xs,
+  },
+  newProcessPrice: {
+    ...typography.callout,
+    fontWeight: "700",
+    marginBottom: spacing.sm,
+  },
+  newProcessFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  newProcessViewText: {
+    ...typography.caption1,
+    fontWeight: "600",
   },
 });
 

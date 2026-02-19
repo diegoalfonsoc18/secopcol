@@ -75,6 +75,11 @@ export async function checkAlertsForUser(userId: string): Promise<number> {
         const previousIds = new Set(alert.last_results_ids || []);
         const newIds = currentIds.filter((id) => !previousIds.has(id));
 
+        // Obtener los procesos nuevos con sus detalles
+        const newProcesses = processes.filter(
+          (p) => p.id_del_proceso && newIds.includes(p.id_del_proceso)
+        );
+
         // Enviar notificacion local si hay procesos nuevos
         // Primero verificar si el servidor ya envio push para esta alerta
         // (deduplicacion cliente/servidor)
@@ -98,11 +103,32 @@ export async function checkAlertsForUser(userId: string): Promise<number> {
           }
 
           if (shouldSendLocal) {
+            // Construir body con resumen de los procesos encontrados
+            const processLines = newProcesses.slice(0, 3).map(
+              (p) => `• ${(p.nombre_del_procedimiento || p.entidad || "").substring(0, 60)}`
+            );
+            const extra = newIds.length > 3 ? `\n...y ${newIds.length - 3} más` : "";
+            const body = processLines.join("\n") + extra;
+
+            // Incluir resumen de procesos en el data para mostrar en la app
+            const processSummaries = newProcesses.slice(0, 5).map((p) => ({
+              id: p.id_del_proceso,
+              nombre: (p.nombre_del_procedimiento || "").substring(0, 100),
+              entidad: (p.entidad || "").substring(0, 80),
+              precio: p.precio_base || null,
+              fase: p.fase || null,
+            }));
+
             await Notifications.scheduleNotificationAsync({
               content: {
-                title: alert.name,
-                body: `${newIds.length} nuevo${newIds.length > 1 ? "s" : ""} proceso${newIds.length > 1 ? "s" : ""} encontrado${newIds.length > 1 ? "s" : ""}`,
-                data: { type: "alert_match", alertId: alert.id },
+                title: `${alert.name} — ${newIds.length} nuevo${newIds.length > 1 ? "s" : ""}`,
+                body,
+                data: {
+                  type: "alert_match",
+                  alertId: alert.id,
+                  newProcessIds: newIds.slice(0, 10),
+                  processSummaries,
+                },
                 sound: true,
               },
               trigger: null,

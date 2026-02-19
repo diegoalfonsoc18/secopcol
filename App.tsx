@@ -109,6 +109,7 @@ function AlertsStackNavigator() {
         contentStyle: { backgroundColor: colors.background },
       }}>
       <Stack.Screen name="AlertsTab" component={AlertsScreen} />
+      <Stack.Screen name="Detail" component={DetailScreen} />
     </Stack.Navigator>
   );
 }
@@ -312,13 +313,19 @@ const navigationRef = React.createRef<NavigationContainerRef<any>>();
 function AppContent() {
   const { colors, isDark } = useTheme();
 
-  // Manejar tap en notificacion: navegar al tab Alertas
+  // Manejar tap en notificacion: navegar al tab Alertas con procesos detectados
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener(
       (response) => {
         const data = response.notification.request.content.data;
         if (data?.type === "alert_match" && navigationRef.current) {
-          navigationRef.current.navigate("Alerts");
+          navigationRef.current.navigate("Alerts", {
+            screen: "AlertsTab",
+            params: {
+              newProcesses: data.processSummaries || [],
+              alertId: data.alertId,
+            },
+          });
         }
       }
     );
@@ -328,8 +335,6 @@ function AppContent() {
   // Manejar deep links de Supabase
   useEffect(() => {
     const handleDeepLink = async (url: string) => {
-      console.log("Deep link received:", url);
-
       if (
         url.includes("access_token") ||
         url.includes("refresh_token") ||
@@ -343,22 +348,18 @@ function AppContent() {
           const accessToken = params.get("access_token");
           const refreshToken = params.get("refresh_token");
 
-          console.log("Tokens found:", !!accessToken, !!refreshToken);
-
           if (accessToken && refreshToken) {
-            const { data, error } = await supabase.auth.setSession({
+            const { error } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken,
             });
 
             if (error) {
-              console.error("Error setting session:", error);
-            } else {
-              console.log("Session set successfully:", !!data.session);
+              console.error("Error setting session from deep link");
             }
           }
-        } catch (error) {
-          console.error("Error handling deep link:", error);
+        } catch {
+          console.error("Error handling auth deep link");
         }
       }
     };
