@@ -225,8 +225,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                       styles.statCard,
                       {
                         backgroundColor: card.bgColor,
-                        borderLeftWidth: 3,
-                        borderLeftColor: card.color,
                       },
                     ]}
                     onPress={card.onPress}
