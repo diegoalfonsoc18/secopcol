@@ -507,9 +507,6 @@ _Enviado desde SECOP Colombia App_`;
                 <>
                   <Ionicons name="sparkles" size={20} color={colors.accent} />
                   <Text style={styles.analyzeButtonText}>Analizar con IA</Text>
-                  <View style={styles.analyzeButtonBadge}>
-                    <Text style={styles.analyzeButtonBadgeText}>Gratis</Text>
-                  </View>
                 </>
               )}
             </TouchableOpacity>
