@@ -9,12 +9,13 @@ import {
   View,
   ActivityIndicator,
   Alert,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
-import { spacing, borderRadius } from "../theme";
+import { spacing, borderRadius, typography, scale } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { useHaptics } from "../hooks/useHaptics";
 import { FadeIn, SlideInUp } from "../components/Animations";
@@ -288,7 +289,7 @@ _Enviado desde SECOP Colombia App_`;
       <View style={styles.aiSection}>
         <View style={styles.aiHeader}>
           <View style={styles.aiTitleRow}>
-            <Ionicons name="sparkles" size={20} color="#8B5CF6" />
+            <Ionicons name="sparkles" size={20} color={colors.accent} />
             <Text style={styles.aiTitle}>Análisis IA</Text>
           </View>
           <View style={styles.aiBadge}>
@@ -392,18 +393,26 @@ _Enviado desde SECOP Colombia App_`;
             haptics.light();
             navigation.goBack();
           }}
-          style={styles.backButton}>
+          style={styles.backButton}
+          accessibilityLabel="Volver"
+          accessibilityRole="button">
           <Ionicons name="chevron-back" size={24} color={colors.accent} />
           <Text style={styles.backText}>Atrás</Text>
         </TouchableOpacity>
 
         <View style={styles.headerActions}>
-          <TouchableOpacity onPress={handleShare} style={styles.headerButton}>
+          <TouchableOpacity
+            onPress={handleShare}
+            style={styles.headerButton}
+            accessibilityLabel="Compartir proceso"
+            accessibilityRole="button">
             <Ionicons name="share-outline" size={22} color={colors.accent} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleToggleFavorite}
-            style={styles.headerButton}>
+            style={styles.headerButton}
+            accessibilityLabel={favorite ? "Quitar de favoritos" : "Agregar a favoritos"}
+            accessibilityRole="button">
             <Ionicons
               name={favorite ? "heart" : "heart-outline"}
               size={22}
@@ -486,15 +495,17 @@ _Enviado desde SECOP Colombia App_`;
                 analyzing && styles.analyzeButtonDisabled,
               ]}
               onPress={handleAnalyze}
-              disabled={analyzing}>
+              disabled={analyzing}
+              accessibilityLabel={analyzing ? "Analizando proceso" : "Analizar con inteligencia artificial"}
+              accessibilityRole="button">
               {analyzing ? (
                 <>
-                  <ActivityIndicator size="small" color="#8B5CF6" />
+                  <ActivityIndicator size="small" color={colors.accent} />
                   <Text style={styles.analyzeButtonText}>Analizando...</Text>
                 </>
               ) : (
                 <>
-                  <Ionicons name="sparkles" size={20} color="#8B5CF6" />
+                  <Ionicons name="sparkles" size={20} color={colors.accent} />
                   <Text style={styles.analyzeButtonText}>Analizar con IA</Text>
                   <View style={styles.analyzeButtonBadge}>
                     <Text style={styles.analyzeButtonBadgeText}>Gratis</Text>
@@ -647,7 +658,11 @@ _Enviado desde SECOP Colombia App_`;
         )}
 
         {/* Botón Ver en SECOP */}
-        <TouchableOpacity style={styles.secopButton} onPress={handleOpenSecop}>
+        <TouchableOpacity
+          style={styles.secopButton}
+          onPress={handleOpenSecop}
+          accessibilityLabel="Ver en SECOP II"
+          accessibilityRole="link">
           <Ionicons
             name="open-outline"
             size={20}
@@ -683,7 +698,7 @@ const createStyles = (colors: any) =>
       gap: spacing.xs,
     },
     backText: {
-      fontSize: 17,
+      ...typography.headline,
       color: colors.accent,
     },
     headerActions: {
@@ -709,14 +724,14 @@ const createStyles = (colors: any) =>
       flex: 1,
     },
     idLabel: {
-      fontSize: 11,
+      ...typography.caption2,
       fontWeight: "600",
       color: colors.textTertiary,
       letterSpacing: 1,
-      marginBottom: 4,
+      marginBottom: spacing.xs,
     },
     idValue: {
-      fontSize: 16,
+      ...typography.callout,
       fontWeight: "700",
       color: colors.accent,
     },
@@ -731,14 +746,14 @@ const createStyles = (colors: any) =>
       paddingHorizontal: spacing.sm,
       paddingVertical: spacing.xs,
       borderRadius: borderRadius.full,
-      gap: 4,
+      gap: spacing.xs,
     },
     phaseText: {
-      fontSize: 11,
+      ...typography.caption2,
       fontWeight: "600",
     },
     procedureName: {
-      fontSize: 15,
+      ...typography.subhead,
       fontWeight: "600",
       color: colors.accent,
       marginBottom: spacing.lg,
@@ -748,9 +763,21 @@ const createStyles = (colors: any) =>
       borderRadius: borderRadius.md,
       padding: spacing.lg,
       marginBottom: spacing.lg,
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.04,
+          shadowRadius: 8,
+        },
+        android: {
+          borderWidth: 1,
+          borderColor: colors.separatorLight,
+        },
+      }),
     },
     descriptionLabel: {
-      fontSize: 12,
+      ...typography.caption1,
       fontWeight: "600",
       color: colors.textTertiary,
       textTransform: "uppercase",
@@ -758,9 +785,8 @@ const createStyles = (colors: any) =>
       marginBottom: spacing.sm,
     },
     descriptionText: {
-      fontSize: 15,
+      ...typography.subhead,
       color: colors.textPrimary,
-      lineHeight: 22,
     },
 
     // Botón Analizar con IA
@@ -768,9 +794,9 @@ const createStyles = (colors: any) =>
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: "rgba(139, 92, 246, 0.1)",
+      backgroundColor: colors.accentLight,
       borderWidth: 1,
-      borderColor: "#8B5CF6",
+      borderColor: colors.accent,
       borderRadius: borderRadius.md,
       paddingVertical: spacing.md,
       paddingHorizontal: spacing.lg,
@@ -781,20 +807,20 @@ const createStyles = (colors: any) =>
       opacity: 0.7,
     },
     analyzeButtonText: {
-      fontSize: 15,
+      ...typography.subhead,
       fontWeight: "600",
-      color: "#8B5CF6",
+      color: colors.accent,
     },
     analyzeButtonBadge: {
-      backgroundColor: "#8B5CF6",
+      backgroundColor: colors.accent,
       paddingHorizontal: spacing.sm,
       paddingVertical: 2,
       borderRadius: borderRadius.full,
     },
     analyzeButtonBadgeText: {
-      fontSize: 10,
+      fontSize: scale(10),
       fontWeight: "700",
-      color: "#FFFFFF",
+      color: colors.background,
     },
 
     // Sección Análisis IA
@@ -813,26 +839,38 @@ const createStyles = (colors: any) =>
       gap: spacing.sm,
     },
     aiTitle: {
-      fontSize: 18,
+      ...typography.title3,
       fontWeight: "700",
       color: colors.textPrimary,
     },
     aiBadge: {
-      backgroundColor: "rgba(139, 92, 246, 0.15)",
+      backgroundColor: colors.accentLight,
       paddingHorizontal: spacing.sm,
-      paddingVertical: 4,
+      paddingVertical: spacing.xs,
       borderRadius: borderRadius.full,
     },
     aiBadgeText: {
-      fontSize: 11,
+      ...typography.caption2,
       fontWeight: "600",
-      color: "#8B5CF6",
+      color: colors.accent,
     },
     aiCard: {
       backgroundColor: colors.backgroundSecondary,
       borderRadius: borderRadius.md,
       padding: spacing.md,
       marginBottom: spacing.sm,
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.04,
+          shadowRadius: 8,
+        },
+        android: {
+          borderWidth: 1,
+          borderColor: colors.separatorLight,
+        },
+      }),
     },
     aiCardHeader: {
       flexDirection: "row",
@@ -841,20 +879,19 @@ const createStyles = (colors: any) =>
       marginBottom: spacing.sm,
     },
     aiCardTitle: {
-      fontSize: 14,
+      ...typography.footnote,
       fontWeight: "600",
       color: colors.textPrimary,
     },
     aiCardText: {
-      fontSize: 14,
+      ...typography.footnote,
       color: colors.textSecondary,
-      lineHeight: 20,
     },
     aiList: {
       marginTop: spacing.sm,
     },
     aiListLabel: {
-      fontSize: 12,
+      ...typography.caption1,
       fontWeight: "600",
       color: colors.textTertiary,
       marginBottom: spacing.xs,
@@ -863,17 +900,16 @@ const createStyles = (colors: any) =>
       flexDirection: "row",
       alignItems: "flex-start",
       gap: spacing.xs,
-      marginBottom: 4,
+      marginBottom: spacing.xs,
     },
     aiText: {
-      fontSize: 14,
+      ...typography.footnote,
       color: colors.textSecondary,
-      lineHeight: 20,
-      marginBottom: 6,
+      marginBottom: spacing.sm,
     },
     aiListText: {
       flex: 1,
-      fontSize: 13,
+      ...typography.footnote,
       color: colors.textSecondary,
     },
     aiDateRow: {
@@ -883,11 +919,11 @@ const createStyles = (colors: any) =>
       paddingVertical: spacing.xs,
     },
     aiDateLabel: {
-      fontSize: 13,
+      ...typography.footnote,
       color: colors.textSecondary,
     },
     aiDateValue: {
-      fontSize: 13,
+      ...typography.footnote,
       fontWeight: "600",
       color: colors.textPrimary,
     },
@@ -900,19 +936,18 @@ const createStyles = (colors: any) =>
     aiRecommendationNumber: {
       width: 20,
       height: 20,
-      borderRadius: 10,
+      borderRadius: borderRadius.full,
       backgroundColor: colors.warningLight,
       color: colors.warning,
-      fontSize: 12,
+      ...typography.caption1,
       fontWeight: "700",
       textAlign: "center",
       lineHeight: 20,
     },
     aiRecommendationText: {
       flex: 1,
-      fontSize: 13,
+      ...typography.footnote,
       color: colors.textSecondary,
-      lineHeight: 18,
     },
 
     priceCard: {
@@ -920,6 +955,18 @@ const createStyles = (colors: any) =>
       borderRadius: borderRadius.md,
       padding: spacing.lg,
       marginBottom: spacing.lg,
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.04,
+          shadowRadius: 8,
+        },
+        android: {
+          borderWidth: 1,
+          borderColor: colors.separatorLight,
+        },
+      }),
     },
     priceHeader: {
       flexDirection: "row",
@@ -928,12 +975,12 @@ const createStyles = (colors: any) =>
       marginBottom: spacing.sm,
     },
     priceLabel: {
-      fontSize: 14,
+      ...typography.footnote,
       fontWeight: "600",
       color: colors.textSecondary,
     },
     priceValue: {
-      fontSize: 26,
+      ...typography.title1,
       fontWeight: "700",
       color: colors.accent,
     },
@@ -947,7 +994,7 @@ const createStyles = (colors: any) =>
       marginBottom: spacing.md,
     },
     sectionTitle: {
-      fontSize: 18,
+      ...typography.title3,
       fontWeight: "700",
       color: colors.textPrimary,
     },
@@ -955,6 +1002,18 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.backgroundSecondary,
       borderRadius: borderRadius.md,
       overflow: "hidden",
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.04,
+          shadowRadius: 8,
+        },
+        android: {
+          borderWidth: 1,
+          borderColor: colors.separatorLight,
+        },
+      }),
     },
     infoRow: {
       flexDirection: "row",
@@ -962,13 +1021,13 @@ const createStyles = (colors: any) =>
       padding: spacing.md,
     },
     infoRowBorder: {
-      borderBottomWidth: 1,
+      borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: colors.separatorLight,
     },
     infoIconContainer: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
+      width: scale(36),
+      height: scale(36),
+      borderRadius: borderRadius.full,
       backgroundColor: colors.accentLight,
       justifyContent: "center",
       alignItems: "center",
@@ -978,14 +1037,12 @@ const createStyles = (colors: any) =>
       flex: 1,
     },
     infoLabel: {
-      fontSize: 12,
-      fontWeight: "500",
+      ...typography.caption1,
       color: colors.textTertiary,
       marginBottom: 2,
     },
     infoValue: {
-      fontSize: 15,
-      fontWeight: "500",
+      ...typography.subhead,
       color: colors.textPrimary,
     },
     secopButton: {
@@ -999,7 +1056,7 @@ const createStyles = (colors: any) =>
       marginTop: spacing.md,
     },
     secopButtonText: {
-      fontSize: 16,
+      ...typography.callout,
       fontWeight: "600",
       color: colors.backgroundSecondary,
     },
