@@ -5,7 +5,7 @@ import * as TaskManager from "expo-task-manager";
 import * as BackgroundTask from "expo-background-task";
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getAlerts, updateAlertResults } from "./alertService";
+import { getAlerts, getAlert, updateAlertResults } from "./alertService";
 import { advancedSearch } from "../api/secop";
 
 // ============================================
@@ -75,18 +75,40 @@ export async function checkAlertsForUser(userId: string): Promise<number> {
         const previousIds = new Set(alert.last_results_ids || []);
         const newIds = currentIds.filter((id) => !previousIds.has(id));
 
-        // Enviar notificacion si hay procesos nuevos
+        // Enviar notificacion local si hay procesos nuevos
+        // Primero verificar si el servidor ya envio push para esta alerta
+        // (deduplicacion cliente/servidor)
         if (newIds.length > 0) {
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: alert.name,
-              body: `${newIds.length} nuevo${newIds.length > 1 ? "s" : ""} proceso${newIds.length > 1 ? "s" : ""} encontrado${newIds.length > 1 ? "s" : ""}`,
-              data: { type: "alert_match", alertId: alert.id },
-              sound: true,
-            },
-            trigger: null,
-          });
-          notificationsSent++;
+          let shouldSendLocal = true;
+
+          try {
+            const freshAlert = await getAlert(alert.id);
+            if (freshAlert?.last_check) {
+              const serverLastCheck = new Date(freshAlert.last_check);
+              const clientLastCheck = alert.last_check
+                ? new Date(alert.last_check)
+                : new Date(0);
+              // Si el servidor ya checkeo mas recientemente, no enviar local
+              if (serverLastCheck > clientLastCheck) {
+                shouldSendLocal = false;
+              }
+            }
+          } catch {
+            // Si falla la verificacion, enviar local como fallback
+          }
+
+          if (shouldSendLocal) {
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: alert.name,
+                body: `${newIds.length} nuevo${newIds.length > 1 ? "s" : ""} proceso${newIds.length > 1 ? "s" : ""} encontrado${newIds.length > 1 ? "s" : ""}`,
+                data: { type: "alert_match", alertId: alert.id },
+                sound: true,
+              },
+              trigger: null,
+            });
+            notificationsSent++;
+          }
         }
 
         // Actualizar resultados en Supabase
@@ -109,6 +131,8 @@ export async function checkAlertsForUser(userId: string): Promise<number> {
 // ============================================
 // DEFINIR BACKGROUND TASK
 // ============================================
+const BG_TASK_LOG_KEY = "secop-last-bg-task-run";
+
 TaskManager.defineTask(ALERT_CHECK_TASK, async () => {
   try {
     const userId = await getUserIdFromStorage();
@@ -117,11 +141,20 @@ TaskManager.defineTask(ALERT_CHECK_TASK, async () => {
       return BackgroundTask.BackgroundTaskResult.Failed;
     }
 
-    const sent = await checkAlertsForUser(userId);
+    // Timeout de 25s para evitar que el OS mate el task
+    const timeoutPromise = new Promise<number>((_, reject) =>
+      setTimeout(() => reject(new Error("Background task timeout (25s)")), 25000)
+    );
 
-    return sent > 0
-      ? BackgroundTask.BackgroundTaskResult.Success
-      : BackgroundTask.BackgroundTaskResult.Success;
+    const sent = await Promise.race([
+      checkAlertsForUser(userId),
+      timeoutPromise,
+    ]);
+
+    // Guardar timestamp para debugging
+    await AsyncStorage.setItem(BG_TASK_LOG_KEY, new Date().toISOString());
+
+    return BackgroundTask.BackgroundTaskResult.Success;
   } catch (error) {
     console.error("Background alert check failed:", error);
     return BackgroundTask.BackgroundTaskResult.Failed;

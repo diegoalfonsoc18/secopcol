@@ -27,7 +27,8 @@
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "RECEIVE_BOOT_COMPLETED"
+        "RECEIVE_BOOT_COMPLETED",
+        "SCHEDULE_EXACT_ALARM"
       ]
     },
     "plugins": [
@@ -47,7 +48,14 @@
         }
       ],
       "expo-web-browser",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "color": "#007AFF",
+          "defaultChannel": "secop-alerts",
+          "enableBackgroundRemoteNotifications": true
+        }
+      ],
       "expo-background-task"
     ],
     "experiments": {
