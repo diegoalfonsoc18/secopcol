@@ -35,7 +35,6 @@ import {
   updateAlert,
   deleteAlert,
   toggleAlert,
-  ALERT_FREQUENCY_HOURS,
 } from "../services/alertService";
 import { getProcessById } from "../api/secop";
 import { Alert as AlertType, AlertFilters } from "../types/database";
@@ -215,18 +214,6 @@ const AlertCard: React.FC<AlertCardProps> = ({
         </Text>
 
         <View style={styles.alertFooter}>
-          <View style={styles.alertMeta}>
-            <Ionicons
-              name="time-outline"
-              size={14}
-              color={colors.textTertiary}
-            />
-            <Text
-              style={[styles.alertMetaText, { color: colors.textTertiary }]}>
-              Cada {ALERT_FREQUENCY_HOURS} horas
-            </Text>
-          </View>
-
           {alert.last_check && (
             <View style={styles.alertMeta}>
               <Ionicons
@@ -672,9 +659,8 @@ const AlertModal: React.FC<AlertModalProps> = ({
                 color={colors.accent}
               />
               <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-                Recibirás una notificación cada {ALERT_FREQUENCY_HOURS} horas
-                cuando se publiquen nuevos procesos que coincidan con tus
-                filtros.
+                Recibirás una notificación cuando se publiquen nuevos procesos
+                que coincidan con tus filtros.
               </Text>
             </View>
           </ScrollView>
