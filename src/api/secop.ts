@@ -5,6 +5,9 @@ import { SecopProcess } from "../types/index";
 
 const SECOP_API_URL = "https://www.datos.gov.co/resource/p6dx-8zbt.json";
 
+// Escapar comillas simples para prevenir SoQL injection
+const escapeSoql = (val: string) => val.replace(/'/g, "''");
+
 // App Token (aumenta límite de requests)
 // Se lee de variable de entorno para no exponer el token en el código fuente
 const APP_TOKEN = process.env.EXPO_PUBLIC_SECOP_APP_TOKEN || "";
@@ -63,7 +66,7 @@ const buildQuery = (params: {
     const date = new Date();
     date.setDate(date.getDate() - params.recentDays);
     const dateStr = date.toISOString().split("T")[0];
-    conditions.push(`fecha_de_ultima_publicaci >= '${dateStr}'`);
+    conditions.push(`fecha_de_ultima_publicaci >= '${escapeSoql(dateStr)}'`);
   } else if (params.requireDate !== false) {
     conditions.push("fecha_de_ultima_publicaci IS NOT NULL");
   }
@@ -74,7 +77,7 @@ const buildQuery = (params: {
       .replace(/,/g, "")
       .replace(/\s+/g, " ")
       .trim();
-    conditions.push(`upper(ciudad_entidad) LIKE upper('%${cleanMunicipio}%')`);
+    conditions.push(`upper(ciudad_entidad) LIKE upper('%${escapeSoql(cleanMunicipio)}%')`);
   }
 
   if (params.departamento) {
@@ -84,24 +87,24 @@ const buildQuery = (params: {
       .replace(/\s+/g, " ")
       .trim();
     conditions.push(
-      `upper(departamento_entidad) LIKE upper('%${cleanDepartamento}%')`,
+      `upper(departamento_entidad) LIKE upper('%${escapeSoql(cleanDepartamento)}%')`,
     );
   }
 
   if (params.fase) {
-    conditions.push(`fase='${params.fase}'`);
+    conditions.push(`fase='${escapeSoql(params.fase)}'`);
   }
 
   if (params.modalidad) {
-    conditions.push(`modalidad_de_contratacion='${params.modalidad}'`);
+    conditions.push(`modalidad_de_contratacion='${escapeSoql(params.modalidad)}'`);
   }
 
   if (params.tipoContrato) {
-    conditions.push(`tipo_de_contrato='${params.tipoContrato}'`);
+    conditions.push(`tipo_de_contrato='${escapeSoql(params.tipoContrato)}'`);
   }
 
   if (params.keyword) {
-    const keyword = params.keyword.replace(/'/g, "''");
+    const keyword = escapeSoql(params.keyword);
     conditions.push(
       `(upper(descripci_n_del_procedimiento) LIKE upper('%${keyword}%') OR upper(entidad) LIKE upper('%${keyword}%') OR upper(nombre_del_procedimiento) LIKE upper('%${keyword}%'))`,
     );
@@ -221,7 +224,7 @@ export const getProcessById = async (
   id: string,
 ): Promise<SecopProcess | null> => {
   const query = `$where=${encodeURIComponent(
-    `id_del_proceso='${id}'`,
+    `id_del_proceso='${escapeSoql(id)}'`,
   )}&$limit=1`;
   const results = await fetchSecop(query);
   return results.length > 0 ? results[0] : null;
@@ -232,7 +235,7 @@ export const getCountByMunicipality = async (
 ): Promise<number> => {
   try {
     const url = `${SECOP_API_URL}?$select=count(*)&$where=${encodeURIComponent(
-      `ciudad_entidad='${municipio}'`,
+      `ciudad_entidad='${escapeSoql(municipio)}'`,
     )}`;
     const response = await fetch(url, { headers: getHeaders() });
     const data = await response.json();

@@ -29,6 +29,9 @@ interface AlertFilters {
   fase?: string;
 }
 
+// Escapar comillas simples para prevenir SoQL injection
+const escapeSoql = (val: string) => val.replace(/'/g, "''");
+
 function buildSecopUrl(filters: AlertFilters, limit = 20): string {
   const conditions: string[] = [];
 
@@ -38,7 +41,7 @@ function buildSecopUrl(filters: AlertFilters, limit = 20): string {
       .replace(/,/g, "")
       .replace(/\s+/g, " ")
       .trim();
-    conditions.push(`upper(ciudad_entidad) LIKE upper('%${clean}%')`);
+    conditions.push(`upper(ciudad_entidad) LIKE upper('%${escapeSoql(clean)}%')`);
   }
 
   if (filters.departamento) {
@@ -48,24 +51,24 @@ function buildSecopUrl(filters: AlertFilters, limit = 20): string {
       .replace(/\s+/g, " ")
       .trim();
     conditions.push(
-      `upper(departamento_entidad) LIKE upper('%${clean}%')`
+      `upper(departamento_entidad) LIKE upper('%${escapeSoql(clean)}%')`
     );
   }
 
   if (filters.fase) {
-    conditions.push(`fase='${filters.fase}'`);
+    conditions.push(`fase='${escapeSoql(filters.fase)}'`);
   }
 
   if (filters.modalidad) {
-    conditions.push(`modalidad_de_contratacion='${filters.modalidad}'`);
+    conditions.push(`modalidad_de_contratacion='${escapeSoql(filters.modalidad)}'`);
   }
 
   if (filters.tipo_contrato) {
-    conditions.push(`tipo_de_contrato='${filters.tipo_contrato}'`);
+    conditions.push(`tipo_de_contrato='${escapeSoql(filters.tipo_contrato)}'`);
   }
 
   if (filters.keyword) {
-    const keyword = filters.keyword.replace(/'/g, "''");
+    const keyword = escapeSoql(filters.keyword);
     conditions.push(
       `(upper(descripci_n_del_procedimiento) LIKE upper('%${keyword}%') OR upper(entidad) LIKE upper('%${keyword}%') OR upper(nombre_del_procedimiento) LIKE upper('%${keyword}%'))`
     );
