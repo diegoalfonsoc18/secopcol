@@ -10,9 +10,11 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { ProcessCard, DashboardSkeleton, StaggeredItem, ContractTypeSelector, AnimatedPressable, ScaleIn, SlideInRight } from "../components/index";
+import { ProcessCard, DashboardSkeleton, StaggeredItem, ContractTypeSelector, AnimatedPressable, ScaleIn, SlideInRight, ObligationCard } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
+import { useObligationsStore } from "../store/obligationsStore";
 import { SecopProcess, advancedSearch } from "../api/secop";
+import { getUpcomingObligations } from "../services/obligationService";
 import { spacing, borderRadius, scale, shadows } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
@@ -20,6 +22,7 @@ import { useHaptics } from "../hooks/useHaptics";
 import { useLocation } from "../hooks/useLocation";
 import { CONTRACT_TYPES, getContractTypeColor } from "../constants/contractTypes";
 import { useDashboardStats } from "../hooks/useDashboardStats";
+import { ContractObligation } from "../types/database";
 
 // ============================================
 // COMPONENTE PRINCIPAL
@@ -39,6 +42,16 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   } = useLocation();
 
   const [nearbyProcesses, setNearbyProcesses] = useState<SecopProcess[]>([]);
+  const [upcomingObligations, setUpcomingObligations] = useState<ContractObligation[]>([]);
+
+  // Cargar obligaciones proximas
+  useEffect(() => {
+    if (user?.id) {
+      getUpcomingObligations(user.id, 30)
+        .then((data) => setUpcomingObligations(data.slice(0, 3)))
+        .catch(() => setUpcomingObligations([]));
+    }
+  }, [user?.id]);
 
   const stats = useDashboardStats(
     processes,
@@ -303,7 +316,41 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </ScrollView>
 
           {/* ================================ */}
-          {/* SECCION 3: Procesos destacados   */}
+          {/* SECCION 3: Obligaciones proximas */}
+          {/* ================================ */}
+          {upcomingObligations.length > 0 && (
+            <View style={styles.processSection}>
+              <View style={styles.sectionSeparator} />
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionHeaderLeft}>
+                  <Ionicons
+                    name="calendar-outline"
+                    size={18}
+                    color="#5856D6"
+                  />
+                  <Text style={styles.sectionTitle}>Obligaciones</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate("Obligations")}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Text style={styles.viewAllText}>Ver todas</Text>
+                </TouchableOpacity>
+              </View>
+
+              {upcomingObligations.map((obl, index) => (
+                <StaggeredItem key={obl.id} index={index} staggerDelay={30}>
+                  <ObligationCard
+                    obligation={obl}
+                    compact
+                    onPress={() => navigation.navigate("Obligations")}
+                  />
+                </StaggeredItem>
+              ))}
+            </View>
+          )}
+
+          {/* ================================ */}
+          {/* SECCION 4: Procesos destacados   */}
           {/* ================================ */}
 
           {/* Sub-seccion: Cerca de ti */}

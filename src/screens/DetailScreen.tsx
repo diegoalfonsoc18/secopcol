@@ -19,7 +19,11 @@ import { spacing, borderRadius, typography, scale } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { useHaptics } from "../hooks/useHaptics";
 import { FadeIn, SlideInUp } from "../components/Animations";
+import { AnimatedPressable } from "../components/AnimatedPressable";
+import { ObligationFormModal, ObligationFormData } from "../components/ObligationFormModal";
 import { analyzeProcess, AnalysisResult } from "../services/aiAnalysis";
+import { useObligationsStore } from "../store/obligationsStore";
+import { useAuth } from "../context/AuthContext";
 
 // ============================================
 // UTILIDADES
@@ -84,9 +88,13 @@ export const DetailScreen = ({ route, navigation }: any) => {
   const { isFavorite, addFavorite, removeFavorite } = useProcessesStore();
   const favorite = isFavorite(process.id_del_proceso);
 
+  const { user } = useAuth();
+  const { addObligation } = useObligationsStore();
+
   // Estado para análisis IA
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [showObligationForm, setShowObligationForm] = useState(false);
 
   const styles = createStyles(colors);
 
@@ -577,6 +585,24 @@ _Enviado desde SECOP Colombia App_`;
           </Section>
         )}
 
+        {/* Botón: Agregar Obligación Tributaria */}
+        {adjudicado && (
+          <SlideInUp delay={120}>
+            <AnimatedPressable
+              style={styles.obligationButton}
+              onPress={() => setShowObligationForm(true)}
+              scaleValue={0.97}
+              hapticType="medium">
+              <Ionicons name="calendar-outline" size={20} color="#5856D6" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.obligationButtonTitle}>Agregar obligacion tributaria</Text>
+                <Text style={styles.obligationButtonSubtitle}>Estampillas, retenciones, seg. social, informes</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+            </AnimatedPressable>
+          </SlideInUp>
+        )}
+
         {/* Información de la Entidad */}
         <Section title="Entidad Contratante" icon="business-outline">
           <InfoRow icon="business" label="Entidad" value={process.entidad} />
@@ -668,6 +694,31 @@ _Enviado desde SECOP Colombia App_`;
           <Text style={styles.secopButtonText}>Ver en SECOP II</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Modal: Agregar Obligación Tributaria */}
+      <ObligationFormModal
+        visible={showObligationForm}
+        onClose={() => setShowObligationForm(false)}
+        processId={process.id_del_proceso}
+        processName={process.nombre_del_procedimiento || process.entidad || ""}
+        onSubmit={async (data: ObligationFormData) => {
+          if (!user?.id) return;
+          const { success, error } = await addObligation({
+            user_id: user.id,
+            process_id: data.process_id || process.id_del_proceso,
+            process_name: data.process_name || process.nombre_del_procedimiento || process.entidad || "",
+            obligation_type: data.obligation_type,
+            title: data.title,
+            description: data.description || undefined,
+            due_date: data.due_date,
+            estimated_amount: data.estimated_amount ? Number(data.estimated_amount) : undefined,
+            notes: data.notes || undefined,
+          });
+          if (!success) {
+            Alert.alert("Error", error || "No se pudo crear la obligacion");
+          }
+        }}
+      />
     </View>
   );
 };
@@ -1056,6 +1107,27 @@ const createStyles = (colors: any) =>
       ...typography.callout,
       fontWeight: "600",
       color: colors.backgroundSecondary,
+    },
+    obligationButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "rgba(88, 86, 214, 0.08)",
+      borderWidth: 1,
+      borderColor: "rgba(88, 86, 214, 0.2)",
+      borderRadius: borderRadius.md,
+      padding: spacing.lg,
+      marginBottom: spacing.lg,
+      gap: spacing.md,
+    },
+    obligationButtonTitle: {
+      ...typography.subhead,
+      fontWeight: "600",
+      color: "#5856D6",
+    },
+    obligationButtonSubtitle: {
+      ...typography.caption1,
+      color: colors.textTertiary,
+      marginTop: 2,
     },
   });
 
