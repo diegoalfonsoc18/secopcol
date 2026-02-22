@@ -5,4 +5,5 @@ export { default as DetailScreen } from "./DetailScreen";
 export { default as AppSettingsScreen } from "./AppSettingsScreen";
 export { default as LoginScreen } from "./LoginScreen";
 export { default as OnboardingScreen } from "./OnboardingScreen";
-export { default as AlertsScreen } from "./AlertsScreen"; // ← Agregar
+export { default as AlertsScreen } from "./AlertsScreen";
+export { default as ObligationsScreen } from "./ObligationsScreen";

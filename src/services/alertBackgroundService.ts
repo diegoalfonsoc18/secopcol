@@ -7,6 +7,7 @@ import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getAlerts, getAlert, updateAlertResults } from "./alertService";
 import { advancedSearch } from "../api/secop";
+import { getObligations, checkOverdue, OBLIGATION_TYPE_CONFIG } from "./obligationService";
 
 // ============================================
 // CONSTANTES
@@ -155,6 +156,76 @@ export async function checkAlertsForUser(userId: string): Promise<number> {
 }
 
 // ============================================
+// VERIFICAR OBLIGACIONES PROXIMAS A VENCER
+// ============================================
+const OBLIGATION_NOTIF_KEY = "secop-obligation-notif-dates";
+
+export async function checkObligationReminders(userId: string): Promise<number> {
+  let notificationsSent = 0;
+
+  try {
+    // Primero actualizar vencidas
+    await checkOverdue(userId);
+
+    const obligations = await getObligations(userId);
+    const pending = obligations.filter((o) => o.status === "pending");
+
+    if (pending.length === 0) return 0;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Cargar notificaciones ya enviadas (para no duplicar)
+    const sentRaw = await AsyncStorage.getItem(OBLIGATION_NOTIF_KEY);
+    const sentMap: Record<string, string[]> = sentRaw ? JSON.parse(sentRaw) : {};
+
+    for (const obl of pending) {
+      const dueDate = new Date(obl.due_date + "T00:00:00");
+      const diffDays = Math.round(
+        (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      const reminderDays = obl.reminder_days || [7, 1];
+      const sentForObl = sentMap[obl.id] || [];
+
+      for (const reminderDay of reminderDays) {
+        if (diffDays === reminderDay && !sentForObl.includes(String(reminderDay))) {
+          const typeConfig = OBLIGATION_TYPE_CONFIG[obl.obligation_type];
+          const daysText = reminderDay === 1 ? "manana" : `en ${reminderDay} dias`;
+
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: `${typeConfig?.label || "Obligacion"} vence ${daysText}`,
+              body: `${obl.title}${obl.process_name ? ` — ${obl.process_name}` : ""}`,
+              data: {
+                type: "obligation_reminder",
+                obligationId: obl.id,
+                processId: obl.process_id,
+              },
+              sound: true,
+            },
+            trigger: null,
+          });
+
+          notificationsSent++;
+
+          // Registrar como enviada
+          if (!sentMap[obl.id]) sentMap[obl.id] = [];
+          sentMap[obl.id].push(String(reminderDay));
+        }
+      }
+    }
+
+    // Guardar estado de notificaciones enviadas
+    await AsyncStorage.setItem(OBLIGATION_NOTIF_KEY, JSON.stringify(sentMap));
+  } catch (error) {
+    console.error("Error checking obligation reminders:", error);
+  }
+
+  return notificationsSent;
+}
+
+// ============================================
 // DEFINIR BACKGROUND TASK
 // ============================================
 const BG_TASK_LOG_KEY = "secop-last-bg-task-run";
@@ -173,7 +244,10 @@ TaskManager.defineTask(ALERT_CHECK_TASK, async () => {
     );
 
     const sent = await Promise.race([
-      checkAlertsForUser(userId),
+      Promise.all([
+        checkAlertsForUser(userId),
+        checkObligationReminders(userId),
+      ]),
       timeoutPromise,
     ]);
 

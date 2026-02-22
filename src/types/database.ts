@@ -78,6 +78,30 @@ export interface AlertHistory {
   created_at: string;
 }
 
+// ============================================
+// OBLIGACIONES TRIBUTARIAS
+// ============================================
+export type ObligationType = "estampilla" | "retencion" | "seguridad_social" | "informe";
+export type ObligationStatus = "pending" | "completed" | "overdue";
+
+export interface ContractObligation {
+  id: string;
+  user_id: string;
+  process_id: string;
+  process_name: string | null;
+  obligation_type: ObligationType;
+  title: string;
+  description: string | null;
+  due_date: string;
+  estimated_amount: number | null;
+  status: ObligationStatus;
+  reminder_days: number[];
+  notes: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // Tipo Database simplificado (sin generics complejos)
 export interface Database {
   public: {
@@ -128,6 +152,17 @@ export interface Database {
           new_processes_ids: string[];
         };
         Update: Partial<AlertHistory>;
+      };
+      contract_obligations: {
+        Row: ContractObligation;
+        Insert: Partial<ContractObligation> & {
+          user_id: string;
+          process_id: string;
+          obligation_type: ObligationType;
+          title: string;
+          due_date: string;
+        };
+        Update: Partial<ContractObligation>;
       };
     };
   };

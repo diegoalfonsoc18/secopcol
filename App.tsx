@@ -31,6 +31,7 @@ import {
   LoginScreen,
   OnboardingScreen,
   AlertsScreen,
+  ObligationsScreen,
 } from "./src/screens/index";
 import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
@@ -57,6 +58,11 @@ function HomeStackNavigator() {
       }}>
       <Stack.Screen name="HomeTab" component={HomeScreen} />
       <Stack.Screen name="Detail" component={DetailScreen} />
+      <Stack.Screen
+        name="Obligations"
+        component={ObligationsScreen}
+        options={{ animation: "slide_from_bottom" }}
+      />
       <Stack.Screen
         name="AppSettings"
         component={AppSettingsScreen}
