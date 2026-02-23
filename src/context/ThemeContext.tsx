@@ -33,7 +33,7 @@ export const lightColors = {
 
   // Text
   textPrimary: "#000000",
-  textSecondary: "#3C3C43",
+  textSecondary: "#6B6B6B",
   textTertiary: "#8E8E93",
 
   // Accent
