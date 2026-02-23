@@ -3,7 +3,7 @@
     "name": "Secopcol",
     "slug": "secopcol",
     "scheme": "secopcol",
-    "icon": "./assets/images/android-icon-foreground.png",
+    "icon": "./assets/images/icon.png",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.secopcol.app",
@@ -19,8 +19,9 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png",
+        "backgroundColor": "#000000"
       },
       "package": "com.secopcol.app",
       "permissions": [
