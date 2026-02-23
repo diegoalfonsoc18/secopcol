@@ -179,9 +179,9 @@ function TabNavigator() {
           tabBarIcon: ({ focused, color }) => (
             <HomeIcon
               size={22}
-              filled={focused} // 🔥 cambia automáticamente
-              color={colors.textSecondary} // outline
-              activeColor={colors.accent} // solid
+              filled={focused}
+              color={color}
+              activeColor={color}
             />
           ),
         }}
@@ -194,9 +194,9 @@ function TabNavigator() {
           tabBarIcon: ({ focused, color }) => (
             <SearchIcon
               size={25}
-              filled={focused} // 🔥 cambia automáticamente
-              color={colors.textSecondary} // outline
-              activeColor={colors.accent} // solid
+              filled={focused}
+              color={color}
+              activeColor={color}
             />
           ),
         }}
@@ -218,9 +218,9 @@ function TabNavigator() {
           tabBarIcon: ({ focused, color }) => (
             <FavoritesIcon
               size={24}
-              filled={focused} // 🔥 cambia automáticamente
-              color={colors.textSecondary} // outline
-              activeColor={colors.accent} // solid
+              filled={focused}
+              color={color}
+              activeColor={color}
             />
           ),
         }}
@@ -233,9 +233,9 @@ function TabNavigator() {
           tabBarIcon: ({ focused, color }) => (
             <AlertIcon
               size={23}
-              filled={focused} // 🔥 cambia automáticamente
-              color={colors.textSecondary} // outline
-              activeColor={colors.accent} // solid
+              filled={focused}
+              color={color}
+              activeColor={color}
             />
           ),
         }}
