@@ -257,15 +257,19 @@ const AlertModal: React.FC<AlertModalProps> = ({
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
 
-  // Android: sincronizar nav bar con modal
+  // Android: sincronizar nav bar con modal (solo funciona en builds nativos, no en Expo Go)
   useEffect(() => {
     if (Platform.OS === "android") {
-      if (visible) {
-        NavigationBar.setBackgroundColorAsync(colors.background);
-        NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
-      } else {
-        NavigationBar.setBackgroundColorAsync(isDark ? "#000000" : "#F2F2F7");
-        NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
+      try {
+        if (visible) {
+          NavigationBar.setBackgroundColorAsync(colors.background);
+          NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
+        } else {
+          NavigationBar.setBackgroundColorAsync(isDark ? "#000000" : "#F2F2F7");
+          NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
+        }
+      } catch (_) {
+        // expo-navigation-bar no disponible en Expo Go
       }
     }
   }, [visible, isDark]);
@@ -891,15 +895,19 @@ const NewProcessesModal: React.FC<NewProcessesModalProps> = ({
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
 
-  // Android: sincronizar nav bar con modal
+  // Android: sincronizar nav bar con modal (solo funciona en builds nativos, no en Expo Go)
   useEffect(() => {
     if (Platform.OS === "android") {
-      if (visible) {
-        NavigationBar.setBackgroundColorAsync(colors.background);
-        NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
-      } else {
-        NavigationBar.setBackgroundColorAsync(isDark ? "#000000" : "#F2F2F7");
-        NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
+      try {
+        if (visible) {
+          NavigationBar.setBackgroundColorAsync(colors.background);
+          NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
+        } else {
+          NavigationBar.setBackgroundColorAsync(isDark ? "#000000" : "#F2F2F7");
+          NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
+        }
+      } catch (_) {
+        // expo-navigation-bar no disponible en Expo Go
       }
     }
   }, [visible, isDark]);
