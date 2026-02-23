@@ -29,6 +29,7 @@ import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
+import * as NavigationBar from "expo-navigation-bar";
 import {
   getAlerts,
   createAlert,
@@ -254,6 +255,19 @@ const AlertModal: React.FC<AlertModalProps> = ({
   colors,
 }) => {
   const insets = useSafeAreaInsets();
+  const { isDark } = useTheme();
+
+  // Android: sincronizar nav bar con modal (solo builds nativos, no Expo Go)
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      try {
+        NavigationBar.setBackgroundColorAsync(
+          visible ? colors.background : (isDark ? "#000000" : "#F2F2F7")
+        );
+        NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
+      } catch (_) {}
+    }
+  }, [visible, isDark]);
 
   // Estados del formulario
   const [name, setName] = useState("");
@@ -874,6 +888,19 @@ const NewProcessesModal: React.FC<NewProcessesModalProps> = ({
   colors,
 }) => {
   const insets = useSafeAreaInsets();
+  const { isDark } = useTheme();
+
+  // Android: sincronizar nav bar con modal (solo builds nativos, no Expo Go)
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      try {
+        NavigationBar.setBackgroundColorAsync(
+          visible ? colors.background : (isDark ? "#000000" : "#F2F2F7")
+        );
+        NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
+      } catch (_) {}
+    }
+  }, [visible, isDark]);
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
