@@ -17,15 +17,10 @@
         "ITSAppUsesNonExemptEncryption": false
       }
     },
-    "androidNavigationBar": {
-      "backgroundColor": "#000000",
-      "barStyle": "light-content"
-    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png",
-        "backgroundColor": "#000000"
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "com.secopcol.app",
       "permissions": [
@@ -60,7 +55,11 @@
           "enableBackgroundRemoteNotifications": true
         }
       ],
-      "expo-background-task"
+      "expo-background-task",
+      ["expo-navigation-bar", {
+        "backgroundColor": "#000000",
+        "barStyle": "light-content"
+      }]
     ],
     "experiments": {
       "typedRoutes": true
