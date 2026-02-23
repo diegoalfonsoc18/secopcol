@@ -29,7 +29,6 @@ import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
-import * as NavigationBar from "expo-navigation-bar";
 import {
   getAlerts,
   createAlert,
@@ -255,24 +254,6 @@ const AlertModal: React.FC<AlertModalProps> = ({
   colors,
 }) => {
   const insets = useSafeAreaInsets();
-  const { isDark } = useTheme();
-
-  // Android: sincronizar nav bar con modal (solo funciona en builds nativos, no en Expo Go)
-  useEffect(() => {
-    if (Platform.OS === "android") {
-      try {
-        if (visible) {
-          NavigationBar.setBackgroundColorAsync(colors.background);
-          NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
-        } else {
-          NavigationBar.setBackgroundColorAsync(isDark ? "#000000" : "#F2F2F7");
-          NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
-        }
-      } catch (_) {
-        // expo-navigation-bar no disponible en Expo Go
-      }
-    }
-  }, [visible, isDark]);
 
   // Estados del formulario
   const [name, setName] = useState("");
@@ -893,24 +874,6 @@ const NewProcessesModal: React.FC<NewProcessesModalProps> = ({
   colors,
 }) => {
   const insets = useSafeAreaInsets();
-  const { isDark } = useTheme();
-
-  // Android: sincronizar nav bar con modal (solo funciona en builds nativos, no en Expo Go)
-  useEffect(() => {
-    if (Platform.OS === "android") {
-      try {
-        if (visible) {
-          NavigationBar.setBackgroundColorAsync(colors.background);
-          NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
-        } else {
-          NavigationBar.setBackgroundColorAsync(isDark ? "#000000" : "#F2F2F7");
-          NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
-        }
-      } catch (_) {
-        // expo-navigation-bar no disponible en Expo Go
-      }
-    }
-  }, [visible, isDark]);
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
