@@ -12,6 +12,7 @@ import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 
 import * as Linking from "expo-linking";
 import * as Notifications from "expo-notifications";
+import * as NavigationBar from "expo-navigation-bar";
 
 // Background task: debe importarse a nivel modulo para que
 // TaskManager.defineTask() se ejecute antes del render
@@ -312,6 +313,19 @@ function RootNavigator() {
 }
 
 // ============================================
+// ANDROID NAVIGATION BAR (botones nativos)
+// ============================================
+function AndroidNavigationBar({ isDark }: { isDark: boolean }) {
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      NavigationBar.setBackgroundColorAsync(isDark ? "#000000" : "#F2F2F7");
+      NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
+    }
+  }, [isDark]);
+  return null;
+}
+
+// ============================================
 // APP CONTENT (con manejo de deep links)
 // ============================================
 const navigationRef = React.createRef<NavigationContainerRef<any>>();
@@ -384,6 +398,7 @@ function AppContent() {
   return (
     <>
     <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+    <AndroidNavigationBar isDark={isDark} />
     <NavigationContainer
       ref={navigationRef}
       theme={{
