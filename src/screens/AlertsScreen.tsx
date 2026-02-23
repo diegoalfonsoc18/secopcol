@@ -18,6 +18,8 @@ import {
   FlatList,
   ActivityIndicator,
   Animated,
+  BackHandler,
+  Dimensions,
 } from "react-native";
 import * as Notifications from "expo-notifications";
 import { Swipeable } from "react-native-gesture-handler";
@@ -1075,6 +1077,8 @@ interface AlertResultsModalProps {
   colors: any;
 }
 
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+
 const AlertResultsModal: React.FC<AlertResultsModalProps> = ({
   visible,
   alert,
@@ -1086,120 +1090,164 @@ const AlertResultsModal: React.FC<AlertResultsModalProps> = ({
   colors,
 }) => {
   const insets = useSafeAreaInsets();
-  const { isDark } = useTheme();
+  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const [rendered, setRendered] = useState(false);
 
-  // Android: sincronizar nav bar con modal
+  // Animar entrada/salida
   useEffect(() => {
-    if (Platform.OS === "android") {
-      try {
-        NavigationBar.setBackgroundColorAsync(
-          visible ? colors.background : (isDark ? "#000000" : "#F2F2F7")
-        );
-        NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
-      } catch (_) {}
+    if (visible) {
+      setRendered(true);
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(overlayOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: SCREEN_HEIGHT,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+        Animated.timing(overlayOpacity, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start(() => setRendered(false));
     }
-  }, [visible, isDark]);
+  }, [visible]);
+
+  // Android: back button cierra el overlay
+  useEffect(() => {
+    if (!visible) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      onClose();
+      return true;
+    });
+    return () => sub.remove();
+  }, [visible, onClose]);
+
+  if (!rendered) return null;
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.modalOverlay}>
-        <View
-          style={[
-            styles.newProcessesModalContent,
-            {
-              backgroundColor: colors.background,
-              paddingBottom: insets.bottom + spacing.lg,
-            },
-          ]}>
-          {/* Header */}
-          <View style={styles.newProcessesHeader}>
-            <View style={styles.newProcessesTitleRow}>
-              <View
-                style={[
-                  styles.newProcessesIconBg,
-                  { backgroundColor: colors.accentLight },
-                ]}>
-                <Ionicons
-                  name="search"
-                  size={20}
-                  color={colors.accent}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={[
-                    styles.newProcessesTitle,
-                    { color: colors.textPrimary },
-                  ]}
-                  numberOfLines={1}>
-                  {alert?.name || "Resultados"}
-                </Text>
-                <Text
-                  style={[
-                    styles.newProcessesSubtitle,
-                    { color: colors.textSecondary },
-                  ]}>
-                  {loading
-                    ? "Buscando..."
-                    : `${processes.length} resultado${processes.length !== 1 ? "s" : ""}`}
-                </Text>
-              </View>
+    <View style={StyleSheet.absoluteFill} pointerEvents={visible ? "auto" : "none"}>
+      {/* Fondo oscuro */}
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFill,
+          { backgroundColor: "rgba(0,0,0,0.5)", opacity: overlayOpacity },
+        ]}
+      >
+        <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
+      </Animated.View>
+
+      {/* Contenido slide-up */}
+      <Animated.View
+        style={[
+          styles.alertResultsOverlay,
+          {
+            backgroundColor: colors.background,
+            paddingBottom: insets.bottom + spacing.lg,
+            transform: [{ translateY: slideAnim }],
+          },
+        ]}>
+        {/* Header */}
+        <View style={styles.newProcessesHeader}>
+          <View style={styles.newProcessesTitleRow}>
+            <View
+              style={[
+                styles.newProcessesIconBg,
+                { backgroundColor: colors.accentLight },
+              ]}>
+              <Ionicons
+                name="search"
+                size={20}
+                color={colors.accent}
+              />
             </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
-              <TouchableOpacity
-                onPress={onEdit}
+            <View style={{ flex: 1 }}>
+              <Text
                 style={[
-                  styles.newProcessesCloseButton,
-                  { backgroundColor: colors.backgroundSecondary },
-                ]}>
-                <Ionicons name="create-outline" size={20} color={colors.accent} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={onClose}
+                  styles.newProcessesTitle,
+                  { color: colors.textPrimary },
+                ]}
+                numberOfLines={1}>
+                {alert?.name || "Resultados"}
+              </Text>
+              <Text
                 style={[
-                  styles.newProcessesCloseButton,
-                  { backgroundColor: colors.backgroundSecondary },
+                  styles.newProcessesSubtitle,
+                  { color: colors.textSecondary },
                 ]}>
-                <Ionicons name="close" size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
+                {loading
+                  ? "Buscando..."
+                  : `${processes.length} resultado${processes.length !== 1 ? "s" : ""}`}
+              </Text>
             </View>
           </View>
-
-          {/* Contenido */}
-          {loading ? (
-            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: scale(60) }}>
-              <ActivityIndicator size="large" color={colors.accent} />
-              <Text style={[styles.newProcessesSubtitle, { color: colors.textSecondary, marginTop: spacing.md }]}>
-                Buscando procesos...
-              </Text>
-            </View>
-          ) : processes.length === 0 ? (
-            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: scale(60) }}>
-              <Ionicons name="document-text-outline" size={48} color={colors.textSecondary} />
-              <Text style={[styles.newProcessesTitle, { color: colors.textSecondary, marginTop: spacing.md }]}>
-                Sin resultados
-              </Text>
-              <Text style={[styles.newProcessesSubtitle, { color: colors.textSecondary, marginTop: spacing.xs }]}>
-                No se encontraron procesos con estos filtros
-              </Text>
-            </View>
-          ) : (
-            <ScrollView
-              style={styles.newProcessesList}
-              showsVerticalScrollIndicator={false}>
-              {processes.map((process, index) => (
-                <View key={process.id_del_proceso || index} style={{ marginBottom: spacing.md }}>
-                  <ProcessCard
-                    process={process}
-                    onPress={() => onViewProcess(process)}
-                  />
-                </View>
-              ))}
-            </ScrollView>
-          )}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+            <TouchableOpacity
+              onPress={onEdit}
+              style={[
+                styles.newProcessesCloseButton,
+                { backgroundColor: colors.backgroundSecondary },
+              ]}>
+              <Ionicons name="create-outline" size={20} color={colors.accent} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={onClose}
+              style={[
+                styles.newProcessesCloseButton,
+                { backgroundColor: colors.backgroundSecondary },
+              ]}>
+              <Ionicons name="close" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </Modal>
+
+        {/* Contenido */}
+        {loading ? (
+          <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: scale(60) }}>
+            <ActivityIndicator size="large" color={colors.accent} />
+            <Text style={[styles.newProcessesSubtitle, { color: colors.textSecondary, marginTop: spacing.md }]}>
+              Buscando procesos...
+            </Text>
+          </View>
+        ) : processes.length === 0 ? (
+          <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: scale(60) }}>
+            <Ionicons name="document-text-outline" size={48} color={colors.textSecondary} />
+            <Text style={[styles.newProcessesTitle, { color: colors.textSecondary, marginTop: spacing.md }]}>
+              Sin resultados
+            </Text>
+            <Text style={[styles.newProcessesSubtitle, { color: colors.textSecondary, marginTop: spacing.xs }]}>
+              No se encontraron procesos con estos filtros
+            </Text>
+          </View>
+        ) : (
+          <ScrollView
+            style={styles.newProcessesList}
+            showsVerticalScrollIndicator={false}>
+            {processes.map((process, index) => (
+              <View key={process.id_del_proceso || index} style={{ marginBottom: spacing.md }}>
+                <ProcessCard
+                  process={process}
+                  onPress={() => onViewProcess(process)}
+                />
+              </View>
+            ))}
+          </ScrollView>
+        )}
+      </Animated.View>
+    </View>
   );
 };
 
@@ -1768,6 +1816,17 @@ const styles = StyleSheet.create({
   },
 
   // New Processes Modal
+  // Alert Results Overlay (no usa Modal, se queda en la misma Activity)
+  alertResultsOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    maxHeight: "85%",
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+  },
+
   newProcessesModalContent: {
     borderTopLeftRadius: borderRadius.xl,
     borderTopRightRadius: borderRadius.xl,
