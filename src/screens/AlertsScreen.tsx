@@ -257,12 +257,12 @@ const AlertModal: React.FC<AlertModalProps> = ({
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
 
-  // Android: sincronizar nav bar con modal overlay
+  // Android: sincronizar nav bar con modal
   useEffect(() => {
     if (Platform.OS === "android") {
       if (visible) {
-        NavigationBar.setBackgroundColorAsync("rgba(0,0,0,0.5)");
-        NavigationBar.setButtonStyleAsync("light");
+        NavigationBar.setBackgroundColorAsync(colors.background);
+        NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
       } else {
         NavigationBar.setBackgroundColorAsync(isDark ? "#000000" : "#F2F2F7");
         NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
@@ -891,12 +891,12 @@ const NewProcessesModal: React.FC<NewProcessesModalProps> = ({
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
 
-  // Android: sincronizar nav bar con modal overlay
+  // Android: sincronizar nav bar con modal
   useEffect(() => {
     if (Platform.OS === "android") {
       if (visible) {
-        NavigationBar.setBackgroundColorAsync("rgba(0,0,0,0.5)");
-        NavigationBar.setButtonStyleAsync("light");
+        NavigationBar.setBackgroundColorAsync(colors.background);
+        NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
       } else {
         NavigationBar.setBackgroundColorAsync(isDark ? "#000000" : "#F2F2F7");
         NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
