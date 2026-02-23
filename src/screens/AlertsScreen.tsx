@@ -37,8 +37,10 @@ import {
   deleteAlert,
   toggleAlert,
 } from "../services/alertService";
-import { getProcessById } from "../api/secop";
+import { getProcessById, advancedSearch } from "../api/secop";
+import { SecopProcess } from "../types/index";
 import { Alert as AlertType, AlertFilters } from "../types/database";
+import { ProcessCard } from "../components/index";
 import { useHaptics } from "../hooks/useHaptics";
 import { FadeIn, SlideInUp } from "../components/Animations";
 import { getDepartments, getMunicipalities } from "../services/divipola";
@@ -1060,6 +1062,148 @@ const NewProcessesModal: React.FC<NewProcessesModalProps> = ({
 };
 
 // ============================================
+// MODAL DE RESULTADOS DE ALERTA
+// ============================================
+interface AlertResultsModalProps {
+  visible: boolean;
+  alert: AlertType | null;
+  processes: SecopProcess[];
+  loading: boolean;
+  onClose: () => void;
+  onEdit: () => void;
+  onViewProcess: (process: SecopProcess) => void;
+  colors: any;
+}
+
+const AlertResultsModal: React.FC<AlertResultsModalProps> = ({
+  visible,
+  alert,
+  processes,
+  loading,
+  onClose,
+  onEdit,
+  onViewProcess,
+  colors,
+}) => {
+  const insets = useSafeAreaInsets();
+  const { isDark } = useTheme();
+
+  // Android: sincronizar nav bar con modal
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      try {
+        NavigationBar.setBackgroundColorAsync(
+          visible ? colors.background : (isDark ? "#000000" : "#F2F2F7")
+        );
+        NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
+      } catch (_) {}
+    }
+  }, [visible, isDark]);
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent>
+      <View style={styles.modalOverlay}>
+        <View
+          style={[
+            styles.newProcessesModalContent,
+            {
+              backgroundColor: colors.background,
+              paddingBottom: insets.bottom + spacing.lg,
+            },
+          ]}>
+          {/* Header */}
+          <View style={styles.newProcessesHeader}>
+            <View style={styles.newProcessesTitleRow}>
+              <View
+                style={[
+                  styles.newProcessesIconBg,
+                  { backgroundColor: colors.accentLight },
+                ]}>
+                <Ionicons
+                  name="search"
+                  size={20}
+                  color={colors.accent}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[
+                    styles.newProcessesTitle,
+                    { color: colors.textPrimary },
+                  ]}
+                  numberOfLines={1}>
+                  {alert?.name || "Resultados"}
+                </Text>
+                <Text
+                  style={[
+                    styles.newProcessesSubtitle,
+                    { color: colors.textSecondary },
+                  ]}>
+                  {loading
+                    ? "Buscando..."
+                    : `${processes.length} resultado${processes.length !== 1 ? "s" : ""}`}
+                </Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+              <TouchableOpacity
+                onPress={onEdit}
+                style={[
+                  styles.newProcessesCloseButton,
+                  { backgroundColor: colors.backgroundSecondary },
+                ]}>
+                <Ionicons name="create-outline" size={20} color={colors.accent} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={onClose}
+                style={[
+                  styles.newProcessesCloseButton,
+                  { backgroundColor: colors.backgroundSecondary },
+                ]}>
+                <Ionicons name="close" size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Contenido */}
+          {loading ? (
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: scale(60) }}>
+              <ActivityIndicator size="large" color={colors.accent} />
+              <Text style={[styles.newProcessesSubtitle, { color: colors.textSecondary, marginTop: spacing.md }]}>
+                Buscando procesos...
+              </Text>
+            </View>
+          ) : processes.length === 0 ? (
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: scale(60) }}>
+              <Ionicons name="document-text-outline" size={48} color={colors.textSecondary} />
+              <Text style={[styles.newProcessesTitle, { color: colors.textSecondary, marginTop: spacing.md }]}>
+                Sin resultados
+              </Text>
+              <Text style={[styles.newProcessesSubtitle, { color: colors.textSecondary, marginTop: spacing.xs }]}>
+                No se encontraron procesos con estos filtros
+              </Text>
+            </View>
+          ) : (
+            <ScrollView
+              style={styles.newProcessesList}
+              showsVerticalScrollIndicator={false}>
+              {processes.map((process, index) => (
+                <View key={process.id_del_proceso || index} style={{ marginBottom: spacing.md }}>
+                  <ProcessCard
+                    process={process}
+                    onPress={() => onViewProcess(process)}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+// ============================================
 // PANTALLA PRINCIPAL
 // ============================================
 const AlertsScreen: React.FC<{ route?: any; navigation?: any }> = ({ route, navigation: navProp }) => {
@@ -1080,6 +1224,12 @@ const AlertsScreen: React.FC<{ route?: any; navigation?: any }> = ({ route, navi
   >();
   const [newProcesses, setNewProcesses] = useState<ProcessSummary[]>([]);
   const [showNewProcesses, setShowNewProcesses] = useState(false);
+
+  // Estado para vista de resultados de alerta
+  const [viewingAlert, setViewingAlert] = useState<AlertType | null>(null);
+  const [alertResults, setAlertResults] = useState<SecopProcess[]>([]);
+  const [alertResultsLoading, setAlertResultsLoading] = useState(false);
+  const [showAlertResults, setShowAlertResults] = useState(false);
 
   const swipeableRefs = useRef<Map<string, Swipeable>>(new Map());
 
@@ -1159,6 +1309,53 @@ const AlertsScreen: React.FC<{ route?: any; navigation?: any }> = ({ route, navi
     setInitialFilters(undefined);
     setModalVisible(true);
   };
+
+  // Ver resultados de una alerta (busca procesos que coinciden con sus filtros)
+  const handleViewAlertResults = useCallback(
+    async (alert: AlertType) => {
+      haptics.light();
+      setViewingAlert(alert);
+      setShowAlertResults(true);
+      setAlertResultsLoading(true);
+      setAlertResults([]);
+
+      try {
+        const results = await advancedSearch({
+          keyword: alert.filters.keyword,
+          departamento: alert.filters.departamento,
+          municipio: alert.filters.municipio,
+          modalidad: alert.filters.modalidad,
+          tipoContrato: alert.filters.tipo_contrato,
+          limit: 50,
+        });
+        setAlertResults(results);
+      } catch (error) {
+        console.error("Error fetching alert results:", error);
+        setAlertResults([]);
+      } finally {
+        setAlertResultsLoading(false);
+      }
+    },
+    [haptics]
+  );
+
+  // Editar desde la vista de resultados
+  const handleEditFromResults = useCallback(() => {
+    if (!viewingAlert) return;
+    setShowAlertResults(false);
+    setTimeout(() => {
+      handleEdit(viewingAlert);
+    }, 300);
+  }, [viewingAlert]);
+
+  // Ver detalle de un proceso desde resultados
+  const handleViewResultProcess = useCallback(
+    (process: SecopProcess) => {
+      setShowAlertResults(false);
+      navigation.navigate("Detail" as never, { process } as never);
+    },
+    [navigation]
+  );
 
   const handleDelete = useCallback(
     async (id: string) => {
@@ -1289,7 +1486,7 @@ const AlertsScreen: React.FC<{ route?: any; navigation?: any }> = ({ route, navi
               <AlertCard
                 alert={alert}
                 onToggle={handleToggle}
-                onEdit={handleEdit}
+                onEdit={handleViewAlertResults}
                 onDelete={handleDelete}
                 colors={colors}
                 swipeableRef={(ref) => {
@@ -1323,6 +1520,21 @@ const AlertsScreen: React.FC<{ route?: any; navigation?: any }> = ({ route, navi
         processes={newProcesses}
         onClose={() => setShowNewProcesses(false)}
         onViewProcess={handleViewProcess}
+        colors={colors}
+      />
+
+      {/* Modal resultados de alerta */}
+      <AlertResultsModal
+        visible={showAlertResults}
+        alert={viewingAlert}
+        processes={alertResults}
+        loading={alertResultsLoading}
+        onClose={() => {
+          setShowAlertResults(false);
+          setViewingAlert(null);
+        }}
+        onEdit={handleEditFromResults}
+        onViewProcess={handleViewResultProcess}
         colors={colors}
       />
     </View>

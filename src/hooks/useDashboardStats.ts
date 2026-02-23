@@ -11,7 +11,7 @@ import {
 export interface DashboardStats {
   recentCount: number;
   nearbyCount: number;
-  favoriteTypesCount: number;
+  todayCount: number;
   recentProcesses: SecopProcess[];
   nearbyProcesses: SecopProcess[];
   favoriteTypeConfigs: ContractTypeConfig[];
@@ -27,6 +27,9 @@ export function useDashboardStats(
     const eightDaysAgo = new Date();
     eightDaysAgo.setDate(eightDaysAgo.getDate() - 8);
     eightDaysAgo.setHours(0, 0, 0, 0);
+
+    const todayMidnight = new Date();
+    todayMidnight.setHours(0, 0, 0, 0);
 
     // Filtro por tipos favoritos (aplica a todas las secciones)
     const favoriteSet = new Set(selectedContractTypes);
@@ -61,6 +64,14 @@ export function useDashboardStats(
         ? recentFromLastDays
         : sortedProcesses.slice(0, Math.max(MIN_RECENT, recentFromLastDays.length));
 
+    // Procesos publicados hoy
+    const todayProcesses = sortedProcesses.filter((p) => {
+      const dateStr =
+        p.fecha_de_ultima_publicaci || p.fecha_de_publicacion_del;
+      if (!dateStr) return false;
+      return new Date(dateStr) >= todayMidnight;
+    });
+
     // Procesos del municipio del usuario (ya vienen de la API, solo ordenar)
     const nearbyProcesses = [...baseNearby].sort(
       (a, b) => getProcessDate(b) - getProcessDate(a)
@@ -77,7 +88,7 @@ export function useDashboardStats(
     return {
       recentCount: recentProcesses.length,
       nearbyCount: nearbyProcesses.length,
-      favoriteTypesCount: baseProcesses.length,
+      todayCount: todayProcesses.length,
       recentProcesses: recentProcesses.slice(0, MIN_RECENT),
       nearbyProcesses: nearbyProcesses.slice(0, MIN_RECENT),
       favoriteTypeConfigs,

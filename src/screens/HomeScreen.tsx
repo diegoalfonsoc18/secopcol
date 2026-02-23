@@ -142,15 +142,14 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       show: !!userMunicipio,
     },
     {
-      key: "favorites",
-      icon: "bookmark-outline" as const,
-      count: stats.favoriteTypesCount,
-      label: "Tus tipos",
+      key: "today",
+      icon: "today-outline" as const,
+      count: stats.todayCount,
+      label: "Hoy",
       color: "#FF9500",
       bgColor: "rgba(255, 149, 0, 0.12)",
-      onPress: () =>
-        navigateToSearch({ tipos: preferences.selectedContractTypes }),
-      show: preferences.selectedContractTypes.length > 0,
+      onPress: () => navigateToSearch(),
+      show: true,
     },
   ];
 
