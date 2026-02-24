@@ -289,23 +289,64 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     fetchTodayNearby();
   }, [fetchTodayNearby]);
 
-  // Fetch "Abiertos" (fase Selección)
+  // Fetch "Abiertos" (fase Selección, cercanos ≤20km, últimos 15 días)
   const fetchOpenProcesses = useCallback(() => {
-    advancedSearch({ fase: "Selección", limit: 50 })
-      .then(setOpenProcesses)
-      .catch(() => setOpenProcesses([]));
-  }, []);
+    const nearDepts = nearbyDepartamentos.filter(d => d.distance <= 20);
+    if (nearDepts.length === 0) return;
+
+    Promise.all(
+      nearDepts.map(d =>
+        advancedSearch({
+          departamento: d.departamento,
+          fase: "Selección",
+          recentDays: 15,
+          limit: 50,
+        })
+      )
+    ).then(results => {
+      const merged = results.flat();
+      const seen = new Set<string>();
+      const unique = merged.filter(p => {
+        const id = p.id_del_proceso;
+        if (!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
+      setOpenProcesses(unique);
+    }).catch(() => setOpenProcesses([]));
+  }, [nearbyDepartamentos]);
 
   useEffect(() => {
     fetchOpenProcesses();
   }, [fetchOpenProcesses]);
 
-  // Fetch "Sin ofertas" (fase Selección + sin respuestas)
+  // Fetch "Sin ofertas" (fase Selección + sin respuestas, cercanos ≤20km, últimos 15 días)
   const fetchNoOffersProcesses = useCallback(() => {
-    advancedSearch({ fase: "Selección", noOffers: true, limit: 50 })
-      .then(setNoOffersProcesses)
-      .catch(() => setNoOffersProcesses([]));
-  }, []);
+    const nearDepts = nearbyDepartamentos.filter(d => d.distance <= 20);
+    if (nearDepts.length === 0) return;
+
+    Promise.all(
+      nearDepts.map(d =>
+        advancedSearch({
+          departamento: d.departamento,
+          fase: "Selección",
+          noOffers: true,
+          recentDays: 15,
+          limit: 50,
+        })
+      )
+    ).then(results => {
+      const merged = results.flat();
+      const seen = new Set<string>();
+      const unique = merged.filter(p => {
+        const id = p.id_del_proceso;
+        if (!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
+      setNoOffersProcesses(unique);
+    }).catch(() => setNoOffersProcesses([]));
+  }, [nearbyDepartamentos]);
 
   useEffect(() => {
     fetchNoOffersProcesses();
