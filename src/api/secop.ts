@@ -53,6 +53,7 @@ const buildQuery = (params: {
   modalidad?: string;
   tipoContrato?: string;
   keyword?: string;
+  noOffers?: boolean;
   limit?: number;
   offset?: number;
   orderBy?: string;
@@ -107,6 +108,12 @@ const buildQuery = (params: {
     const keyword = escapeSoql(params.keyword);
     conditions.push(
       `(upper(descripci_n_del_procedimiento) LIKE upper('%${keyword}%') OR upper(entidad) LIKE upper('%${keyword}%') OR upper(nombre_del_procedimiento) LIKE upper('%${keyword}%'))`,
+    );
+  }
+
+  if (params.noOffers) {
+    conditions.push(
+      `(respuestas_al_procedimiento IS NULL OR respuestas_al_procedimiento = '0')`,
     );
   }
 
@@ -209,6 +216,8 @@ export const advancedSearch = async (params: {
   fase?: string;
   modalidad?: string;
   tipoContrato?: string;
+  noOffers?: boolean;
+  recentDays?: number;
   limit?: number;
   offset?: number;
 }): Promise<SecopProcess[]> => {
