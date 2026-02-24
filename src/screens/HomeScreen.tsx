@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Animated,
+  BackHandler,
+  Dimensions,
   RefreshControl,
   StyleSheet,
   Text,
   View,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,6 +28,183 @@ import { CONTRACT_TYPES, getContractTypeColor } from "../constants/contractTypes
 import { useDashboardStats } from "../hooks/useDashboardStats";
 import { ContractObligation } from "../types/database";
 
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+// ============================================
+// OVERLAY DE LISTA DE PROCESOS
+// ============================================
+interface ProcessListOverlayProps {
+  visible: boolean;
+  title: string;
+  processes: SecopProcess[];
+  onClose: () => void;
+  onViewProcess: (process: SecopProcess) => void;
+  colors: any;
+}
+
+const ProcessListOverlay: React.FC<ProcessListOverlayProps> = ({
+  visible,
+  title,
+  processes,
+  onClose,
+  onViewProcess,
+  colors,
+}) => {
+  const insets = useSafeAreaInsets();
+  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const [rendered, setRendered] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      setRendered(true);
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(overlayOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: SCREEN_HEIGHT,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+        Animated.timing(overlayOpacity, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start(() => setRendered(false));
+    }
+  }, [visible]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      onClose();
+      return true;
+    });
+    return () => sub.remove();
+  }, [visible, onClose]);
+
+  if (!rendered) return null;
+
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents={visible ? "auto" : "none"}>
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFill,
+          { backgroundColor: "rgba(0,0,0,0.5)", opacity: overlayOpacity },
+        ]}>
+        <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
+      </Animated.View>
+
+      <Animated.View
+        style={[
+          overlayStyles.container,
+          {
+            backgroundColor: colors.background,
+            paddingBottom: insets.bottom + spacing.lg,
+            transform: [{ translateY: slideAnim }],
+          },
+        ]}>
+        {/* Header */}
+        <View style={overlayStyles.header}>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={[overlayStyles.title, { color: colors.textPrimary }]}
+              numberOfLines={1}>
+              {title}
+            </Text>
+            <Text style={[overlayStyles.subtitle, { color: colors.textSecondary }]}>
+              {`${processes.length} proceso${processes.length !== 1 ? "s" : ""}`}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={onClose}
+            style={[overlayStyles.closeButton, { backgroundColor: colors.backgroundSecondary }]}>
+            <Ionicons name="close" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Lista */}
+        {processes.length === 0 ? (
+          <View style={overlayStyles.emptyState}>
+            <Ionicons name="document-text-outline" size={48} color={colors.textSecondary} />
+            <Text style={[overlayStyles.title, { color: colors.textSecondary, marginTop: spacing.md }]}>
+              Sin resultados
+            </Text>
+          </View>
+        ) : (
+          <ScrollView
+            style={overlayStyles.list}
+            showsVerticalScrollIndicator={false}>
+            {processes.map((process, index) => (
+              <View key={process.id_del_proceso || index} style={{ marginBottom: spacing.md }}>
+                <ProcessCard
+                  process={process}
+                  onPress={() => onViewProcess(process)}
+                />
+              </View>
+            ))}
+          </ScrollView>
+        )}
+      </Animated.View>
+    </View>
+  );
+};
+
+const overlayStyles = StyleSheet.create({
+  container: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    maxHeight: "85%",
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: spacing.lg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(0,0,0,0.1)",
+  },
+  title: {
+    fontSize: scale(17),
+    fontWeight: "700",
+  },
+  subtitle: {
+    fontSize: scale(12),
+    marginTop: 2,
+  },
+  closeButton: {
+    width: scale(32),
+    height: scale(32),
+    borderRadius: scale(16),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  list: {
+    padding: spacing.lg,
+  },
+  emptyState: {
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: scale(60),
+  },
+});
+
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
@@ -39,10 +220,21 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const {
     departamento: userDepartamento,
     municipio: userMunicipio,
+    nearbyDepartamentos,
   } = useLocation();
 
-  const [nearbyProcesses, setNearbyProcesses] = useState<SecopProcess[]>([]);
+  // Estados para las 3 fuentes de datos de las cards
+  const [todayNearbyProcesses, setTodayNearbyProcesses] = useState<SecopProcess[]>([]);
+  const [openProcesses, setOpenProcesses] = useState<SecopProcess[]>([]);
+  const [noOffersProcesses, setNoOffersProcesses] = useState<SecopProcess[]>([]);
   const [upcomingObligations, setUpcomingObligations] = useState<ContractObligation[]>([]);
+
+  // Estado para el modal overlay de cards
+  const [cardModal, setCardModal] = useState<{
+    visible: boolean;
+    title: string;
+    processes: SecopProcess[];
+  }>({ visible: false, title: "", processes: [] });
 
   // Cargar obligaciones proximas
   useEffect(() => {
@@ -54,24 +246,70 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   }, [user?.id]);
 
   const stats = useDashboardStats(
-    processes,
-    nearbyProcesses,
+    todayNearbyProcesses,
+    openProcesses,
+    noOffersProcesses,
     preferences.selectedContractTypes
   );
 
   const styles = createStyles(colors);
 
+  // Fetch procesos recientes (feed general)
   useEffect(() => {
     fetchRecentProcesses(100, false);
   }, [fetchRecentProcesses]);
 
-  // Fetch procesos del municipio del usuario
+  // Fetch "Hoy + Cerca" (departamentos a ≤20km)
+  const fetchTodayNearby = useCallback(() => {
+    const nearDepts = nearbyDepartamentos.filter(d => d.distance <= 20);
+    if (nearDepts.length === 0) return;
+
+    Promise.all(
+      nearDepts.map(d =>
+        advancedSearch({
+          departamento: d.departamento,
+          recentDays: 1,
+          limit: 30,
+        })
+      )
+    ).then(results => {
+      const merged = results.flat();
+      const seen = new Set<string>();
+      const unique = merged.filter(p => {
+        const id = p.id_del_proceso;
+        if (!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
+      setTodayNearbyProcesses(unique);
+    }).catch(() => setTodayNearbyProcesses([]));
+  }, [nearbyDepartamentos]);
+
   useEffect(() => {
-    if (!userMunicipio) return;
-    advancedSearch({ municipio: userMunicipio, limit: 50 })
-      .then(setNearbyProcesses)
-      .catch(() => setNearbyProcesses([]));
-  }, [userMunicipio]);
+    fetchTodayNearby();
+  }, [fetchTodayNearby]);
+
+  // Fetch "Abiertos" (fase Selección)
+  const fetchOpenProcesses = useCallback(() => {
+    advancedSearch({ fase: "Selección", limit: 50 })
+      .then(setOpenProcesses)
+      .catch(() => setOpenProcesses([]));
+  }, []);
+
+  useEffect(() => {
+    fetchOpenProcesses();
+  }, [fetchOpenProcesses]);
+
+  // Fetch "Sin ofertas" (fase Selección + sin respuestas)
+  const fetchNoOffersProcesses = useCallback(() => {
+    advancedSearch({ fase: "Selección", noOffers: true, limit: 50 })
+      .then(setNoOffersProcesses)
+      .catch(() => setNoOffersProcesses([]));
+  }, []);
+
+  useEffect(() => {
+    fetchNoOffersProcesses();
+  }, [fetchNoOffersProcesses]);
 
   // Animaciones del header
   const headerHeight = scrollY.interpolate({
@@ -102,8 +340,13 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const handleRefresh = useCallback(async () => {
     haptics.medium();
-    await fetchRecentProcesses(100, false);
-  }, [fetchRecentProcesses, haptics]);
+    await Promise.all([
+      fetchRecentProcesses(100, false),
+      fetchTodayNearby(),
+      fetchOpenProcesses(),
+      fetchNoOffersProcesses(),
+    ]);
+  }, [fetchRecentProcesses, fetchTodayNearby, fetchOpenProcesses, fetchNoOffersProcesses, haptics]);
 
   const navigateToSearch = useCallback(
     (params?: Record<string, any>) => {
@@ -116,44 +359,49 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     [navigation, haptics]
   );
 
+  const openCardModal = useCallback(
+    (title: string, procs: SecopProcess[]) => {
+      haptics.light();
+      setCardModal({ visible: true, title, processes: procs });
+    },
+    [haptics]
+  );
+
   // ============================================
   // STATS CARDS
   // ============================================
   const statCards = [
     {
-      key: "recent",
-      icon: "calendar-outline" as const,
-      count: stats.recentCount,
-      label: "Recientes",
-      color: colors.accent,
-      bgColor: colors.accentLight,
-      onPress: () => navigateToSearch(),
-      show: true,
-    },
-    {
-      key: "nearby",
-      icon: "location-outline" as const,
-      count: stats.nearbyCount,
-      label: "Cerca de ti",
-      color: colors.success,
-      bgColor: "rgba(52, 199, 89, 0.12)",
-      onPress: () =>
-        navigateToSearch({ departamento: userDepartamento }),
-      show: !!userMunicipio,
-    },
-    {
       key: "today",
       icon: "today-outline" as const,
-      count: stats.todayCount,
+      count: stats.todayNearbyCount,
       label: "Hoy",
       color: "#FF9500",
       bgColor: "rgba(255, 149, 0, 0.12)",
-      onPress: () => navigateToSearch(),
+      onPress: () => openCardModal("Publicados hoy", stats.todayNearbyProcesses),
+      show: true,
+    },
+    {
+      key: "open",
+      icon: "lock-open-outline" as const,
+      count: stats.openCount,
+      label: "Abiertos",
+      color: colors.accent,
+      bgColor: colors.accentLight,
+      onPress: () => openCardModal("Abiertos", stats.openProcesses),
+      show: true,
+    },
+    {
+      key: "noOffers",
+      icon: "hand-left-outline" as const,
+      count: stats.noOffersCount,
+      label: "Sin ofertas",
+      color: colors.success,
+      bgColor: "rgba(52, 199, 89, 0.12)",
+      onPress: () => openCardModal("Sin ofertas", stats.noOffersProcesses),
       show: true,
     },
   ];
-
-  const hasLocation = !!userMunicipio;
 
   return (
     <View style={styles.container}>
@@ -349,48 +597,28 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           )}
 
           {/* ================================ */}
-          {/* SECCION 4: Procesos destacados   */}
+          {/* SECCION 4: Procesos recientes    */}
           {/* ================================ */}
-
-          {/* Sub-seccion: Cerca de ti */}
-          {hasLocation && stats.nearbyProcesses.length > 0 && (
+          {processes.length > 0 && (
             <View style={styles.processSection}>
               <View style={styles.sectionSeparator} />
               <View style={styles.sectionHeader}>
                 <View style={styles.sectionHeaderLeft}>
                   <Ionicons
-                    name="location-outline"
+                    name="time-outline"
                     size={18}
-                    color={colors.success}
+                    color={colors.accent}
                   />
-                  <Text style={styles.sectionTitle}>
-                    {userMunicipio || "Cerca de ti"}
-                  </Text>
+                  <Text style={styles.sectionTitle}>Recientes</Text>
                 </View>
                 <TouchableOpacity
-                  onPress={() =>
-                    navigateToSearch({ municipio: userMunicipio })
-                  }
+                  onPress={() => navigateToSearch()}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                   <Text style={styles.viewAllText}>Ver mas</Text>
                 </TouchableOpacity>
               </View>
 
-              {stats.nearbyProcesses.map((process, index) => (
-                <StaggeredItem key={process.id_del_proceso} index={index} staggerDelay={30}>
-                  <ProcessCard
-                    process={process}
-                    onPress={() => handleProcessPress(process)}
-                  />
-                </StaggeredItem>
-              ))}
-            </View>
-          )}
-
-          {/* Sub-seccion: Recientes */}
-          {stats.recentProcesses.length > 0 && (
-            <View style={styles.processSection}>
-              {stats.recentProcesses.map((process, index) => (
+              {processes.slice(0, 20).map((process, index) => (
                 <StaggeredItem key={process.id_del_proceso} index={index} staggerDelay={30}>
                   <ProcessCard
                     process={process}
@@ -402,31 +630,44 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           )}
 
           {/* Estado vacio */}
-          {stats.recentProcesses.length === 0 &&
-            stats.nearbyProcesses.length === 0 && (
-              <View style={styles.emptyContainer}>
-                <View style={styles.emptyIconContainer}>
-                  <Ionicons
-                    name="document-text-outline"
-                    size={52}
-                    color={colors.textTertiary}
-                  />
-                </View>
-                <Text style={styles.emptyTitle}>Sin procesos destacados</Text>
-                <Text style={styles.emptyMessage}>
-                  No hay procesos nuevos en este momento. Desliza hacia abajo
-                  para actualizar.
-                </Text>
-                <AnimatedPressable
-                  style={[styles.searchButton, { backgroundColor: colors.accent, ...shadows.card }]}
-                  onPress={() => navigateToSearch()}>
-                  <Ionicons name="search" size={18} color="#FFF" />
-                  <Text style={styles.searchButtonText}>Buscar procesos</Text>
-                </AnimatedPressable>
+          {processes.length === 0 && (
+            <View style={styles.emptyContainer}>
+              <View style={styles.emptyIconContainer}>
+                <Ionicons
+                  name="document-text-outline"
+                  size={52}
+                  color={colors.textTertiary}
+                />
               </View>
-            )}
+              <Text style={styles.emptyTitle}>Sin procesos destacados</Text>
+              <Text style={styles.emptyMessage}>
+                No hay procesos nuevos en este momento. Desliza hacia abajo
+                para actualizar.
+              </Text>
+              <AnimatedPressable
+                style={[styles.searchButton, { backgroundColor: colors.accent, ...shadows.card }]}
+                onPress={() => navigateToSearch()}>
+                <Ionicons name="search" size={18} color="#FFF" />
+                <Text style={styles.searchButtonText}>Buscar procesos</Text>
+              </AnimatedPressable>
+            </View>
+          )}
         </Animated.ScrollView>
       )}
+
+      {/* Modal overlay para cards */}
+      <ProcessListOverlay
+        visible={cardModal.visible}
+        title={cardModal.title}
+        processes={cardModal.processes}
+        onClose={() => setCardModal({ visible: false, title: "", processes: [] })}
+        onViewProcess={(process) => {
+          setCardModal({ visible: false, title: "", processes: [] });
+          setTimeout(() => handleProcessPress(process), 300);
+        }}
+        colors={colors}
+      />
+
       <ContractTypeSelector
         visible={showCategorySelector}
         onClose={() => setShowCategorySelector(false)}
