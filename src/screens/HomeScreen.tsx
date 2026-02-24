@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   Animated,
   BackHandler,
@@ -253,6 +253,13 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   );
 
   const styles = createStyles(colors);
+
+  // Filtrar procesos por categorías favoritas del usuario
+  const filteredProcesses = useMemo(() => {
+    if (!preferences.selectedContractTypes.length) return processes;
+    const favSet = new Set(preferences.selectedContractTypes);
+    return processes.filter(p => favSet.has(p.tipo_de_contrato || ""));
+  }, [processes, preferences.selectedContractTypes]);
 
   // Fetch procesos recientes (feed general)
   useEffect(() => {
@@ -640,7 +647,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           {/* ================================ */}
           {/* SECCION 4: Procesos recientes    */}
           {/* ================================ */}
-          {processes.length > 0 && (
+          {filteredProcesses.length > 0 && (
             <View style={styles.processSection}>
               <View style={styles.sectionSeparator} />
               <View style={styles.sectionHeader}>
@@ -659,7 +666,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 </TouchableOpacity>
               </View>
 
-              {processes.slice(0, 20).map((process, index) => (
+              {filteredProcesses.slice(0, 20).map((process, index) => (
                 <StaggeredItem key={process.id_del_proceso} index={index} staggerDelay={30}>
                   <ProcessCard
                     process={process}
@@ -671,7 +678,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           )}
 
           {/* Estado vacio */}
-          {processes.length === 0 && (
+          {filteredProcesses.length === 0 && (
             <View style={styles.emptyContainer}>
               <View style={styles.emptyIconContainer}>
                 <Ionicons
