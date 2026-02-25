@@ -50,8 +50,8 @@ const buildQuery = (params: {
   municipio?: string;
   departamento?: string;
   fase?: string;
-  modalidad?: string;
-  tipoContrato?: string;
+  modalidad?: string | string[];
+  tipoContrato?: string | string[];
   keyword?: string;
   noOffers?: boolean;
   limit?: number;
@@ -97,11 +97,23 @@ const buildQuery = (params: {
   }
 
   if (params.modalidad) {
-    conditions.push(`modalidad_de_contratacion='${escapeSoql(params.modalidad)}'`);
+    const mods = Array.isArray(params.modalidad) ? params.modalidad : [params.modalidad];
+    if (mods.length === 1) {
+      conditions.push(`modalidad_de_contratacion='${escapeSoql(mods[0])}'`);
+    } else if (mods.length > 1) {
+      const orParts = mods.map(m => `modalidad_de_contratacion='${escapeSoql(m)}'`);
+      conditions.push(`(${orParts.join(" OR ")})`);
+    }
   }
 
   if (params.tipoContrato) {
-    conditions.push(`tipo_de_contrato='${escapeSoql(params.tipoContrato)}'`);
+    const tipos = Array.isArray(params.tipoContrato) ? params.tipoContrato : [params.tipoContrato];
+    if (tipos.length === 1) {
+      conditions.push(`tipo_de_contrato='${escapeSoql(tipos[0])}'`);
+    } else if (tipos.length > 1) {
+      const orParts = tipos.map(t => `tipo_de_contrato='${escapeSoql(t)}'`);
+      conditions.push(`(${orParts.join(" OR ")})`);
+    }
   }
 
   if (params.keyword) {
@@ -214,8 +226,8 @@ export const advancedSearch = async (params: {
   departamento?: string;
   municipio?: string;
   fase?: string;
-  modalidad?: string;
-  tipoContrato?: string;
+  modalidad?: string | string[];
+  tipoContrato?: string | string[];
   noOffers?: boolean;
   recentDays?: number;
   limit?: number;

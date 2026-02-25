@@ -186,10 +186,12 @@ export const formatAlertFilters = (filters: AlertFilters): string => {
     parts.push(filters.municipio);
   }
   if (filters.tipo_contrato) {
-    parts.push(filters.tipo_contrato);
+    const tc = filters.tipo_contrato;
+    parts.push(Array.isArray(tc) ? tc.join(", ") : tc);
   }
   if (filters.modalidad) {
-    parts.push(filters.modalidad);
+    const mod = filters.modalidad;
+    parts.push(Array.isArray(mod) ? mod.join(", ") : mod);
   }
 
   return parts.length > 0 ? parts.join(" • ") : "Todos los procesos";
