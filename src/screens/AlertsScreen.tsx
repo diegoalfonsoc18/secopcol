@@ -48,6 +48,7 @@ import { FadeIn, SlideInUp } from "../components/Animations";
 import { getDepartments, getMunicipalities } from "../services/divipola";
 import { AlertIcon } from "../assets/icons";
 import { spacing, scale, borderRadius, typography } from "../theme";
+import { MODALIDADES, TIPOS_CONTRATO as TIPOS } from "../constants/filterOptions";
 
 // ============================================
 // TIPOS PARA PROCESOS DE NOTIFICACIÓN
@@ -59,37 +60,6 @@ interface ProcessSummary {
   precio: string | number | null;
   fase: string | null;
 }
-
-// ============================================
-// CONSTANTES DE FILTROS
-// ============================================
-const MODALIDADES = [
-  { id: "licitacion", label: "Licitación", value: "Licitación pública" },
-  { id: "directa", label: "Directa", value: "Contratación directa" },
-  { id: "minima", label: "Mínima cuantía", value: "Mínima cuantía" },
-  {
-    id: "abreviada",
-    label: "Abreviada",
-    value: "Selección abreviada menor cuantía",
-  },
-  { id: "concurso", label: "Concurso", value: "Concurso de méritos abierto" },
-  {
-    id: "especial",
-    label: "Régimen especial",
-    value: "Contratación régimen especial",
-  },
-];
-
-const TIPOS = [
-  { id: "obra", label: "Obra", value: "Obra" },
-  { id: "servicios", label: "Servicios", value: "Prestación de servicios" },
-  { id: "suministro", label: "Suministro", value: "Suministro" },
-  { id: "consultoria", label: "Consultoría", value: "Consultoría" },
-  { id: "compraventa", label: "Compraventa", value: "Compraventa" },
-  { id: "interventoria", label: "Interventoría", value: "Interventoría" },
-  { id: "arrendamiento", label: "Arrendamiento", value: "Arrendamiento" },
-  { id: "concesion", label: "Concesión", value: "Concesión" },
-];
 
 // ============================================
 // COMPONENTE: CARD DE ALERTA CON SWIPE
@@ -278,8 +248,8 @@ const AlertModal: React.FC<AlertModalProps> = ({
   const [keyword, setKeyword] = useState("");
   const [selectedDepartamento, setSelectedDepartamento] = useState("");
   const [selectedMunicipio, setSelectedMunicipio] = useState("");
-  const [selectedModalidad, setSelectedModalidad] = useState("");
-  const [selectedTipo, setSelectedTipo] = useState("");
+  const [selectedModalidades, setSelectedModalidades] = useState<string[]>([]);
+  const [selectedTipos, setSelectedTipos] = useState<string[]>([]);
 
   // Estados DIVIPOLA
   const [departments, setDepartments] = useState<string[]>([]);
@@ -327,29 +297,45 @@ const AlertModal: React.FC<AlertModalProps> = ({
       setKeyword(alert.filters.keyword || "");
       setSelectedDepartamento(alert.filters.departamento || "");
       setSelectedMunicipio(alert.filters.municipio || "");
-      // Buscar el ID de modalidad/tipo por su valor
-      const mod = MODALIDADES.find((m) => m.value === alert.filters.modalidad);
-      setSelectedModalidad(mod?.id || "");
-      const tipo = TIPOS.find((t) => t.value === alert.filters.tipo_contrato);
-      setSelectedTipo(tipo?.id || "");
+      // Buscar los IDs de modalidad/tipo por sus valores (soporta string o string[])
+      const modValues = Array.isArray(alert.filters.modalidad)
+        ? alert.filters.modalidad
+        : alert.filters.modalidad ? [alert.filters.modalidad] : [];
+      setSelectedModalidades(
+        modValues.map(v => MODALIDADES.find(m => m.value === v)?.id).filter(Boolean) as string[]
+      );
+      const tipoValues = Array.isArray(alert.filters.tipo_contrato)
+        ? alert.filters.tipo_contrato
+        : alert.filters.tipo_contrato ? [alert.filters.tipo_contrato] : [];
+      setSelectedTipos(
+        tipoValues.map(v => TIPOS.find(t => t.value === v)?.id).filter(Boolean) as string[]
+      );
     } else if (initialFilters) {
       // Nueva alerta con filtros iniciales (desde SearchScreen)
       setName("");
       setKeyword(initialFilters.keyword || "");
       setSelectedDepartamento(initialFilters.departamento || "");
       setSelectedMunicipio(initialFilters.municipio || "");
-      const mod = MODALIDADES.find((m) => m.value === initialFilters.modalidad);
-      setSelectedModalidad(mod?.id || "");
-      const tipo = TIPOS.find((t) => t.value === initialFilters.tipo_contrato);
-      setSelectedTipo(tipo?.id || "");
+      const modVal = Array.isArray(initialFilters.modalidad)
+        ? initialFilters.modalidad
+        : initialFilters.modalidad ? [initialFilters.modalidad] : [];
+      setSelectedModalidades(
+        modVal.map(v => MODALIDADES.find(m => m.value === v)?.id).filter(Boolean) as string[]
+      );
+      const tipoVal = Array.isArray(initialFilters.tipo_contrato)
+        ? initialFilters.tipo_contrato
+        : initialFilters.tipo_contrato ? [initialFilters.tipo_contrato] : [];
+      setSelectedTipos(
+        tipoVal.map(v => TIPOS.find(t => t.value === v)?.id).filter(Boolean) as string[]
+      );
     } else {
       // Nueva alerta vacía
       setName("");
       setKeyword("");
       setSelectedDepartamento("");
       setSelectedMunicipio("");
-      setSelectedModalidad("");
-      setSelectedTipo("");
+      setSelectedModalidades([]);
+      setSelectedTipos([]);
     }
   }, [alert, initialFilters, visible]);
 
@@ -375,13 +361,19 @@ const AlertModal: React.FC<AlertModalProps> = ({
     if (keyword.trim()) filters.keyword = keyword.trim();
     if (selectedDepartamento) filters.departamento = selectedDepartamento;
     if (selectedMunicipio) filters.municipio = selectedMunicipio;
-    if (selectedModalidad) {
-      const mod = MODALIDADES.find((m) => m.id === selectedModalidad);
-      if (mod) filters.modalidad = mod.value;
+    if (selectedModalidades.length > 0) {
+      const values = selectedModalidades
+        .map(id => MODALIDADES.find(m => m.id === id)?.value)
+        .filter(Boolean) as string[];
+      if (values.length === 1) filters.modalidad = values[0];
+      else if (values.length > 1) filters.modalidad = values;
     }
-    if (selectedTipo) {
-      const tipo = TIPOS.find((t) => t.id === selectedTipo);
-      if (tipo) filters.tipo_contrato = tipo.value;
+    if (selectedTipos.length > 0) {
+      const values = selectedTipos
+        .map(id => TIPOS.find(t => t.id === id)?.value)
+        .filter(Boolean) as string[];
+      if (values.length === 1) filters.tipo_contrato = values[0];
+      else if (values.length > 1) filters.tipo_contrato = values;
     }
 
     if (Object.keys(filters).length === 0) {
@@ -604,31 +596,34 @@ const AlertModal: React.FC<AlertModalProps> = ({
               horizontal
               showsHorizontalScrollIndicator={false}
               style={styles.chipsScroll}>
-              {MODALIDADES.map((mod) => (
-                <TouchableOpacity
-                  key={mod.id}
-                  style={[
-                    styles.chip,
-                    { backgroundColor: colors.backgroundSecondary },
-                    selectedModalidad === mod.id && {
-                      backgroundColor: colors.accent,
-                    },
-                  ]}
-                  onPress={() =>
-                    setSelectedModalidad(
-                      selectedModalidad === mod.id ? "" : mod.id,
-                    )
-                  }>
-                  <Text
+              {MODALIDADES.map((mod) => {
+                const isSelected = selectedModalidades.includes(mod.id);
+                return (
+                  <TouchableOpacity
+                    key={mod.id}
                     style={[
-                      styles.chipText,
-                      { color: colors.textSecondary },
-                      selectedModalidad === mod.id && { color: "#FFFFFF" },
-                    ]}>
-                    {mod.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                      styles.chip,
+                      { backgroundColor: colors.backgroundSecondary },
+                      isSelected && { backgroundColor: colors.accent },
+                    ]}
+                    onPress={() =>
+                      setSelectedModalidades(prev =>
+                        prev.includes(mod.id)
+                          ? prev.filter(id => id !== mod.id)
+                          : [...prev, mod.id]
+                      )
+                    }>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        { color: colors.textSecondary },
+                        isSelected && { color: "#FFFFFF" },
+                      ]}>
+                      {mod.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
 
             {/* Tipo de contrato */}
@@ -643,29 +638,34 @@ const AlertModal: React.FC<AlertModalProps> = ({
               horizontal
               showsHorizontalScrollIndicator={false}
               style={styles.chipsScroll}>
-              {TIPOS.map((tipo) => (
-                <TouchableOpacity
-                  key={tipo.id}
-                  style={[
-                    styles.chip,
-                    { backgroundColor: colors.backgroundSecondary },
-                    selectedTipo === tipo.id && {
-                      backgroundColor: colors.accent,
-                    },
-                  ]}
-                  onPress={() =>
-                    setSelectedTipo(selectedTipo === tipo.id ? "" : tipo.id)
-                  }>
-                  <Text
+              {TIPOS.map((tipo) => {
+                const isSelected = selectedTipos.includes(tipo.id);
+                return (
+                  <TouchableOpacity
+                    key={tipo.id}
                     style={[
-                      styles.chipText,
-                      { color: colors.textSecondary },
-                      selectedTipo === tipo.id && { color: "#FFFFFF" },
-                    ]}>
-                    {tipo.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                      styles.chip,
+                      { backgroundColor: colors.backgroundSecondary },
+                      isSelected && { backgroundColor: colors.accent },
+                    ]}
+                    onPress={() =>
+                      setSelectedTipos(prev =>
+                        prev.includes(tipo.id)
+                          ? prev.filter(id => id !== tipo.id)
+                          : [...prev, tipo.id]
+                      )
+                    }>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        { color: colors.textSecondary },
+                        isSelected && { color: "#FFFFFF" },
+                      ]}>
+                      {tipo.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
 
             {/* Info */}

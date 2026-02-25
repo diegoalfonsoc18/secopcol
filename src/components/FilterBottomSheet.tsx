@@ -17,70 +17,7 @@ import {
 } from "./BottomSheet";
 import { useTheme } from "../context/ThemeContext";
 import { spacing } from "../theme";
-
-// Configuración de filtros
-const MODALIDADES = [
-  { id: "licitacion", label: "Licitación", value: "Licitación pública" },
-  { id: "directa", label: "Directa", value: "Contratación directa" },
-  { id: "minima", label: "Mínima cuantía", value: "Mínima cuantía" },
-  {
-    id: "abreviada",
-    label: "Abreviada",
-    value: "Selección abreviada menor cuantía",
-  },
-  { id: "concurso", label: "Concurso", value: "Concurso de méritos abierto" },
-  {
-    id: "especial",
-    label: "Régimen especial",
-    value: "Contratación régimen especial",
-  },
-];
-
-const TIPOS_CONTRATO = [
-  { id: "obra", label: "Obra", icon: "construct-outline", color: "#FF9500" },
-  {
-    id: "servicios",
-    label: "Servicios",
-    icon: "briefcase-outline",
-    color: "#007AFF",
-  },
-  {
-    id: "suministro",
-    label: "Suministro",
-    icon: "cube-outline",
-    color: "#34C759",
-  },
-  {
-    id: "consultoria",
-    label: "Consultoría",
-    icon: "bulb-outline",
-    color: "#5856D6",
-  },
-  {
-    id: "compraventa",
-    label: "Compraventa",
-    icon: "cart-outline",
-    color: "#FF2D55",
-  },
-  {
-    id: "interventoria",
-    label: "Interventoría",
-    icon: "eye-outline",
-    color: "#AF52DE",
-  },
-  {
-    id: "arrendamiento",
-    label: "Arrendamiento",
-    icon: "home-outline",
-    color: "#00C7BE",
-  },
-  {
-    id: "concesion",
-    label: "Concesión",
-    icon: "key-outline",
-    color: "#FF9F0A",
-  },
-];
+import { MODALIDADES, TIPOS_CONTRATO } from "../constants/filterOptions";
 
 const FASES = [
   { id: "borrador", label: "Borrador" },
@@ -183,8 +120,6 @@ export const FilterBottomSheet = forwardRef<
               onPress={() =>
                 setTipoContrato(tipoContrato === tipo.id ? "" : tipo.id)
               }
-              icon={tipo.icon}
-              color={tipo.color}
             />
           ))}
         </View>

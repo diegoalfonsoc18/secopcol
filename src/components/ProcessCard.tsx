@@ -124,15 +124,25 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
         )}
       </View>
 
-      {/* TIPO DE CONTRATO */}
-      <View
-        style={[styles.typeContainer, { backgroundColor: `${mainColor}15` }]}>
-        <View style={[styles.iconWrapper, { backgroundColor: mainColor }]}>
-          <typeConfig.CustomIcon size={14} color="#FFF" />
+      {/* TIPO DE CONTRATO + FASE */}
+      <View style={styles.badgesRow}>
+        <View
+          style={[styles.typeContainer, { backgroundColor: `${mainColor}15` }]}>
+          <View style={[styles.iconWrapper, { backgroundColor: mainColor }]}>
+            <typeConfig.CustomIcon size={14} color="#FFF" />
+          </View>
+          <Text style={[styles.typeText, { color: mainColor }]}>
+            {typeConfig.label}
+          </Text>
         </View>
-        <Text style={[styles.typeText, { color: mainColor }]}>
-          {typeConfig.label}
-        </Text>
+        {process.fase && (
+          <View style={[styles.faseBadge, { backgroundColor: colors.accentLight }]}>
+            <Ionicons name="flag-outline" size={12} color={colors.accent} />
+            <Text style={[styles.faseText, { color: colors.accent }]}>
+              {process.fase}
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* TÍTULO */}
@@ -276,15 +286,32 @@ const createStyles = (colors: any, mainColor: string) =>
       fontSize: scale(11),
       fontWeight: "700",
     },
+    badgesRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+      marginBottom: spacing.sm,
+    },
     typeContainer: {
       flexDirection: "row",
       alignItems: "center",
-      alignSelf: "flex-start",
       paddingHorizontal: spacing.sm,
       paddingVertical: spacing.xs,
       borderRadius: 100,
-      marginBottom: spacing.sm,
       gap: spacing.sm,
+    },
+    faseBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: 100,
+      gap: scale(4),
+    },
+    faseText: {
+      ...typography.caption2,
+      fontWeight: "600",
     },
     iconWrapper: {
       width: scale(24),

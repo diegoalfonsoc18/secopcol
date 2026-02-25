@@ -213,7 +213,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { colors } = useTheme();
   const haptics = useHaptics();
   const { user, preferences } = useAuth();
-  const { processes, loading, fetchRecentProcesses } = useProcessesStore();
+  useProcessesStore(); // mantener store inicializado
   const scrollY = useRef(new Animated.Value(0)).current;
   const [showCategorySelector, setShowCategorySelector] = useState(false);
 
@@ -227,6 +227,9 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [todayNearbyProcesses, setTodayNearbyProcesses] = useState<SecopProcess[]>([]);
   const [openProcesses, setOpenProcesses] = useState<SecopProcess[]>([]);
   const [noOffersProcesses, setNoOffersProcesses] = useState<SecopProcess[]>([]);
+  // Procesos recientes locales (filtrados por ubicación + tipos)
+  const [recentProcesses, setRecentProcesses] = useState<SecopProcess[]>([]);
+  const [recentLoading, setRecentLoading] = useState(true);
   const [upcomingObligations, setUpcomingObligations] = useState<ContractObligation[]>([]);
 
   // Estado para el modal overlay de cards
@@ -254,29 +257,45 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const styles = createStyles(colors);
 
-  // Filtrar procesos por categorías favoritas del usuario
+  // Priorizar: depto usuario > cercanos > abiertos, ordenado por fecha
   const filteredProcesses = useMemo(() => {
-    if (!preferences.selectedContractTypes.length) return processes;
-    const favSet = new Set(preferences.selectedContractTypes);
-    return processes.filter(p => favSet.has(p.tipo_de_contrato || ""));
-  }, [processes, preferences.selectedContractTypes]);
+    const openIds = new Set(openProcesses.map(p => p.id_del_proceso).filter(Boolean));
+    const userDept = userDepartamento?.toUpperCase() || "";
+    return [...recentProcesses].sort((a, b) => {
+      // +4 si es del departamento del usuario
+      const aDept = (a.departamento_entidad || "").toUpperCase() === userDept ? 4 : 0;
+      const bDept = (b.departamento_entidad || "").toUpperCase() === userDept ? 4 : 0;
+      // +2 si está abierto (en Selección cerca)
+      const aOpen = openIds.has(a.id_del_proceso || "") ? 2 : 0;
+      const bOpen = openIds.has(b.id_del_proceso || "") ? 2 : 0;
+      return (bDept + bOpen) - (aDept + aOpen);
+    });
+  }, [recentProcesses, openProcesses, userDepartamento]);
 
-  // Fetch procesos recientes (feed general)
-  useEffect(() => {
-    fetchRecentProcesses(100, false);
-  }, [fetchRecentProcesses]);
+  // Departamentos: primero el del usuario, luego cercanos (≤30km)
+  const cardDepts = useMemo(() => {
+    const depts: string[] = [];
+    if (userDepartamento) depts.push(userDepartamento);
+    for (const d of nearbyDepartamentos) {
+      if (d.distance <= 30 && d.departamento !== userDepartamento) {
+        depts.push(d.departamento);
+      }
+    }
+    return depts;
+  }, [nearbyDepartamentos, userDepartamento]);
 
-  // Fetch "Hoy + Cerca" (departamentos a ≤20km)
+  // Fetch "Recientes + Cerca" (últimos 7 días, filtrado por tipos favoritos)
+  const selectedTypes = preferences.selectedContractTypes;
   const fetchTodayNearby = useCallback(() => {
-    const nearDepts = nearbyDepartamentos.filter(d => d.distance <= 20);
-    if (nearDepts.length === 0) return;
+    if (cardDepts.length === 0) return;
 
     Promise.all(
-      nearDepts.map(d =>
+      cardDepts.map(dept =>
         advancedSearch({
-          departamento: d.departamento,
-          recentDays: 1,
-          limit: 30,
+          departamento: dept,
+          recentDays: 7,
+          limit: 50,
+          ...(selectedTypes.length > 0 && { tipoContrato: selectedTypes }),
         })
       )
     ).then(results => {
@@ -290,24 +309,24 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       });
       setTodayNearbyProcesses(unique);
     }).catch(() => setTodayNearbyProcesses([]));
-  }, [nearbyDepartamentos]);
+  }, [cardDepts, selectedTypes]);
 
   useEffect(() => {
     fetchTodayNearby();
   }, [fetchTodayNearby]);
 
-  // Fetch "Abiertos" (fase Selección, cercanos ≤20km, últimos 15 días)
+  // Fetch "Abiertos" (fase Selección, cercanos, últimos 15 días, filtrado por tipos)
   const fetchOpenProcesses = useCallback(() => {
-    const nearDepts = nearbyDepartamentos.filter(d => d.distance <= 20);
-    if (nearDepts.length === 0) return;
+    if (cardDepts.length === 0) return;
 
     Promise.all(
-      nearDepts.map(d =>
+      cardDepts.map(dept =>
         advancedSearch({
-          departamento: d.departamento,
+          departamento: dept,
           fase: "Selección",
           recentDays: 15,
           limit: 50,
+          ...(selectedTypes.length > 0 && { tipoContrato: selectedTypes }),
         })
       )
     ).then(results => {
@@ -321,25 +340,25 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       });
       setOpenProcesses(unique);
     }).catch(() => setOpenProcesses([]));
-  }, [nearbyDepartamentos]);
+  }, [cardDepts, selectedTypes]);
 
   useEffect(() => {
     fetchOpenProcesses();
   }, [fetchOpenProcesses]);
 
-  // Fetch "Sin ofertas" (fase Selección + sin respuestas, cercanos ≤20km, últimos 15 días)
+  // Fetch "Sin ofertas" (fase Selección + sin respuestas, cercanos, últimos 15 días, filtrado por tipos)
   const fetchNoOffersProcesses = useCallback(() => {
-    const nearDepts = nearbyDepartamentos.filter(d => d.distance <= 20);
-    if (nearDepts.length === 0) return;
+    if (cardDepts.length === 0) return;
 
     Promise.all(
-      nearDepts.map(d =>
+      cardDepts.map(dept =>
         advancedSearch({
-          departamento: d.departamento,
+          departamento: dept,
           fase: "Selección",
           noOffers: true,
           recentDays: 15,
           limit: 50,
+          ...(selectedTypes.length > 0 && { tipoContrato: selectedTypes }),
         })
       )
     ).then(results => {
@@ -353,11 +372,54 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       });
       setNoOffersProcesses(unique);
     }).catch(() => setNoOffersProcesses([]));
-  }, [nearbyDepartamentos]);
+  }, [cardDepts, selectedTypes]);
 
   useEffect(() => {
     fetchNoOffersProcesses();
   }, [fetchNoOffersProcesses]);
+
+  // Fetch "Recientes" — lógica estilo SearchScreen: por depto + tipos, ordenado por fecha
+  const fetchRecentForHome = useCallback(async () => {
+    if (cardDepts.length === 0) return;
+    setRecentLoading(true);
+    try {
+      const promises = cardDepts.map(dept =>
+        advancedSearch({
+          departamento: dept,
+          limit: 50,
+          ...(selectedTypes.length > 0 && { tipoContrato: selectedTypes }),
+        })
+      );
+      const results = await Promise.all(promises);
+      const allResults = results.flat();
+
+      // Dedup por id_del_proceso (como SearchScreen)
+      const seen = new Set<string>();
+      const unique = allResults.filter(p => {
+        const id = p.id_del_proceso;
+        if (!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
+
+      // Ordenar por fecha más reciente (como SearchScreen)
+      unique.sort((a, b) => {
+        const dateA = a.fecha_de_ultima_publicaci || a.fecha_de_publicacion_del || "";
+        const dateB = b.fecha_de_ultima_publicaci || b.fecha_de_publicacion_del || "";
+        return dateB.localeCompare(dateA);
+      });
+
+      setRecentProcesses(unique.slice(0, 50));
+    } catch {
+      setRecentProcesses([]);
+    } finally {
+      setRecentLoading(false);
+    }
+  }, [cardDepts, selectedTypes]);
+
+  useEffect(() => {
+    fetchRecentForHome();
+  }, [fetchRecentForHome]);
 
   // Animaciones del header
   const headerHeight = scrollY.interpolate({
@@ -389,12 +451,12 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const handleRefresh = useCallback(async () => {
     haptics.medium();
     await Promise.all([
-      fetchRecentProcesses(100, false),
+      fetchRecentForHome(),
       fetchTodayNearby(),
       fetchOpenProcesses(),
       fetchNoOffersProcesses(),
     ]);
-  }, [fetchRecentProcesses, fetchTodayNearby, fetchOpenProcesses, fetchNoOffersProcesses, haptics]);
+  }, [fetchRecentForHome, fetchTodayNearby, fetchOpenProcesses, fetchNoOffersProcesses, haptics]);
 
   const navigateToSearch = useCallback(
     (params?: Record<string, any>) => {
@@ -421,12 +483,12 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const statCards = [
     {
       key: "today",
-      icon: "today-outline" as const,
+      icon: "time-outline" as const,
       count: stats.todayNearbyCount,
-      label: "Hoy",
+      label: "Recientes",
       color: "#FF9500",
       bgColor: "rgba(255, 149, 0, 0.12)",
-      onPress: () => openCardModal("Publicados hoy", stats.todayNearbyProcesses),
+      onPress: () => openCardModal("Recientes cerca de ti", stats.todayNearbyProcesses),
       show: true,
     },
     {
@@ -494,7 +556,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       </Animated.View>
 
       {/* Contenido */}
-      {loading && processes.length === 0 ? (
+      {recentLoading && recentProcesses.length === 0 ? (
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}>
@@ -514,14 +576,14 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           scrollEventThrottle={16}
           refreshControl={
             <RefreshControl
-              refreshing={loading}
+              refreshing={recentLoading}
               onRefresh={handleRefresh}
               tintColor={colors.accent}
               colors={[colors.accent]}
             />
           }>
           {/* ================================ */}
-          {/* SECCION 1: Stats Summary        */}
+          {/* SECCION 1: Stats Summary         */}
           {/* ================================ */}
           <View style={styles.statsRow}>
             {statCards
@@ -556,11 +618,17 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </View>
 
           {/* ================================ */}
-          {/* SECCION 2: Categorias favoritas  */}
+          {/* SECCION 2: Categorías            */}
           {/* ================================ */}
-          <View style={styles.sectionSeparator} />
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Categorias</Text>
+            <View style={styles.sectionHeaderLeft}>
+              <Ionicons
+                name="grid-outline"
+                size={18}
+                color={colors.accent}
+              />
+              <Text style={styles.sectionTitle}>Categorías</Text>
+            </View>
             <TouchableOpacity
               onPress={() => setShowCategorySelector(true)}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -572,46 +640,67 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.categoriesRow}>
-            {stats.favoriteTypeConfigs.map((config, index) => {
-              const typeColor = getContractTypeColor(config);
+            {stats.favoriteTypeConfigs.map((type) => {
+              const typeColor = getContractTypeColor(type);
               return (
-                <SlideInRight key={config.id} delay={index * 60}>
-                  <AnimatedPressable
-                    style={styles.categoryItem}
-                    onPress={() =>
-                      navigateToSearch({ tipoContrato: config.id })
-                    }
-                    scaleValue={0.92}
-                    hapticType="selection">
-                    <View
-                      style={[
-                        styles.categoryIconCircle,
-                        {
-                          backgroundColor: typeColor + "15",
-                          borderWidth: 1,
-                          borderColor: typeColor + "25",
-                        },
-                      ]}>
-                      {config.CustomIcon && (
-                        <config.CustomIcon
-                          size={26}
-                          color={typeColor}
-                        />
-                      )}
-                    </View>
-                    <Text
-                      style={[styles.categoryLabel, { color: colors.textPrimary }]}
-                      numberOfLines={1}>
-                      {config.label}
-                    </Text>
-                  </AnimatedPressable>
-                </SlideInRight>
+                <AnimatedPressable
+                  key={type.id}
+                  style={styles.categoryItem}
+                  onPress={() =>
+                    navigateToSearch({ tipoContrato: type.label })
+                  }>
+                  <View
+                    style={[
+                      styles.categoryIconCircle,
+                      { backgroundColor: `${typeColor}15` },
+                    ]}>
+                    <type.CustomIcon size={24} color={typeColor} />
+                  </View>
+                  <Text
+                    style={[styles.categoryLabel, { color: colors.textSecondary }]}
+                    numberOfLines={1}>
+                    {type.label}
+                  </Text>
+                </AnimatedPressable>
               );
             })}
           </ScrollView>
 
           {/* ================================ */}
-          {/* SECCION 3: Obligaciones proximas */}
+          {/* SECCION 3: Procesos recientes    */}
+          {/* ================================ */}
+          {filteredProcesses.length > 0 && (
+            <View style={styles.processSection}>
+              <View style={styles.sectionSeparator} />
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionHeaderLeft}>
+                  <Ionicons
+                    name="time-outline"
+                    size={18}
+                    color={colors.accent}
+                  />
+                  <Text style={styles.sectionTitle}>Recientes</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => navigateToSearch()}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Text style={styles.viewAllText}>Ver mas</Text>
+                </TouchableOpacity>
+              </View>
+
+              {filteredProcesses.slice(0, 20).map((process, index) => (
+                <StaggeredItem key={process.id_del_proceso} index={index} staggerDelay={30}>
+                  <ProcessCard
+                    process={process}
+                    onPress={() => handleProcessPress(process)}
+                  />
+                </StaggeredItem>
+              ))}
+            </View>
+          )}
+
+          {/* ================================ */}
+          {/* SECCION 4: Obligaciones proximas */}
           {/* ================================ */}
           {upcomingObligations.length > 0 && (
             <View style={styles.processSection}>
@@ -638,39 +727,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                     obligation={obl}
                     compact
                     onPress={() => navigation.navigate("Obligations")}
-                  />
-                </StaggeredItem>
-              ))}
-            </View>
-          )}
-
-          {/* ================================ */}
-          {/* SECCION 4: Procesos recientes    */}
-          {/* ================================ */}
-          {filteredProcesses.length > 0 && (
-            <View style={styles.processSection}>
-              <View style={styles.sectionSeparator} />
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeaderLeft}>
-                  <Ionicons
-                    name="time-outline"
-                    size={18}
-                    color={colors.accent}
-                  />
-                  <Text style={styles.sectionTitle}>Recientes</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => navigateToSearch()}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  <Text style={styles.viewAllText}>Ver mas</Text>
-                </TouchableOpacity>
-              </View>
-
-              {filteredProcesses.slice(0, 20).map((process, index) => (
-                <StaggeredItem key={process.id_del_proceso} index={index} staggerDelay={30}>
-                  <ProcessCard
-                    process={process}
-                    onPress={() => handleProcessPress(process)}
                   />
                 </StaggeredItem>
               ))}
