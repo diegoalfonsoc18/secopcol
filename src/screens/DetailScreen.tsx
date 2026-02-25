@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Linking,
   ScrollView,
@@ -22,6 +22,7 @@ import { FadeIn, SlideInUp } from "../components/Animations";
 import { AnimatedPressable } from "../components/AnimatedPressable";
 import { ObligationFormModal, ObligationFormData } from "../components/ObligationFormModal";
 import { analyzeProcess, AnalysisResult } from "../services/aiAnalysis";
+import { getProponentesByProcess, SecopProponente } from "../api/secop";
 import { useObligationsStore } from "../store/obligationsStore";
 import { useAuth } from "../context/AuthContext";
 
@@ -95,6 +96,18 @@ export const DetailScreen = ({ route, navigation }: any) => {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [showObligationForm, setShowObligationForm] = useState(false);
+  const [proponentes, setProponentes] = useState<SecopProponente[]>([]);
+  const [loadingProponentes, setLoadingProponentes] = useState(true);
+
+  useEffect(() => {
+    const fetchProponentes = async () => {
+      setLoadingProponentes(true);
+      const data = await getProponentesByProcess(process.id_del_proceso);
+      setProponentes(data);
+      setLoadingProponentes(false);
+    };
+    fetchProponentes();
+  }, [process.id_del_proceso]);
 
   const styles = createStyles(colors);
 
@@ -442,7 +455,7 @@ _Enviado desde SECOP Colombia App_`;
           <View style={styles.heroSection}>
             <View style={styles.idContainer}>
               <Text style={styles.idLabel}>PROCESO</Text>
-              <Text style={styles.idValue}>{process.id_del_proceso}</Text>
+              <Text style={styles.idValue}>{process.referencia_del_proceso || process.id_del_proceso}</Text>
             </View>
 
             <View style={styles.badgesRow}>
@@ -486,7 +499,7 @@ _Enviado desde SECOP Colombia App_`;
 
           {/* Descripción */}
           <View style={styles.descriptionCard}>
-            <Text style={styles.descriptionLabel}>Objeto del Proceso</Text>
+            <Text style={styles.descriptionLabel}>Descripción</Text>
             <Text style={styles.descriptionText}>
               {process.descripci_n_del_procedimiento ||
                 "Sin descripción disponible"}
@@ -679,6 +692,44 @@ _Enviado desde SECOP Colombia App_`;
             )}
           </Section>
         )}
+
+        {/* Oferentes / Proponentes */}
+        <Section title="Oferentes" icon="people-outline">
+          {loadingProponentes ? (
+            <View style={styles.proponentesLoading}>
+              <ActivityIndicator size="small" color={colors.accent} />
+              <Text style={styles.proponentesLoadingText}>Cargando oferentes...</Text>
+            </View>
+          ) : proponentes.length > 0 ? (
+            proponentes.map((prop, index) => (
+              <View
+                key={`${prop.nit_proveedor}-${index}`}
+                style={[
+                  styles.proponenteRow,
+                  index < proponentes.length - 1 && styles.infoRowBorder,
+                ]}>
+                <View style={styles.proponentePosition}>
+                  <Text style={styles.proponentePositionText}>{index + 1}</Text>
+                </View>
+                <View style={styles.proponenteInfo}>
+                  <Text style={styles.proponenteName} numberOfLines={2}>
+                    {prop.proveedor}
+                  </Text>
+                  {prop.nit_proveedor && (
+                    <Text style={styles.proponenteNit}>
+                      NIT: {prop.nit_proveedor}
+                    </Text>
+                  )}
+                </View>
+              </View>
+            ))
+          ) : (
+            <View style={styles.proponentesEmpty}>
+              <Ionicons name="people-outline" size={24} color={colors.textTertiary} />
+              <Text style={styles.proponentesEmptyText}>Sin oferentes registrados</Text>
+            </View>
+          )}
+        </Section>
 
         {/* Botón Ver en SECOP */}
         <TouchableOpacity
@@ -1128,6 +1179,59 @@ const createStyles = (colors: any) =>
       ...typography.caption1,
       color: colors.textTertiary,
       marginTop: 2,
+    },
+    // Proponentes
+    proponenteRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: spacing.md,
+    },
+    proponentePosition: {
+      width: scale(28),
+      height: scale(28),
+      borderRadius: scale(14),
+      backgroundColor: colors.accentLight,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: spacing.md,
+    },
+    proponentePositionText: {
+      ...typography.caption1,
+      fontWeight: "700",
+      color: colors.accent,
+    },
+    proponenteInfo: {
+      flex: 1,
+    },
+    proponenteName: {
+      ...typography.subhead,
+      color: colors.textPrimary,
+    },
+    proponenteNit: {
+      ...typography.caption1,
+      color: colors.textTertiary,
+      marginTop: 2,
+    },
+    proponentesLoading: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: spacing.lg,
+      gap: spacing.sm,
+    },
+    proponentesLoadingText: {
+      ...typography.footnote,
+      color: colors.textSecondary,
+    },
+    proponentesEmpty: {
+      alignItems: "center",
+      justifyContent: "center",
+      padding: spacing.lg,
+      gap: spacing.sm,
+    },
+    proponentesEmptyText: {
+      ...typography.footnote,
+      color: colors.textTertiary,
     },
   });
 

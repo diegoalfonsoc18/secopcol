@@ -18,7 +18,7 @@ import { AlertIcon, MarcadorIcon } from "../assets/icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ProcessCard, SearchResultsSkeleton, AnimatedPressable } from "../components/index";
-import { SecopProcess, advancedSearch } from "../api/secop";
+import { SecopProcess, advancedSearch, getEntitiesByLocation } from "../api/secop";
 import { spacing, borderRadius, scale, shadows } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { useFiltersStore, SavedFilter } from "../store/filtersStore";
@@ -48,10 +48,15 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
   const [selectedMunicipio, setSelectedMunicipio] = useState("");
   const [selectedModalidad, setSelectedModalidad] = useState("");
   const [selectedTipos, setSelectedTipos] = useState<string[]>([]);
+  const [entities, setEntities] = useState<string[]>([]);
+  const [loadingEntities, setLoadingEntities] = useState(false);
+  const [selectedEntidad, setSelectedEntidad] = useState("");
   const [showDeptModal, setShowDeptModal] = useState(false);
   const [showMuniModal, setShowMuniModal] = useState(false);
+  const [showEntidadModal, setShowEntidadModal] = useState(false);
   const [deptSearchText, setDeptSearchText] = useState("");
   const [muniSearchText, setMuniSearchText] = useState("");
+  const [entidadSearchText, setEntidadSearchText] = useState("");
   const [processes, setProcesses] = useState<SecopProcess[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +87,25 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
     };
     loadMunicipalities();
   }, [selectedDepartamento]);
+
+  useEffect(() => {
+    if (!selectedMunicipio) {
+      setEntities([]);
+      setSelectedEntidad("");
+      return;
+    }
+    const loadEntities = async () => {
+      setLoadingEntities(true);
+      setSelectedEntidad("");
+      const data = await getEntitiesByLocation({
+        departamento: selectedDepartamento,
+        municipio: selectedMunicipio,
+      });
+      setEntities(data);
+      setLoadingEntities(false);
+    };
+    loadEntities();
+  }, [selectedDepartamento, selectedMunicipio]);
 
   // Consumir params de navegacion desde HomeScreen
   const pendingSearchRef = React.useRef<{ tipos: string[] } | null>(null);
@@ -134,6 +158,12 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
       )
     : municipalities;
 
+  const filteredEntities = entidadSearchText
+    ? entities.filter((e) =>
+        e.toLowerCase().includes(entidadSearchText.toLowerCase())
+      )
+    : entities;
+
   // Toggle tipo de contrato y buscar automáticamente
   const handleToggleTipo = (tipoId: string) => {
     const newSelectedTipos = selectedTipos.includes(tipoId)
@@ -165,21 +195,23 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
 
       let allResults: SecopProcess[] = [];
 
+      const baseParams = {
+        keyword: keyword || undefined,
+        departamento: selectedDepartamento || undefined,
+        municipio: selectedMunicipio || undefined,
+        entidad: selectedEntidad || undefined,
+        modalidad: modalidadValue,
+      };
+
       if (tipoValues.length === 0) {
         const results = await advancedSearch({
-          keyword: keyword || undefined,
-          departamento: selectedDepartamento || undefined,
-          municipio: selectedMunicipio || undefined,
-          modalidad: modalidadValue,
+          ...baseParams,
           limit: 50,
         });
         allResults = results;
       } else if (tipoValues.length === 1) {
         const results = await advancedSearch({
-          keyword: keyword || undefined,
-          departamento: selectedDepartamento || undefined,
-          municipio: selectedMunicipio || undefined,
-          modalidad: modalidadValue,
+          ...baseParams,
           tipoContrato: tipoValues[0],
           limit: 50,
         });
@@ -187,10 +219,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
       } else {
         const promises = tipoValues.map((tipo) =>
           advancedSearch({
-            keyword: keyword || undefined,
-            departamento: selectedDepartamento || undefined,
-            municipio: selectedMunicipio || undefined,
-            modalidad: modalidadValue,
+            ...baseParams,
             tipoContrato: tipo,
             limit: 30,
           })
@@ -321,6 +350,12 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
     setMuniSearchText("");
   };
 
+  const handleSelectEntidad = (entidad: string) => {
+    setSelectedEntidad(selectedEntidad === entidad ? "" : entidad);
+    setShowEntidadModal(false);
+    setEntidadSearchText("");
+  };
+
   const COMMON_SUGGESTIONS = [
     "Construcción",
     "Obra",
@@ -374,6 +409,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
     keyword,
     selectedDepartamento,
     selectedMunicipio,
+    selectedEntidad,
     selectedModalidad,
     ...selectedTipos,
   ].filter(Boolean).length;
@@ -383,6 +419,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
     setKeyword("");
     setSelectedDepartamento("");
     setSelectedMunicipio("");
+    setSelectedEntidad("");
     setSelectedModalidad("");
     setSelectedTipos([]);
   };
@@ -574,6 +611,43 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
               )}
             </TouchableOpacity>
           </View>
+
+          {/* Entidad */}
+          <TouchableOpacity
+            style={[
+              styles.entidadButton,
+              selectedEntidad && styles.locationButtonActive,
+              !selectedMunicipio && styles.locationButtonDisabled,
+            ]}
+            onPress={() => selectedMunicipio && setShowEntidadModal(true)}
+            disabled={!selectedMunicipio || loadingEntities}>
+            {loadingEntities ? (
+              <ActivityIndicator size="small" color={colors.textTertiary} />
+            ) : (
+              <>
+                <Ionicons
+                  name="shield-outline"
+                  size={16}
+                  color={
+                    selectedEntidad ? colors.accent : colors.textSecondary
+                  }
+                />
+                <Text
+                  style={[
+                    styles.locationText,
+                    selectedEntidad && styles.locationTextActive,
+                  ]}
+                  numberOfLines={1}>
+                  {selectedEntidad || "Entidad"}
+                </Text>
+                <Ionicons
+                  name="chevron-down"
+                  size={16}
+                  color={colors.textTertiary}
+                />
+              </>
+            )}
+          </TouchableOpacity>
 
           {/* Modalidades */}
           <View style={styles.sectionContainer}>
@@ -882,6 +956,56 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Modal Entidades */}
+      <Modal visible={showEntidadModal} animationType="slide" transparent>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { paddingBottom: insets.bottom }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Entidad</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowEntidadModal(false);
+                  setEntidadSearchText("");
+                }}>
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.modalSearchBar}>
+              <Ionicons name="search" size={18} color={colors.textTertiary} />
+              <TextInput
+                style={styles.modalSearchInput}
+                placeholder="Buscar entidad..."
+                placeholderTextColor={colors.textTertiary}
+                value={entidadSearchText}
+                onChangeText={setEntidadSearchText}
+                autoFocus
+              />
+            </View>
+            <FlatList
+              data={filteredEntities}
+              keyExtractor={(item) => item}
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.modalItem}
+                  onPress={() => handleSelectEntidad(item)}>
+                  <Text style={styles.modalItemText}>{item}</Text>
+                  {selectedEntidad === item && (
+                    <Ionicons
+                      name="checkmark"
+                      size={20}
+                      color={colors.accent}
+                    />
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 };
@@ -995,6 +1119,18 @@ const createStyles = (colors: any) =>
       height: 42,
       borderWidth: 1,
       borderColor: colors.separatorLight,
+    },
+    entidadButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "transparent",
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.md,
+      gap: spacing.xs,
+      height: 42,
+      borderWidth: 1,
+      borderColor: colors.separatorLight,
+      marginBottom: spacing.md,
     },
     locationButtonActive: {
       backgroundColor: colors.accentLight,
