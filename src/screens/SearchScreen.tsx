@@ -27,26 +27,7 @@ import {
   CONTRACT_TYPES,
   getContractTypeColor,
 } from "../constants/contractTypes";
-
-// ============================================
-// FILTROS
-// ============================================
-const MODALIDADES = [
-  { id: "licitacion", label: "Licitación", value: "Licitación pública" },
-  { id: "directa", label: "Directa", value: "Contratación directa" },
-  { id: "minima", label: "Mínima cuantía", value: "Mínima cuantía" },
-  {
-    id: "abreviada",
-    label: "Abreviada",
-    value: "Selección abreviada menor cuantía",
-  },
-  { id: "concurso", label: "Concurso", value: "Concurso de méritos abierto" },
-  {
-    id: "especial",
-    label: "Régimen especial",
-    value: "Contratación régimen especial",
-  },
-];
+import { MODALIDADES } from "../constants/filterOptions";
 
 // ============================================
 // COMPONENTE PRINCIPAL

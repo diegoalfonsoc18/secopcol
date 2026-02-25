@@ -6,8 +6,8 @@ export interface AlertFilters {
   keyword?: string;
   departamento?: string;
   municipio?: string;
-  modalidad?: string;
-  tipo_contrato?: string;
+  modalidad?: string | string[];
+  tipo_contrato?: string | string[];
   fase?: string;
   precio_min?: number;
   precio_max?: number;
