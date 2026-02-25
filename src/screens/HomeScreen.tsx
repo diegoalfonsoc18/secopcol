@@ -9,14 +9,11 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
-  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { ProcessCard, DashboardSkeleton, StaggeredItem, ContractTypeSelector, AnimatedPressable, ScaleIn, SlideInRight, ObligationCard } from "../components/index";
+import { ProcessCard, DashboardSkeleton, StaggeredItem, ContractTypeSelector, AnimatedPressable, ScaleIn, ObligationCard } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
-import { useObligationsStore } from "../store/obligationsStore";
 import { SecopProcess, advancedSearch } from "../api/secop";
 import { getUpcomingObligations } from "../services/obligationService";
 import { spacing, borderRadius, scale, shadows } from "../theme";
@@ -24,8 +21,7 @@ import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { useHaptics } from "../hooks/useHaptics";
 import { useLocation } from "../hooks/useLocation";
-import { CONTRACT_TYPES, getContractTypeColor } from "../constants/contractTypes";
-import { useDashboardStats } from "../hooks/useDashboardStats";
+import { CONTRACT_TYPES, ContractTypeConfig, getContractTypeColor } from "../constants/contractTypes";
 import { ContractObligation } from "../types/database";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -223,11 +219,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     nearbyDepartamentos,
   } = useLocation();
 
-  // Estados para las 3 fuentes de datos de las cards
-  const [todayNearbyProcesses, setTodayNearbyProcesses] = useState<SecopProcess[]>([]);
-  const [openProcesses, setOpenProcesses] = useState<SecopProcess[]>([]);
-  const [noOffersProcesses, setNoOffersProcesses] = useState<SecopProcess[]>([]);
-  // Procesos recientes locales (filtrados por ubicación + tipos)
+  // Procesos recientes (fuente única para cards + sección)
   const [recentProcesses, setRecentProcesses] = useState<SecopProcess[]>([]);
   const [recentLoading, setRecentLoading] = useState(true);
   const [upcomingObligations, setUpcomingObligations] = useState<ContractObligation[]>([]);
@@ -248,29 +240,44 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     }
   }, [user?.id]);
 
-  const stats = useDashboardStats(
-    todayNearbyProcesses,
-    openProcesses,
-    noOffersProcesses,
-    preferences.selectedContractTypes
-  );
+  // Configs de tipos favoritos para la sección de categorías
+  const favoriteTypeConfigs = useMemo(() => {
+    if (preferences.selectedContractTypes.length > 0) {
+      return preferences.selectedContractTypes
+        .map(id => CONTRACT_TYPES.find(t => t.id === id))
+        .filter(Boolean) as ContractTypeConfig[];
+    }
+    return CONTRACT_TYPES;
+  }, [preferences.selectedContractTypes]);
 
   const styles = createStyles(colors);
 
-  // Priorizar: depto usuario > cercanos > abiertos, ordenado por fecha
+  // Derivar "Abiertos" y "Sin ofertas" de recentProcesses (misma fuente)
+  const openFromRecent = useMemo(() =>
+    recentProcesses.filter(p => p.estado_de_apertura_del_proceso === "Abierto"),
+    [recentProcesses]
+  );
+
+  const noOffersFromRecent = useMemo(() =>
+    recentProcesses.filter(p =>
+      p.estado_de_apertura_del_proceso === "Abierto" &&
+      (!p.respuestas_al_procedimiento || p.respuestas_al_procedimiento === "0")
+    ),
+    [recentProcesses]
+  );
+
+  // Priorizar: depto usuario > abiertos, ordenado por fecha
   const filteredProcesses = useMemo(() => {
-    const openIds = new Set(openProcesses.map(p => p.id_del_proceso).filter(Boolean));
+    const openIds = new Set(openFromRecent.map(p => p.id_del_proceso).filter(Boolean));
     const userDept = userDepartamento?.toUpperCase() || "";
     return [...recentProcesses].sort((a, b) => {
-      // +4 si es del departamento del usuario
       const aDept = (a.departamento_entidad || "").toUpperCase() === userDept ? 4 : 0;
       const bDept = (b.departamento_entidad || "").toUpperCase() === userDept ? 4 : 0;
-      // +2 si está abierto (en Selección cerca)
       const aOpen = openIds.has(a.id_del_proceso || "") ? 2 : 0;
       const bOpen = openIds.has(b.id_del_proceso || "") ? 2 : 0;
       return (bDept + bOpen) - (aDept + aOpen);
     });
-  }, [recentProcesses, openProcesses, userDepartamento]);
+  }, [recentProcesses, openFromRecent, userDepartamento]);
 
   // Departamentos: primero el del usuario, luego cercanos (≤30km)
   const cardDepts = useMemo(() => {
@@ -284,101 +291,8 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     return depts;
   }, [nearbyDepartamentos, userDepartamento]);
 
-  // Fetch "Recientes + Cerca" (últimos 7 días, filtrado por tipos favoritos)
+  // Fetch único: recientes por depto + tipos (fuente para cards + sección)
   const selectedTypes = preferences.selectedContractTypes;
-  const fetchTodayNearby = useCallback(() => {
-    if (cardDepts.length === 0) return;
-
-    Promise.all(
-      cardDepts.map(dept =>
-        advancedSearch({
-          departamento: dept,
-          recentDays: 7,
-          limit: 50,
-          ...(selectedTypes.length > 0 && { tipoContrato: selectedTypes }),
-        })
-      )
-    ).then(results => {
-      const merged = results.flat();
-      const seen = new Set<string>();
-      const unique = merged.filter(p => {
-        const id = p.id_del_proceso;
-        if (!id || seen.has(id)) return false;
-        seen.add(id);
-        return true;
-      });
-      setTodayNearbyProcesses(unique);
-    }).catch(() => setTodayNearbyProcesses([]));
-  }, [cardDepts, selectedTypes]);
-
-  useEffect(() => {
-    fetchTodayNearby();
-  }, [fetchTodayNearby]);
-
-  // Fetch "Abiertos" (fase Selección, cercanos, últimos 15 días, filtrado por tipos)
-  const fetchOpenProcesses = useCallback(() => {
-    if (cardDepts.length === 0) return;
-
-    Promise.all(
-      cardDepts.map(dept =>
-        advancedSearch({
-          departamento: dept,
-          fase: "Selección",
-          recentDays: 15,
-          limit: 50,
-          ...(selectedTypes.length > 0 && { tipoContrato: selectedTypes }),
-        })
-      )
-    ).then(results => {
-      const merged = results.flat();
-      const seen = new Set<string>();
-      const unique = merged.filter(p => {
-        const id = p.id_del_proceso;
-        if (!id || seen.has(id)) return false;
-        seen.add(id);
-        return true;
-      });
-      setOpenProcesses(unique);
-    }).catch(() => setOpenProcesses([]));
-  }, [cardDepts, selectedTypes]);
-
-  useEffect(() => {
-    fetchOpenProcesses();
-  }, [fetchOpenProcesses]);
-
-  // Fetch "Sin ofertas" (fase Selección + sin respuestas, cercanos, últimos 15 días, filtrado por tipos)
-  const fetchNoOffersProcesses = useCallback(() => {
-    if (cardDepts.length === 0) return;
-
-    Promise.all(
-      cardDepts.map(dept =>
-        advancedSearch({
-          departamento: dept,
-          fase: "Selección",
-          noOffers: true,
-          recentDays: 15,
-          limit: 50,
-          ...(selectedTypes.length > 0 && { tipoContrato: selectedTypes }),
-        })
-      )
-    ).then(results => {
-      const merged = results.flat();
-      const seen = new Set<string>();
-      const unique = merged.filter(p => {
-        const id = p.id_del_proceso;
-        if (!id || seen.has(id)) return false;
-        seen.add(id);
-        return true;
-      });
-      setNoOffersProcesses(unique);
-    }).catch(() => setNoOffersProcesses([]));
-  }, [cardDepts, selectedTypes]);
-
-  useEffect(() => {
-    fetchNoOffersProcesses();
-  }, [fetchNoOffersProcesses]);
-
-  // Fetch "Recientes" — lógica estilo SearchScreen: por depto + tipos, ordenado por fecha
   const fetchRecentForHome = useCallback(async () => {
     if (cardDepts.length === 0) return;
     setRecentLoading(true);
@@ -450,13 +364,8 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const handleRefresh = useCallback(async () => {
     haptics.medium();
-    await Promise.all([
-      fetchRecentForHome(),
-      fetchTodayNearby(),
-      fetchOpenProcesses(),
-      fetchNoOffersProcesses(),
-    ]);
-  }, [fetchRecentForHome, fetchTodayNearby, fetchOpenProcesses, fetchNoOffersProcesses, haptics]);
+    await fetchRecentForHome();
+  }, [fetchRecentForHome, haptics]);
 
   const navigateToSearch = useCallback(
     (params?: Record<string, any>) => {
@@ -484,31 +393,31 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     {
       key: "today",
       icon: "time-outline" as const,
-      count: stats.todayNearbyCount,
+      count: recentProcesses.length,
       label: "Recientes",
       color: "#FF9500",
       bgColor: "rgba(255, 149, 0, 0.12)",
-      onPress: () => openCardModal("Recientes cerca de ti", stats.todayNearbyProcesses),
+      onPress: () => openCardModal("Recientes cerca de ti", recentProcesses),
       show: true,
     },
     {
       key: "open",
       icon: "lock-open-outline" as const,
-      count: stats.openCount,
+      count: openFromRecent.length,
       label: "Abiertos",
       color: colors.accent,
       bgColor: colors.accentLight,
-      onPress: () => openCardModal("Abiertos", stats.openProcesses),
+      onPress: () => openCardModal("Abiertos", openFromRecent),
       show: true,
     },
     {
       key: "noOffers",
       icon: "hand-left-outline" as const,
-      count: stats.noOffersCount,
+      count: noOffersFromRecent.length,
       label: "Sin ofertas",
       color: colors.success,
       bgColor: "rgba(52, 199, 89, 0.12)",
-      onPress: () => openCardModal("Sin ofertas", stats.noOffersProcesses),
+      onPress: () => openCardModal("Sin ofertas", noOffersFromRecent),
       show: true,
     },
   ];
@@ -640,7 +549,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.categoriesRow}>
-            {stats.favoriteTypeConfigs.map((type) => {
+            {favoriteTypeConfigs.map((type) => {
               const typeColor = getContractTypeColor(type);
               return (
                 <AnimatedPressable

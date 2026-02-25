@@ -49,6 +49,7 @@ const fetchSecop = async (query: string): Promise<SecopProcess[]> => {
 const buildQuery = (params: {
   municipio?: string;
   departamento?: string;
+  entidad?: string;
   fase?: string;
   modalidad?: string | string[];
   tipoContrato?: string | string[];
@@ -90,6 +91,10 @@ const buildQuery = (params: {
     conditions.push(
       `upper(departamento_entidad) LIKE upper('%${escapeSoql(cleanDepartamento)}%')`,
     );
+  }
+
+  if (params.entidad) {
+    conditions.push(`entidad='${escapeSoql(params.entidad)}'`);
   }
 
   if (params.fase) {
@@ -225,6 +230,7 @@ export const advancedSearch = async (params: {
   keyword?: string;
   departamento?: string;
   municipio?: string;
+  entidad?: string;
   fase?: string;
   modalidad?: string | string[];
   tipoContrato?: string | string[];
@@ -266,18 +272,86 @@ export const getCountByMunicipality = async (
   }
 };
 
+// Dataset de Proponentes por Proceso SECOP II
+const PROPONENTES_API_URL = "https://www.datos.gov.co/resource/hgi6-6wh3.json";
+
+export interface SecopProponente {
+  id_procedimiento: string;
+  fecha_publicaci_n?: string;
+  nombre_procedimiento?: string;
+  entidad_compradora?: string;
+  proveedor: string;
+  nit_proveedor?: string;
+}
+
+export const getProponentesByProcess = async (
+  processId: string,
+): Promise<SecopProponente[]> => {
+  try {
+    const url = `${PROPONENTES_API_URL}?$where=${encodeURIComponent(
+      `id_procedimiento='${escapeSoql(processId)}'`,
+    )}&$order=proveedor ASC&$limit=100`;
+    const response = await fetch(url, { headers: getHeaders() });
+    if (!response.ok) return [];
+    const data: SecopProponente[] = await response.json();
+    // Deduplicar por NIT del proveedor
+    const seen = new Set<string>();
+    return data.filter((p) => {
+      const key = p.nit_proveedor || p.proveedor;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  } catch {
+    return [];
+  }
+};
+
+export const getEntitiesByLocation = async (params: {
+  departamento?: string;
+  municipio?: string;
+}): Promise<string[]> => {
+  try {
+    const conditions: string[] = [];
+    if (params.municipio) {
+      conditions.push(`upper(ciudad_entidad) LIKE upper('%${escapeSoql(params.municipio)}%')`);
+    }
+    if (params.departamento) {
+      conditions.push(`upper(departamento_entidad) LIKE upper('%${escapeSoql(params.departamento)}%')`);
+    }
+    if (conditions.length === 0) return [];
+
+    const where = encodeURIComponent(conditions.join(" AND "));
+    const url = `${SECOP_API_URL}?$select=entidad&$group=entidad&$order=entidad&$where=${where}&$limit=500`;
+    const response = await fetch(url, { headers: getHeaders() });
+    if (!response.ok) return [];
+    const data: { entidad: string }[] = await response.json();
+    return data.map((d) => d.entidad).filter(Boolean);
+  } catch {
+    return [];
+  }
+};
+
 // Constantes útiles
 export const SECOP_PHASES = [
-  "Borrador",
-  "Planeación",
-  "Selección",
-  "Contratación",
-  "Ejecución",
-  "Liquidación",
-  "Terminado",
-  "Cancelado",
-  "Suspendido",
-  "Desierto",
+  "Presentación de oferta",
+  "Fase de ofertas",
+  "Presentación de observaciones",
+  "Manifestación de interés (Menor Cuantía)",
+  "Fase de Selección (Presentación de ofertas)",
+  "Proceso de ofertas",
+  "Selección de ofertas (borrador)",
+  "Pré-Calificación de competidores",
+  "Fase de Concurso",
+];
+
+// Fases donde el proceso acepta ofertas (abierto)
+export const SECOP_OPEN_PHASES = [
+  "Presentación de oferta",
+  "Fase de ofertas",
+  "Fase de Selección (Presentación de ofertas)",
+  "Proceso de ofertas",
+  "Manifestación de interés (Menor Cuantía)",
 ];
 
 export const SECOP_MODALITIES = [

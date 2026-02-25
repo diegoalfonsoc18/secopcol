@@ -105,7 +105,7 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
         <View style={{ flex: 1 }}>
           <Text style={styles.label}>N° PROCESO</Text>
           <Text style={styles.processId}>
-            {process.id_del_proceso || "S/N"}
+            {process.referencia_del_proceso || process.id_del_proceso || "S/N"}
           </Text>
         </View>
 
@@ -124,7 +124,7 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
         )}
       </View>
 
-      {/* TIPO DE CONTRATO + FASE */}
+      {/* TIPO DE CONTRATO + ESTADO + FASE */}
       <View style={styles.badgesRow}>
         <View
           style={[styles.typeContainer, { backgroundColor: `${mainColor}15` }]}>
@@ -135,9 +135,37 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
             {typeConfig.label}
           </Text>
         </View>
+        {process.estado_de_apertura_del_proceso && (
+          <View style={[
+            styles.estadoBadge,
+            {
+              backgroundColor: process.estado_de_apertura_del_proceso === "Abierto"
+                ? "rgba(48, 209, 88, 0.12)"
+                : "rgba(142, 142, 147, 0.12)",
+            },
+          ]}>
+            <View style={[
+              styles.estadoDot,
+              {
+                backgroundColor: process.estado_de_apertura_del_proceso === "Abierto"
+                  ? colors.success
+                  : colors.textTertiary,
+              },
+            ]} />
+            <Text style={[
+              styles.estadoText,
+              {
+                color: process.estado_de_apertura_del_proceso === "Abierto"
+                  ? colors.success
+                  : colors.textTertiary,
+              },
+            ]}>
+              {process.estado_de_apertura_del_proceso}
+            </Text>
+          </View>
+        )}
         {process.fase && (
           <View style={[styles.faseBadge, { backgroundColor: colors.accentLight }]}>
-            <Ionicons name="flag-outline" size={12} color={colors.accent} />
             <Text style={[styles.faseText, { color: colors.accent }]}>
               {process.fase}
             </Text>
@@ -300,6 +328,23 @@ const createStyles = (colors: any, mainColor: string) =>
       paddingVertical: spacing.xs,
       borderRadius: 100,
       gap: spacing.sm,
+    },
+    estadoBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: 100,
+      gap: scale(4),
+    },
+    estadoDot: {
+      width: scale(6),
+      height: scale(6),
+      borderRadius: scale(3),
+    },
+    estadoText: {
+      ...typography.caption2,
+      fontWeight: "600",
     },
     faseBadge: {
       flexDirection: "row",
