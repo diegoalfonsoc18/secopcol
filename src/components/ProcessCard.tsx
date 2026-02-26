@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { parseISO, format, isAfter } from "date-fns";
+import { parseISO, format } from "date-fns";
 import { es } from "date-fns/locale";
 
 import { SecopProcess } from "../types/index";
@@ -30,71 +30,37 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
     DEFAULT_CONTRACT_CONFIG;
   const mainColor = getContractTypeColor(typeConfig);
 
-  // 2. LÓGICA DE TIEMPO Y FECHAS
+  // 2. FECHAS
   const fechaPubRaw =
     process.fecha_de_publicacion_del || process.fecha_de_ultima_publicaci;
   const fechaPublicacion = fechaPubRaw ? parseISO(fechaPubRaw) : new Date();
 
-  const fechaCierreRaw = process.fecha_de_recepcion_de;
-  const fechaCierre = fechaCierreRaw ? parseISO(fechaCierreRaw) : null;
+  // 3. ESTADO RESUMEN
+  const estadoResumen = process.estado_resumen;
 
-  const ahora = new Date();
-  const estaCerrado = fechaCierre ? isAfter(ahora, fechaCierre) : false;
-
-  // 3. LÓGICA DE SEMÁFORO (Verde, Amarillo, Rojo)
-  const horasRestantes = fechaCierre
-    ? (fechaCierre.getTime() - ahora.getTime()) / (1000 * 60 * 60)
-    : null;
-
-  let colorSemaforo = colors.success; // Verde por defecto (+72h)
-  let estadoTiempo = "Abierto";
-
-  if (estaCerrado) {
-    colorSemaforo = colors.textTertiary; // Gris para cerrado
-    estadoTiempo = "Cerrado";
-  } else if (horasRestantes !== null) {
-    if (horasRestantes <= 24) {
-      colorSemaforo = colors.danger; // Rojo (Menos de 24h)
-      estadoTiempo = "Urgente";
-    } else if (horasRestantes <= 72) {
-      colorSemaforo = colors.warning; // Amarillo (Entre 24h y 72h)
-      estadoTiempo = "Próximo";
-    }
-  }
-
-  // 4. CÁLCULO DE PROGRESO PARA LA BARRA
-  let progreso = 0;
-  if (fechaCierre) {
-    if (estaCerrado) {
-      progreso = 1;
-    } else {
-      const total = fechaCierre.getTime() - fechaPublicacion.getTime();
-      const transcurrido = ahora.getTime() - fechaPublicacion.getTime();
-      progreso = Math.min(Math.max(transcurrido / total, 0), 1);
-    }
-  }
-
-  // 5. FORMATO DE TIEMPO RESTANTE
-  const formatTiempoRestante = (): string => {
-    if (!fechaCierre) return "Sin fecha límite";
-    if (estaCerrado) return "Proceso cerrado";
-
-    if (horasRestantes !== null) {
-      if (horasRestantes < 1) {
-        const minutos = Math.round(horasRestantes * 60);
-        return `${minutos} min restantes`;
-      } else if (horasRestantes < 24) {
-        const horas = Math.round(horasRestantes);
-        return `${horas}h restantes`;
-      } else {
-        const dias = Math.round(horasRestantes / 24);
-        return `${dias} día${dias !== 1 ? "s" : ""} restante${
-          dias !== 1 ? "s" : ""
-        }`;
-      }
-    }
-    return "";
+  const getEstadoColor = (estado?: string) => {
+    if (!estado || estado === "No Definido")
+      return { bg: "rgba(142, 142, 147, 0.08)", text: colors.textTertiary };
+    const lower = estado.toLowerCase();
+    // Adjudicado / Seleccionado → azul
+    if (lower.includes("adjudicado") || lower === "seleccionado")
+      return { bg: "rgba(0, 122, 255, 0.12)", text: "#007AFF" };
+    // Abierto para ofertar → verde
+    if (lower.includes("oferta") || lower === "publicado" || lower === "abierto")
+      return { bg: "rgba(48, 209, 88, 0.12)", text: colors.success };
+    // En evaluación → naranja
+    if (lower.includes("observacion") || lower.includes("concurso") || lower.includes("calificaci") || lower === "evaluación")
+      return { bg: "rgba(255, 149, 0, 0.10)", text: colors.warning };
+    // Cancelado / Suspendido → rojo
+    if (lower.includes("cancelado") || lower.includes("desierto") || lower === "suspendido")
+      return { bg: "rgba(255, 59, 48, 0.10)", text: colors.danger };
+    // Borrador / En aprobación → gris
+    if (lower === "borrador" || lower.includes("aprobaci"))
+      return { bg: "rgba(142, 142, 147, 0.10)", text: colors.textTertiary };
+    return { bg: "rgba(142, 142, 147, 0.08)", text: colors.textSecondary };
   };
+
+  const estadoStyle = getEstadoColor(estadoResumen);
 
   const styles = createStyles(colors, mainColor);
 
@@ -116,12 +82,6 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
           </Text>
         </View>
 
-        {horasRestantes !== null && horasRestantes < 24 && !estaCerrado && (
-          <View style={styles.badgeUrgent}>
-            <Ionicons name="time" size={12} color="#FFF" />
-            <Text style={styles.badgeText}>CRÍTICO</Text>
-          </View>
-        )}
       </View>
 
       {/* TIPO DE CONTRATO + ESTADO + FASE */}
@@ -135,39 +95,20 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
             {typeConfig.label}
           </Text>
         </View>
-        {process.estado_de_apertura_del_proceso && (
+        {estadoResumen && estadoResumen !== "No Definido" && (
           <View style={[
             styles.estadoBadge,
-            {
-              backgroundColor: process.estado_de_apertura_del_proceso === "Abierto"
-                ? "rgba(48, 209, 88, 0.12)"
-                : "rgba(142, 142, 147, 0.12)",
-            },
+            { backgroundColor: estadoStyle.bg },
           ]}>
             <View style={[
               styles.estadoDot,
-              {
-                backgroundColor: process.estado_de_apertura_del_proceso === "Abierto"
-                  ? colors.success
-                  : colors.textTertiary,
-              },
+              { backgroundColor: estadoStyle.text },
             ]} />
             <Text style={[
               styles.estadoText,
-              {
-                color: process.estado_de_apertura_del_proceso === "Abierto"
-                  ? colors.success
-                  : colors.textTertiary,
-              },
+              { color: estadoStyle.text },
             ]}>
-              {process.estado_de_apertura_del_proceso}
-            </Text>
-          </View>
-        )}
-        {process.fase && (
-          <View style={[styles.faseBadge, { backgroundColor: colors.accentLight }]}>
-            <Text style={[styles.faseText, { color: colors.accent }]}>
-              {process.fase}
+              {estadoResumen}
             </Text>
           </View>
         )}
@@ -189,46 +130,6 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
           {process.ciudad_entidad}, {process.departamento_entidad}
         </Text>
       </View>
-
-      {/* BARRA DE TIEMPO / PROGRESO */}
-      {fechaCierre && (
-        <View style={styles.timeBarContainer}>
-          <View style={styles.timeHeader}>
-            <View style={styles.timeStatusGroup}>
-              <View
-                style={[styles.statusDot, { backgroundColor: colorSemaforo }]}
-              />
-              <Text style={[styles.statusText, { color: colorSemaforo }]}>
-                {estadoTiempo}
-              </Text>
-            </View>
-            <Text style={[styles.timeRemaining, { color: colorSemaforo }]}>
-              {formatTiempoRestante()}
-            </Text>
-          </View>
-
-          <View style={styles.timeBarTrack}>
-            <View
-              style={[
-                styles.timeBarFill,
-                {
-                  width: `${progreso * 100}%`,
-                  backgroundColor: colorSemaforo,
-                },
-              ]}
-            />
-          </View>
-
-          <View style={styles.timeLabels}>
-            <Text style={styles.timeLabelText}>
-              {format(fechaPublicacion, "dd MMM", { locale: es })}
-            </Text>
-            <Text style={styles.timeLabelText}>
-              Cierre: {format(fechaCierre, "dd MMM yyyy", { locale: es })}
-            </Text>
-          </View>
-        </View>
-      )}
 
       {/* FOOTER: Valor y Fecha de Publicación */}
       <View style={styles.footer}>
@@ -300,20 +201,6 @@ const createStyles = (colors: any, mainColor: string) =>
       color: colors.textPrimary,
       marginTop: scale(2),
     },
-    badgeUrgent: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: colors.danger,
-      paddingHorizontal: scale(8),
-      paddingVertical: scale(4),
-      borderRadius: borderRadius.sm,
-      gap: scale(4),
-    },
-    badgeText: {
-      color: "#FFF",
-      fontSize: scale(11),
-      fontWeight: "700",
-    },
     badgesRow: {
       flexDirection: "row",
       alignItems: "center",
@@ -346,18 +233,6 @@ const createStyles = (colors: any, mainColor: string) =>
       ...typography.caption2,
       fontWeight: "600",
     },
-    faseBadge: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.xs,
-      borderRadius: 100,
-      gap: scale(4),
-    },
-    faseText: {
-      ...typography.caption2,
-      fontWeight: "600",
-    },
     iconWrapper: {
       width: scale(24),
       height: scale(24),
@@ -386,54 +261,6 @@ const createStyles = (colors: any, mainColor: string) =>
       ...typography.footnote,
       color: colors.textSecondary,
       flex: 1,
-    },
-    // Estilos de la barra de tiempo
-    timeBarContainer: {
-      marginTop: spacing.sm,
-      marginBottom: spacing.sm,
-    },
-    timeHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: spacing.sm,
-    },
-    timeStatusGroup: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.sm,
-    },
-    statusDot: {
-      width: scale(8),
-      height: scale(8),
-      borderRadius: scale(4),
-    },
-    statusText: {
-      ...typography.caption1,
-      fontWeight: "600",
-    },
-    timeRemaining: {
-      ...typography.caption2,
-      fontWeight: "600",
-    },
-    timeBarTrack: {
-      height: scale(4),
-      backgroundColor: colors.separatorLight,
-      borderRadius: scale(2),
-      overflow: "hidden",
-    },
-    timeBarFill: {
-      height: "100%",
-      borderRadius: 3,
-    },
-    timeLabels: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      marginTop: spacing.sm,
-    },
-    timeLabelText: {
-      ...typography.caption2,
-      color: colors.textTertiary,
     },
     // Footer
     footer: {

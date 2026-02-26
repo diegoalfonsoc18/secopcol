@@ -50,6 +50,8 @@ const buildQuery = (params: {
   municipio?: string;
   departamento?: string;
   entidad?: string;
+  estadoApertura?: string;
+  soloOfertables?: boolean;
   fase?: string;
   modalidad?: string | string[];
   tipoContrato?: string | string[];
@@ -95,6 +97,15 @@ const buildQuery = (params: {
 
   if (params.entidad) {
     conditions.push(`entidad='${escapeSoql(params.entidad)}'`);
+  }
+
+  if (params.estadoApertura) {
+    conditions.push(`estado_de_apertura_del_proceso='${escapeSoql(params.estadoApertura)}'`);
+  }
+
+  if (params.soloOfertables) {
+    conditions.push("estado_resumen!='Adjudicado'");
+    conditions.push("estado_resumen!='No Definido'");
   }
 
   if (params.fase) {
@@ -231,6 +242,8 @@ export const advancedSearch = async (params: {
   departamento?: string;
   municipio?: string;
   entidad?: string;
+  estadoApertura?: string;
+  soloOfertables?: boolean;
   fase?: string;
   modalidad?: string | string[];
   tipoContrato?: string | string[];

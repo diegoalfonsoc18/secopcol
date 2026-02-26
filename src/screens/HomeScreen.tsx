@@ -266,19 +266,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     [recentProcesses]
   );
 
-  // Priorizar: depto usuario > abiertos, ordenado por fecha
-  const filteredProcesses = useMemo(() => {
-    const openIds = new Set(openFromRecent.map(p => p.id_del_proceso).filter(Boolean));
-    const userDept = userDepartamento?.toUpperCase() || "";
-    return [...recentProcesses].sort((a, b) => {
-      const aDept = (a.departamento_entidad || "").toUpperCase() === userDept ? 4 : 0;
-      const bDept = (b.departamento_entidad || "").toUpperCase() === userDept ? 4 : 0;
-      const aOpen = openIds.has(a.id_del_proceso || "") ? 2 : 0;
-      const bOpen = openIds.has(b.id_del_proceso || "") ? 2 : 0;
-      return (bDept + bOpen) - (aDept + aOpen);
-    });
-  }, [recentProcesses, openFromRecent, userDepartamento]);
-
   // Departamentos: primero el del usuario, luego cercanos (≤30km)
   const cardDepts = useMemo(() => {
     const depts: string[] = [];
@@ -291,6 +278,22 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     return depts;
   }, [nearbyDepartamentos, userDepartamento]);
 
+  // Priorizar: más cercano al usuario primero (según orden de cardDepts)
+  const filteredProcesses = useMemo(() => {
+    const deptPriority = new Map<string, number>();
+    cardDepts.forEach((dept, i) => {
+      deptPriority.set(dept.toUpperCase(), cardDepts.length - i);
+    });
+    return [...recentProcesses].sort((a, b) => {
+      const aPri = deptPriority.get((a.departamento_entidad || "").toUpperCase()) || 0;
+      const bPri = deptPriority.get((b.departamento_entidad || "").toUpperCase()) || 0;
+      if (bPri !== aPri) return bPri - aPri;
+      const dateA = a.fecha_de_ultima_publicaci || a.fecha_de_publicacion_del || "";
+      const dateB = b.fecha_de_ultima_publicaci || b.fecha_de_publicacion_del || "";
+      return dateB.localeCompare(dateA);
+    });
+  }, [recentProcesses, cardDepts]);
+
   // Fetch único: recientes por depto + tipos (fuente para cards + sección)
   const selectedTypes = preferences.selectedContractTypes;
   const fetchRecentForHome = useCallback(async () => {
@@ -300,6 +303,8 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       const promises = cardDepts.map(dept =>
         advancedSearch({
           departamento: dept,
+          estadoApertura: "Abierto",
+          soloOfertables: true,
           limit: 50,
           ...(selectedTypes.length > 0 && { tipoContrato: selectedTypes }),
         })
@@ -597,7 +602,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 </TouchableOpacity>
               </View>
 
-              {filteredProcesses.slice(0, 20).map((process, index) => (
+              {filteredProcesses.slice(0, 30).map((process, index) => (
                 <StaggeredItem key={process.id_del_proceso} index={index} staggerDelay={30}>
                   <ProcessCard
                     process={process}
