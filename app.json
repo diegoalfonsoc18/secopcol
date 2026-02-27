@@ -9,7 +9,7 @@
       "bundleIdentifier": "com.secopcol.app",
       "icon": {
         "light": "./assets/secopcol-exports/dark-iOS-Default-1024x1024@1x.png",
-        "dark": "./assets/secopcol-exports/dark-iOS-Dark-1024x1024@1x.png",
+        "dark": "./assets/secopcol-exports/dark-iOS-Default-1024x1024@1x.png",
         "tinted": "./assets/secopcol-exports/dark-iOS-TintedLight-1024x1024@1x.png"
       },
       "infoPlist": {
@@ -57,10 +57,13 @@
         }
       ],
       "expo-background-task",
-      ["expo-navigation-bar", {
-        "backgroundColor": "#000000",
-        "barStyle": "light-content"
-      }]
+      [
+        "expo-navigation-bar",
+        {
+          "backgroundColor": "#000000",
+          "barStyle": "light-content"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

@@ -696,7 +696,10 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
                 </TouchableOpacity>
               )}
             </View>
-            <View style={styles.tiposChipsWrap}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tiposChipsRow}>
               {CONTRACT_TYPES.map((config) => {
                 const typeColor = getContractTypeColor(config);
                 const isActive = selectedTipos.includes(config.id);
@@ -732,7 +735,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
                   </TouchableOpacity>
                 );
               })}
-            </View>
+            </ScrollView>
           </View>
 
           {/* Botones */}
@@ -1172,9 +1175,8 @@ const createStyles = (colors: any) =>
     chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
     chipText: { fontSize: scale(13), color: colors.textSecondary, fontWeight: "500" },
     chipTextActive: { color: "#FFFFFF" },
-    tiposChipsWrap: {
+    tiposChipsRow: {
       flexDirection: "row",
-      flexWrap: "wrap",
       gap: spacing.sm,
     },
     tipoChip: {
