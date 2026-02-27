@@ -224,7 +224,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [recentLoading, setRecentLoading] = useState(true);
   // Conteos stat cards
   const [closingCount, setClosingCount] = useState(0);
-  const [closingSoonCount, setNoOffersCount] = useState(0);
+  const [noOffersCount, setNoOffersCount] = useState(0);
   const [newTodayCount, setNewTodayCount] = useState(0);
   const [upcomingObligations, setUpcomingObligations] = useState<ContractObligation[]>([]);
 
@@ -340,11 +340,11 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     try {
       const [closing, noOffers, newToday] = await Promise.all([
         getAdvancedCount(baseParams),
-        getAdvancedCount({ closingWithinDays: 3, estadoApertura: "Abierto", ...(selectedTypes.length > 0 && { tipoContrato: selectedTypes }) }),
+        getAdvancedCount({ closingWithinDays: 3, estadoApertura: "Abierto", noOffers: true, ...typesParam }),
         getAdvancedCount({ recentDays: 7, ...typesParam }),
       ]);
       setClosingCount(closing);
-      setNoOffersCount(noOffers); // reutilizado como closingSoonCount
+      setNoOffersCount(noOffers);
       setNewTodayCount(newToday);
     } catch {
       setClosingCount(0);
@@ -448,20 +448,21 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       show: true,
     },
     {
-      key: "closingSoon",
-      icon: "hourglass-outline" as const,
-      count: closingSoonCount,
-      label: "Cierran pronto",
-      color: "#5856D6",
-      bgColor: "rgba(88, 86, 214, 0.12)",
+      key: "noOffers",
+      icon: "hand-left-outline" as const,
+      count: noOffersCount,
+      label: "Sin ofertas",
+      color: colors.success,
+      bgColor: "rgba(52, 199, 89, 0.12)",
       onPress: async () => {
         const results = await advancedSearch({
           closingWithinDays: 3,
           estadoApertura: "Abierto",
+          noOffers: true,
           ...(selectedTypes.length > 0 && { tipoContrato: selectedTypes }),
           limit: 100,
         });
-        openCardModal("Cierran en 3 días", results);
+        openCardModal("Sin ofertas · Cierran en 3 días", results);
       },
       show: true,
     },
