@@ -173,7 +173,7 @@ export const LoginScreen: React.FC = () => {
         {/* Logo y título */}
         <View style={styles.header}>
           <Image
-            source={require("../assets/icon-login.png")}
+            source={require("../../assets/images/icon.png")}
             style={{ width: 100, height: 100 }}
             resizeMode="contain"
           />

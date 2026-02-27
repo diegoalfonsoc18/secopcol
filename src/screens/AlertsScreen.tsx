@@ -48,7 +48,11 @@ import { FadeIn, SlideInUp } from "../components/Animations";
 import { getDepartments, getMunicipalities } from "../services/divipola";
 import { AlertIcon } from "../assets/icons";
 import { spacing, scale, borderRadius, typography } from "../theme";
-import { MODALIDADES, TIPOS_CONTRATO as TIPOS } from "../constants/filterOptions";
+import { MODALIDADES } from "../constants/filterOptions";
+import {
+  CONTRACT_TYPES,
+  getContractTypeColor,
+} from "../constants/contractTypes";
 
 // ============================================
 // TIPOS PARA PROCESOS DE NOTIFICACIÓN
@@ -99,8 +103,14 @@ const AlertCard: React.FC<AlertCardProps> = ({
       if (mod) parts.push(mod.label);
     }
     if (alert.filters.tipo_contrato) {
-      const tipo = TIPOS.find((t) => t.value === alert.filters.tipo_contrato);
+      const tipoValue = Array.isArray(alert.filters.tipo_contrato)
+        ? alert.filters.tipo_contrato[0]
+        : alert.filters.tipo_contrato;
+      const tipo = CONTRACT_TYPES.find((t) => t.id === tipoValue);
       if (tipo) parts.push(tipo.label);
+      if (Array.isArray(alert.filters.tipo_contrato) && alert.filters.tipo_contrato.length > 1) {
+        parts.push(`+${alert.filters.tipo_contrato.length - 1}`);
+      }
     }
     return parts.length > 0 ? parts.join(" • ") : "Todos los procesos";
   };
@@ -188,21 +198,6 @@ const AlertCard: React.FC<AlertCardProps> = ({
           {getFiltersSummary()}
         </Text>
 
-        <View style={styles.alertFooter}>
-          {alert.last_check && (
-            <View style={styles.alertMeta}>
-              <Ionicons
-                name="checkmark-circle-outline"
-                size={14}
-                color={colors.success}
-              />
-              <Text
-                style={[styles.alertMetaText, { color: colors.textTertiary }]}>
-                {alert.last_results_count} resultados
-              </Text>
-            </View>
-          )}
-        </View>
       </TouchableOpacity>
     </Swipeable>
   );
@@ -308,7 +303,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
         ? alert.filters.tipo_contrato
         : alert.filters.tipo_contrato ? [alert.filters.tipo_contrato] : [];
       setSelectedTipos(
-        tipoValues.map(v => TIPOS.find(t => t.value === v)?.id).filter(Boolean) as string[]
+        tipoValues.filter(v => CONTRACT_TYPES.some(t => t.id === v))
       );
     } else if (initialFilters) {
       // Nueva alerta con filtros iniciales (desde SearchScreen)
@@ -326,7 +321,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
         ? initialFilters.tipo_contrato
         : initialFilters.tipo_contrato ? [initialFilters.tipo_contrato] : [];
       setSelectedTipos(
-        tipoVal.map(v => TIPOS.find(t => t.value === v)?.id).filter(Boolean) as string[]
+        tipoVal.filter(v => CONTRACT_TYPES.some(t => t.id === v))
       );
     } else {
       // Nueva alerta vacía
@@ -369,11 +364,8 @@ const AlertModal: React.FC<AlertModalProps> = ({
       else if (values.length > 1) filters.modalidad = values;
     }
     if (selectedTipos.length > 0) {
-      const values = selectedTipos
-        .map(id => TIPOS.find(t => t.id === id)?.value)
-        .filter(Boolean) as string[];
-      if (values.length === 1) filters.tipo_contrato = values[0];
-      else if (values.length > 1) filters.tipo_contrato = values;
+      if (selectedTipos.length === 1) filters.tipo_contrato = selectedTipos[0];
+      else filters.tipo_contrato = selectedTipos;
     }
 
     if (Object.keys(filters).length === 0) {
@@ -457,28 +449,6 @@ const AlertModal: React.FC<AlertModalProps> = ({
               Filtros de búsqueda
             </Text>
 
-            {/* Palabra clave */}
-            <View style={styles.inputGroup}>
-              <Text
-                style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                Palabra clave
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.backgroundSecondary,
-                    color: colors.textPrimary,
-                    borderColor: colors.separator,
-                  },
-                ]}
-                value={keyword}
-                onChangeText={setKeyword}
-                placeholder="Ej: construcción, software, salud"
-                placeholderTextColor={colors.textTertiary}
-              />
-            </View>
-
             {/* Ubicación */}
             <Text
               style={[
@@ -491,10 +461,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
               <TouchableOpacity
                 style={[
                   styles.locationButton,
-                  {
-                    backgroundColor: colors.backgroundSecondary,
-                    borderColor: colors.separator,
-                  },
+                  { borderColor: colors.separatorLight },
                   selectedDepartamento && {
                     backgroundColor: colors.accentLight,
                     borderColor: colors.accent,
@@ -518,10 +485,10 @@ const AlertModal: React.FC<AlertModalProps> = ({
                     <Text
                       style={[
                         styles.locationText,
-                        {
-                          color: selectedDepartamento
-                            ? colors.accent
-                            : colors.textSecondary,
+                        { color: colors.textSecondary },
+                        selectedDepartamento && {
+                          color: colors.accent,
+                          fontWeight: "500",
                         },
                       ]}
                       numberOfLines={1}>
@@ -539,10 +506,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
               <TouchableOpacity
                 style={[
                   styles.locationButton,
-                  {
-                    backgroundColor: colors.backgroundSecondary,
-                    borderColor: colors.separator,
-                  },
+                  { borderColor: colors.separatorLight },
                   selectedMunicipio && {
                     backgroundColor: colors.accentLight,
                     borderColor: colors.accent,
@@ -565,10 +529,10 @@ const AlertModal: React.FC<AlertModalProps> = ({
                     <Text
                       style={[
                         styles.locationText,
-                        {
-                          color: selectedMunicipio
-                            ? colors.accent
-                            : colors.textSecondary,
+                        { color: colors.textSecondary },
+                        selectedMunicipio && {
+                          color: colors.accent,
+                          fontWeight: "500",
                         },
                       ]}
                       numberOfLines={1}>
@@ -603,8 +567,11 @@ const AlertModal: React.FC<AlertModalProps> = ({
                     key={mod.id}
                     style={[
                       styles.chip,
-                      { backgroundColor: colors.backgroundSecondary },
-                      isSelected && { backgroundColor: colors.accent },
+                      { borderColor: colors.separatorLight },
+                      isSelected && {
+                        backgroundColor: colors.accent,
+                        borderColor: colors.accent,
+                      },
                     ]}
                     onPress={() =>
                       setSelectedModalidades(prev =>
@@ -637,31 +604,39 @@ const AlertModal: React.FC<AlertModalProps> = ({
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              style={styles.chipsScroll}>
-              {TIPOS.map((tipo) => {
-                const isSelected = selectedTipos.includes(tipo.id);
+              contentContainerStyle={styles.tiposChipsRow}>
+              {CONTRACT_TYPES.map((config) => {
+                const typeColor = getContractTypeColor(config);
+                const isActive = selectedTipos.includes(config.id);
                 return (
                   <TouchableOpacity
-                    key={tipo.id}
+                    key={config.id}
                     style={[
-                      styles.chip,
-                      { backgroundColor: colors.backgroundSecondary },
-                      isSelected && { backgroundColor: colors.accent },
+                      styles.tipoChip,
+                      {
+                        backgroundColor: isActive ? typeColor : "transparent",
+                        borderWidth: 1,
+                        borderColor: isActive ? typeColor : typeColor + "30",
+                      },
                     ]}
                     onPress={() =>
                       setSelectedTipos(prev =>
-                        prev.includes(tipo.id)
-                          ? prev.filter(id => id !== tipo.id)
-                          : [...prev, tipo.id]
+                        prev.includes(config.id)
+                          ? prev.filter(id => id !== config.id)
+                          : [...prev, config.id]
                       )
-                    }>
+                    }
+                    activeOpacity={0.7}>
+                    <config.CustomIcon
+                      size={14}
+                      color={isActive ? "#FFF" : typeColor}
+                    />
                     <Text
                       style={[
-                        styles.chipText,
-                        { color: colors.textSecondary },
-                        isSelected && { color: "#FFFFFF" },
+                        styles.tipoChipText,
+                        { color: isActive ? "#FFF" : colors.textSecondary },
                       ]}>
-                      {tipo.label}
+                      {config.label}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -1374,7 +1349,7 @@ const AlertsScreen: React.FC<{ route?: any; navigation?: any }> = ({ route, navi
           municipio: alert.filters.municipio,
           modalidad: alert.filters.modalidad,
           tipoContrato: alert.filters.tipo_contrato,
-          limit: 50,
+          limit: 20,
         });
         setAlertResults(results);
       } catch (error) {
@@ -1644,9 +1619,6 @@ const styles = StyleSheet.create({
   },
   alertName: { ...typography.callout, fontWeight: "600", flex: 1 },
   alertFilters: { ...typography.subhead, marginBottom: spacing.sm },
-  alertFooter: { flexDirection: "row", alignItems: "center", gap: spacing.lg },
-  alertMeta: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
-  alertMetaText: { ...typography.caption1 },
 
   // Delete action
   deleteAction: {
@@ -1744,29 +1716,51 @@ const styles = StyleSheet.create({
   },
 
   // Location
-  locationRow: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.sm },
+  locationRow: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.md },
   locationButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    height: 42,
+    backgroundColor: "transparent",
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
-    gap: spacing.sm,
+    gap: spacing.xs,
+    height: 42,
     borderWidth: 1,
   },
-  locationText: { ...typography.subhead, flex: 1 },
+  locationText: { fontSize: scale(14), flex: 1 },
 
   // Chips
-  chipsScroll: { marginBottom: spacing.sm },
+  chipsScroll: { marginBottom: 0 },
   chip: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
+    backgroundColor: "transparent",
     borderRadius: borderRadius.full,
     marginRight: spacing.sm,
+    borderWidth: 1,
   },
-  chipText: { ...typography.footnote, fontWeight: "500" },
+  chipText: { fontSize: scale(13), fontWeight: "500" },
+
+  // Tipo de contrato chips
+  tiposChipsRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  tipoChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    gap: spacing.xs,
+  },
+  tipoChipText: {
+    fontSize: scale(13),
+    fontWeight: "500",
+  },
 
   // Info
   infoBox: {
@@ -1803,7 +1797,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: spacing.lg,
-    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   listItemText: { ...typography.callout },
   listContainer: {
