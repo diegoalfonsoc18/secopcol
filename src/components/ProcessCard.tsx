@@ -34,6 +34,8 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
   const fechaPubRaw =
     process.fecha_de_publicacion_del || process.fecha_de_ultima_publicaci;
   const fechaPublicacion = fechaPubRaw ? parseISO(fechaPubRaw) : new Date();
+  const fechaCierreRaw = process.fecha_de_recepcion_de;
+  const fechaCierre = fechaCierreRaw ? parseISO(fechaCierreRaw) : null;
 
   // 3. ESTADO RESUMEN
   const estadoResumen = process.estado_resumen;
@@ -156,6 +158,21 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
               {format(fechaPublicacion, "dd MMM yyyy", { locale: es })}
             </Text>
           </View>
+          {fechaCierre && (
+            <>
+              <Text style={[styles.label, { marginTop: spacing.sm }]}>CIERRE</Text>
+              <View style={styles.dateContainer}>
+                <Ionicons
+                  name="calendar-outline"
+                  size={14}
+                  color={colors.danger}
+                />
+                <Text style={[styles.dateText, { color: colors.danger }]}>
+                  {format(fechaCierre, "dd MMM yyyy", { locale: es })}
+                </Text>
+              </View>
+            </>
+          )}
         </View>
       </View>
     </TouchableOpacity>

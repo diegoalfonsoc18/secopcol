@@ -53,8 +53,8 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     color: "#3B82F6", // Azul - Profesionalismo, confianza
   },
   {
-    id: "Suministro",
-    label: "Suministro",
+    id: "Suministros",
+    label: "Suministros",
     description: "Entrega periódica de bienes",
     CustomIcon: SuministroIcon,
     color: "#10B981", // Esmeralda - Logística, flujo
@@ -100,7 +100,7 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
 // HELPER: Obtener config por ID
 // ============================================
 export const getContractTypeConfig = (
-  id: string
+  id: string,
 ): ContractTypeConfig | undefined => {
   return CONTRACT_TYPES.find((type) => type.id === id);
 };

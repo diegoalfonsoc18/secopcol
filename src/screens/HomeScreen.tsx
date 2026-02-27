@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ProcessCard, DashboardSkeleton, StaggeredItem, ContractTypeSelector, AnimatedPressable, ScaleIn, ObligationCard } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
-import { SecopProcess, advancedSearch } from "../api/secop";
+import { SecopProcess, advancedSearch, getAdvancedCount } from "../api/secop";
 import { getUpcomingObligations } from "../services/obligationService";
 import { spacing, borderRadius, scale, shadows } from "../theme";
 import { useTheme } from "../context/ThemeContext";
@@ -219,9 +219,13 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     nearbyDepartamentos,
   } = useLocation();
 
-  // Procesos recientes (fuente única para cards + sección)
+  // Procesos recientes (fuente para sección)
   const [recentProcesses, setRecentProcesses] = useState<SecopProcess[]>([]);
   const [recentLoading, setRecentLoading] = useState(true);
+  // Conteos stat cards
+  const [closingCount, setClosingCount] = useState(0);
+  const [closingSoonCount, setNoOffersCount] = useState(0);
+  const [newTodayCount, setNewTodayCount] = useState(0);
   const [upcomingObligations, setUpcomingObligations] = useState<ContractObligation[]>([]);
 
   // Estado para el modal overlay de cards
@@ -251,20 +255,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   }, [preferences.selectedContractTypes]);
 
   const styles = createStyles(colors);
-
-  // Derivar "Abiertos" y "Sin ofertas" de recentProcesses (misma fuente)
-  const openFromRecent = useMemo(() =>
-    recentProcesses.filter(p => p.estado_de_apertura_del_proceso === "Abierto"),
-    [recentProcesses]
-  );
-
-  const noOffersFromRecent = useMemo(() =>
-    recentProcesses.filter(p =>
-      p.estado_de_apertura_del_proceso === "Abierto" &&
-      (!p.respuestas_al_procedimiento || p.respuestas_al_procedimiento === "0")
-    ),
-    [recentProcesses]
-  );
 
   // Departamentos: primero el del usuario, luego cercanos (≤30km)
   const cardDepts = useMemo(() => {
@@ -304,7 +294,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         advancedSearch({
           departamento: dept,
           estadoApertura: "Abierto",
-          soloOfertables: true,
           limit: 50,
           ...(selectedTypes.length > 0 && { tipoContrato: selectedTypes }),
         })
@@ -340,6 +329,34 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     fetchRecentForHome();
   }, [fetchRecentForHome]);
 
+  // Conteos stat cards: cierran hoy + sin ofertas que cierran hoy (paralelo, eficiente)
+  const fetchStatCounts = useCallback(async () => {
+    const baseParams = {
+      closingWithinDays: 0,
+      estadoApertura: "Abierto" as const,
+      ...(selectedTypes.length > 0 && { tipoContrato: selectedTypes }),
+    };
+    const typesParam = selectedTypes.length > 0 ? { tipoContrato: selectedTypes } : {};
+    try {
+      const [closing, noOffers, newToday] = await Promise.all([
+        getAdvancedCount(baseParams),
+        getAdvancedCount({ closingWithinDays: 3, estadoApertura: "Abierto", ...(selectedTypes.length > 0 && { tipoContrato: selectedTypes }) }),
+        getAdvancedCount({ recentDays: 7, ...typesParam }),
+      ]);
+      setClosingCount(closing);
+      setNoOffersCount(noOffers); // reutilizado como closingSoonCount
+      setNewTodayCount(newToday);
+    } catch {
+      setClosingCount(0);
+      setNoOffersCount(0);
+      setNewTodayCount(0);
+    }
+  }, [selectedTypes]);
+
+  useEffect(() => {
+    fetchStatCounts();
+  }, [fetchStatCounts]);
+
   // Animaciones del header
   const headerHeight = scrollY.interpolate({
     inputRange: [0, 80],
@@ -369,8 +386,8 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const handleRefresh = useCallback(async () => {
     haptics.medium();
-    await fetchRecentForHome();
-  }, [fetchRecentForHome, haptics]);
+    await Promise.all([fetchRecentForHome(), fetchStatCounts()]);
+  }, [fetchRecentForHome, fetchStatCounts, haptics]);
 
   const navigateToSearch = useCallback(
     (params?: Record<string, any>) => {
@@ -396,33 +413,56 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   // ============================================
   const statCards = [
     {
-      key: "today",
-      icon: "time-outline" as const,
-      count: recentProcesses.length,
-      label: "Recientes",
+      key: "newWeek",
+      icon: "calendar-outline" as const,
+      count: newTodayCount,
+      label: "Esta semana",
       color: "#FF9500",
       bgColor: "rgba(255, 149, 0, 0.12)",
-      onPress: () => openCardModal("Recientes cerca de ti", recentProcesses),
+      onPress: async () => {
+        const results = await advancedSearch({
+          recentDays: 7,
+          ...(selectedTypes.length > 0 && { tipoContrato: selectedTypes }),
+          limit: 100,
+        });
+        openCardModal("Nuevos esta semana", results);
+      },
       show: true,
     },
     {
-      key: "open",
-      icon: "lock-open-outline" as const,
-      count: openFromRecent.length,
-      label: "Abiertos",
-      color: colors.accent,
-      bgColor: colors.accentLight,
-      onPress: () => openCardModal("Abiertos", openFromRecent),
+      key: "closing",
+      icon: "timer-outline" as const,
+      count: closingCount,
+      label: "Cierran hoy",
+      color: colors.danger,
+      bgColor: "rgba(255, 59, 48, 0.12)",
+      onPress: async () => {
+        const results = await advancedSearch({
+          closingWithinDays: 0,
+          estadoApertura: "Abierto",
+          ...(selectedTypes.length > 0 && { tipoContrato: selectedTypes }),
+          limit: 100,
+        });
+        openCardModal("Cierran hoy", results);
+      },
       show: true,
     },
     {
-      key: "noOffers",
-      icon: "hand-left-outline" as const,
-      count: noOffersFromRecent.length,
-      label: "Sin ofertas",
-      color: colors.success,
-      bgColor: "rgba(52, 199, 89, 0.12)",
-      onPress: () => openCardModal("Sin ofertas", noOffersFromRecent),
+      key: "closingSoon",
+      icon: "hourglass-outline" as const,
+      count: closingSoonCount,
+      label: "Cierran pronto",
+      color: "#5856D6",
+      bgColor: "rgba(88, 86, 214, 0.12)",
+      onPress: async () => {
+        const results = await advancedSearch({
+          closingWithinDays: 3,
+          estadoApertura: "Abierto",
+          ...(selectedTypes.length > 0 && { tipoContrato: selectedTypes }),
+          limit: 100,
+        });
+        openCardModal("Cierran en 3 días", results);
+      },
       show: true,
     },
   ];

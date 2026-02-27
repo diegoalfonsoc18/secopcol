@@ -62,17 +62,30 @@ const buildQuery = (params: {
   orderBy?: string;
   requireDate?: boolean;
   recentDays?: number;
+  closingWithinDays?: number;
 }): string => {
   const conditions: string[] = [];
 
-  // Filtrar por fecha reciente (últimos N días)
-  if (params.recentDays) {
+  // Helper: formatear fecha local YYYY-MM-DD
+  const fmtDate = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+  // Filtrar por fecha reciente (últimos N días, hora local; 0 = solo hoy)
+  if (params.recentDays != null && params.recentDays >= 0) {
     const date = new Date();
     date.setDate(date.getDate() - params.recentDays);
-    const dateStr = date.toISOString().split("T")[0];
-    conditions.push(`fecha_de_ultima_publicaci >= '${escapeSoql(dateStr)}'`);
+    conditions.push(`fecha_de_ultima_publicaci >= '${escapeSoql(fmtDate(date))}'`);
   } else if (params.requireDate !== false) {
     conditions.push("fecha_de_ultima_publicaci IS NOT NULL");
+  }
+
+  // Filtrar por fecha de cierre (0 = cierra hoy, N = cierra en los próximos N días)
+  if (params.closingWithinDays != null && params.closingWithinDays >= 0) {
+    const today = new Date();
+    const end = new Date();
+    end.setDate(end.getDate() + params.closingWithinDays + 1); // +1 para incluir el día completo
+    conditions.push(`fecha_de_recepcion_de >= '${escapeSoql(fmtDate(today))}'`);
+    conditions.push(`fecha_de_recepcion_de < '${escapeSoql(fmtDate(end))}'`);
   }
 
   if (params.municipio) {
@@ -249,6 +262,7 @@ export const advancedSearch = async (params: {
   tipoContrato?: string | string[];
   noOffers?: boolean;
   recentDays?: number;
+  closingWithinDays?: number;
   limit?: number;
   offset?: number;
 }): Promise<SecopProcess[]> => {
@@ -258,6 +272,35 @@ export const advancedSearch = async (params: {
     requireDate: false, // No filtrar por fecha_de_publicacion_del
   });
   return fetchSecop(query);
+};
+
+// Conteo rápido usando count(*) — mismos filtros que advancedSearch
+export const getAdvancedCount = async (params: {
+  departamento?: string;
+  municipio?: string;
+  estadoApertura?: string;
+  soloOfertables?: boolean;
+  tipoContrato?: string | string[];
+  noOffers?: boolean;
+  recentDays?: number;
+  closingWithinDays?: number;
+}): Promise<number> => {
+  try {
+    const query = buildQuery({
+      ...params,
+      requireDate: false,
+      limit: 1,
+    });
+    // Extraer la parte $where del query
+    const whereMatch = query.match(/\$where=([^&]*)/);
+    const whereClause = whereMatch ? `$where=${whereMatch[1]}` : "";
+    const url = `${SECOP_API_URL}?$select=count(*)${whereClause ? "&" + whereClause : ""}`;
+    const response = await fetch(url, { headers: getHeaders() });
+    const data = await response.json();
+    return parseInt(data[0]?.count || "0", 10);
+  } catch {
+    return 0;
+  }
 };
 
 export const getProcessById = async (
