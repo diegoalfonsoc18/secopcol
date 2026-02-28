@@ -27,6 +27,10 @@ interface LocationBottomSheetProps {
   initialMunicipio?: string;
 }
 
+// Normalizar texto: quitar acentos para búsqueda
+const normalize = (text: string) =>
+  text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
 export const LocationBottomSheet = forwardRef<
   BottomSheetLib,
   LocationBottomSheetProps
@@ -134,7 +138,7 @@ export const LocationBottomSheet = forwardRef<
   const filteredMunicipalities =
     searchText && selectedDept
       ? municipalities.filter((m) =>
-          m.toLowerCase().includes(searchText.toLowerCase())
+          normalize(m).includes(normalize(searchText))
         )
       : municipalities;
 
