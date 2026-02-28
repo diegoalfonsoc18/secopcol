@@ -32,7 +32,7 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
 
   // 2. FECHAS
   const fechaPubRaw =
-    process.fecha_de_publicacion_del || process.fecha_de_ultima_publicaci;
+    process.fecha_de_publicacion_del;
   const fechaPublicacion = fechaPubRaw ? parseISO(fechaPubRaw) : new Date();
   const fechaCierreRaw = process.fecha_de_recepcion_de;
   const fechaCierre = fechaCierreRaw ? parseISO(fechaCierreRaw) : null;

@@ -105,9 +105,9 @@ export const TIPOS_CONTRATO = [
     icon: "people-outline",
   },
   {
-    id: "suministro",
-    label: "Suministro",
-    value: "Suministro",
+    id: "suministros",
+    label: "Suministros",
+    value: "Suministros",
     icon: "cube-outline",
   },
   {

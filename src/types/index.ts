@@ -151,16 +151,29 @@ export type ContractModality =
 
 // Tipos de contrato
 export type ContractType =
-  | "Obra"
-  | "Consultoría"
   | "Prestación de servicios"
-  | "Suministro"
+  | "Decreto 092 de 2017"
+  | "Suministros"
+  | "Otro"
   | "Compraventa"
-  | "Arrendamiento"
-  | "Interventoría"
-  | "Concesión"
+  | "Obra"
+  | "Arrendamiento de inmuebles"
   | "Seguros"
-  | "Comodato";
+  | "Interventoría"
+  | "Consultoría"
+  | "Comodato"
+  | "Acuerdo Marco de Precios"
+  | "Arrendamiento de muebles"
+  | "Servicios financieros"
+  | "Venta muebles"
+  | "Concesión"
+  | "Operaciones de Crédito Público"
+  | "Asociación Público Privada"
+  | "Negocio fiduciario"
+  | "Venta inmuebles"
+  | "Comisión"
+  | "Acuerdo de cooperación"
+  | "Empréstito";
 
 // ============================================
 // INTERFACES DE BÚSQUEDA

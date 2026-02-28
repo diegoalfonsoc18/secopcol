@@ -366,8 +366,8 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
       color: colors.accent,
     },
     {
-      id: "Suministro",
-      label: "Suministro",
+      id: "Suministros",
+      label: "Suministros",
       icon: "cube-outline",
       color: colors.success,
     },
@@ -390,7 +390,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
       color: colors.danger,
     },
     {
-      id: "Arrendamiento",
+      id: "Arrendamiento de inmuebles",
       label: "Arrendamiento",
       icon: "home-outline",
       color: colors.success,
