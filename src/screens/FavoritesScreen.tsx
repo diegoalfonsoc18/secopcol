@@ -61,18 +61,6 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
   };
 
   // Animaciones del header
-  const headerHeight = scrollY.interpolate({
-    inputRange: [0, 80],
-    outputRange: [110, 60],
-    extrapolate: "clamp",
-  });
-
-  const titleScale = scrollY.interpolate({
-    inputRange: [0, 80],
-    outputRange: [1, 0.75],
-    extrapolate: "clamp",
-  });
-
   const subtitleOpacity = scrollY.interpolate({
     inputRange: [0, 40],
     outputRange: [1, 0],
@@ -251,11 +239,7 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
           },
         ]}>
         <View style={styles.headerRow}>
-          <Animated.View
-            style={{
-              flex: 1,
-              transform: [{ scale: titleScale }],
-            }}>
+          <View style={{ flex: 1 }}>
             <View style={styles.titleRow}>
               <Text style={styles.title}>Favoritos</Text>
               {favorites.length > 0 && (
@@ -264,7 +248,7 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
                 </View>
               )}
             </View>
-          </Animated.View>
+          </View>
 
           {/* Botón exportar */}
           {favorites.length > 0 && (

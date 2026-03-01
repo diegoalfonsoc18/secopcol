@@ -358,18 +358,6 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   }, [fetchStatCounts]);
 
   // Animaciones del header
-  const headerHeight = scrollY.interpolate({
-    inputRange: [0, 80],
-    outputRange: [120, 70],
-    extrapolate: "clamp",
-  });
-
-  const titleScale = scrollY.interpolate({
-    inputRange: [0, 80],
-    outputRange: [1, 0.75],
-    extrapolate: "clamp",
-  });
-
   const subtitleOpacity = scrollY.interpolate({
     inputRange: [0, 40],
     outputRange: [1, 0],
@@ -479,10 +467,9 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           },
         ]}>
         <View style={styles.headerRow}>
-          <Animated.View
-            style={{ transform: [{ scale: titleScale }], flex: 1 }}>
+          <View style={{ flex: 1 }}>
             <Text style={styles.title}>Inicio</Text>
-          </Animated.View>
+          </View>
 
           <TouchableOpacity
             style={[styles.headerButton, { borderWidth: 1.5, borderColor: colors.accent + "30" }]}

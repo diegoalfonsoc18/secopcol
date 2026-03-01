@@ -426,24 +426,27 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
 
   return (
     <View style={styles.container}>
+      {/* Header fijo */}
+      <View style={[styles.fixedHeader, { paddingTop: insets.top + spacing.md }]}>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>Buscar</Text>
+          {activeFiltersCount > 0 && (
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={handleClearFilters}>
+              <Text style={styles.clearButtonText}>Limpiar</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
       <ScrollView
         style={styles.scrollContainer}
         contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-          <View style={styles.titleRow}>
-            <Text style={styles.title}>Buscar</Text>
-            {activeFiltersCount > 0 && (
-              <TouchableOpacity
-                style={styles.clearButton}
-                onPress={handleClearFilters}>
-                <Text style={styles.clearButtonText}>Limpiar</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
+        {/* Filtros */}
+        <View style={styles.header}>
           {/* Barra de búsqueda */}
           <View style={styles.searchBarContainer}>
             <View style={styles.searchBar}>
@@ -1016,6 +1019,11 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
 const createStyles = (colors: any) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
+    fixedHeader: {
+      backgroundColor: colors.background,
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.sm,
+    },
     scrollContainer: { flex: 1 },
     header: {
       backgroundColor: colors.background,
