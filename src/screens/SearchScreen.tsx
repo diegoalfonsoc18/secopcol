@@ -818,9 +818,9 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
                   </View>
                 )}
               </View>
-              {processes.map((process) => (
+              {processes.map((process, index) => (
                 <ProcessCard
-                  key={process.id_del_proceso}
+                  key={`${process.id_del_proceso}-${index}`}
                   process={process}
                   onPress={() => navigation.navigate("Detail", { process })}
                 />

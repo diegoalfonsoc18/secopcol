@@ -1212,7 +1212,7 @@ const AlertResultsModal: React.FC<AlertResultsModalProps> = ({
             style={styles.newProcessesList}
             showsVerticalScrollIndicator={false}>
             {processes.map((process, index) => (
-              <View key={process.id_del_proceso || index} style={{ marginBottom: spacing.md }}>
+              <View key={`${process.id_del_proceso}-${index}`} style={{ marginBottom: spacing.md }}>
                 <ProcessCard
                   process={process}
                   onPress={() => onViewProcess(process)}

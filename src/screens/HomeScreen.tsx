@@ -144,7 +144,7 @@ const ProcessListOverlay: React.FC<ProcessListOverlayProps> = ({
             style={overlayStyles.list}
             showsVerticalScrollIndicator={false}>
             {processes.map((process, index) => (
-              <View key={process.id_del_proceso || index} style={{ marginBottom: spacing.md }}>
+              <View key={`${process.id_del_proceso}-${index}`} style={{ marginBottom: spacing.md }}>
                 <ProcessCard
                   process={process}
                   onPress={() => onViewProcess(process)}
@@ -644,7 +644,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               </View>
 
               {filteredProcesses.slice(0, 30).map((process, index) => (
-                <StaggeredItem key={process.id_del_proceso} index={index} staggerDelay={30}>
+                <StaggeredItem key={`${process.id_del_proceso}-${index}`} index={index} staggerDelay={30}>
                   <ProcessCard
                     process={process}
                     onPress={() => handleProcessPress(process)}

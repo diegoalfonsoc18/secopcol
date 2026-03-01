@@ -490,18 +490,11 @@ _Enviado desde SECOP Colombia App_`;
             </View>
           </View>
 
-          {/* Nombre del Procedimiento */}
-          {process.nombre_del_procedimiento && (
-            <Text style={styles.procedureName}>
-              {process.nombre_del_procedimiento}
-            </Text>
-          )}
-
           {/* Descripción */}
           <View style={styles.descriptionCard}>
-            <Text style={styles.descriptionLabel}>Descripción</Text>
             <Text style={styles.descriptionText}>
               {process.descripci_n_del_procedimiento ||
+                process.nombre_del_procedimiento ||
                 "Sin descripción disponible"}
             </Text>
           </View>
