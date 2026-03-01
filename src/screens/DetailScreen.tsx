@@ -554,25 +554,16 @@ _Enviado desde SECOP Colombia App_`;
                 value={process.nombre_del_proveedor}
               />
             )}
-            {process.nit_del_proveedor_adjudicado && (
-              <InfoRow
-                icon="card-outline"
-                label="NIT"
-                value={process.nit_del_proveedor_adjudicado}
-              />
-            )}
-            {(process.ciudad_proveedor || process.departamento_proveedor) && (
-              <InfoRow
-                icon="location-outline"
-                label="Ubicación"
-                value={[
-                  process.ciudad_proveedor,
-                  process.departamento_proveedor,
-                ]
-                  .filter(Boolean)
-                  .join(", ")}
-              />
-            )}
+            <InfoRow
+              icon="card-outline"
+              label="NIT"
+              value={
+                (process.nit_del_proveedor_adjudicado && process.nit_del_proveedor_adjudicado !== "No Definido"
+                  ? process.nit_del_proveedor_adjudicado
+                  : proponentes.find(p => p.proveedor === process.nombre_del_proveedor)?.nit_proveedor)
+                || undefined
+              }
+            />
             {process.fecha_adjudicacion && (
               <InfoRow
                 icon="calendar-outline"
