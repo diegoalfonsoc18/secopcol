@@ -13,6 +13,13 @@ import {
   VentaMueblesIcon,
   AcuerdoMarcoIcon,
   OtroIcon,
+  CreditoPublicoIcon,
+  AsocPubPriIcon,
+  NegocioFiduciaIcon,
+  VentaInmueblesIcon,
+  ComisionIcon,
+  AcuerdoCooperacionIcon,
+  EmpresitoIcon,
 } from "../assets/icons";
 
 // ============================================
@@ -143,49 +150,49 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     id: "Operaciones de Crédito Público",
     label: "Crédito Público",
     description: "Operaciones de crédito público",
-    CustomIcon: OtroIcon,
+    CustomIcon: CreditoPublicoIcon,
     color: "#DC2626", // Rojo oscuro
   },
   {
     id: "Asociación Público Privada",
     label: "Asoc. Público Privada",
     description: "Asociaciones público-privadas (APP)",
-    CustomIcon: OtroIcon,
+    CustomIcon: AsocPubPriIcon,
     color: "#4F46E5", // Índigo oscuro
   },
   {
     id: "Negocio fiduciario",
     label: "Negocio fiduciario",
     description: "Negocios fiduciarios y fideicomisos",
-    CustomIcon: OtroIcon,
+    CustomIcon: NegocioFiduciaIcon,
     color: "#0891B2", // Cyan oscuro
   },
   {
     id: "Venta inmuebles",
     label: "Venta inmuebles",
     description: "Enajenación de bienes inmuebles",
-    CustomIcon: OtroIcon,
+    CustomIcon: VentaInmueblesIcon,
     color: "#B45309", // Ámbar más oscuro
   },
   {
     id: "Comisión",
     label: "Comisión",
     description: "Contratos de comisión",
-    CustomIcon: OtroIcon,
+    CustomIcon: ComisionIcon,
     color: "#9333EA", // Púrpura
   },
   {
     id: "Acuerdo de cooperación",
     label: "Acuerdo cooperación",
     description: "Acuerdos de cooperación interinstitucional",
-    CustomIcon: OtroIcon,
+    CustomIcon: AcuerdoCooperacionIcon,
     color: "#2563EB", // Azul oscuro
   },
   {
     id: "Empréstito",
     label: "Empréstito",
     description: "Operaciones de empréstito",
-    CustomIcon: OtroIcon,
+    CustomIcon: EmpresitoIcon,
     color: "#BE185D", // Rosa oscuro
   },
 ];
