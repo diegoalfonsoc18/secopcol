@@ -20,6 +20,7 @@ import {
   ComisionIcon,
   AcuerdoCooperacionIcon,
   EmpresitoIcon,
+  DecretoIcon,
 } from "../assets/icons";
 
 // ============================================
@@ -45,7 +46,7 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     id: "Decreto 092 de 2017",
     label: "Decreto 092",
     description: "Contratos con entidades sin ánimo de lucro",
-    CustomIcon: OtroIcon,
+    CustomIcon: DecretoIcon,
     color: "#7C3AED", // Violeta oscuro
   },
   {
