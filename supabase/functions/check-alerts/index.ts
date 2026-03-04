@@ -148,6 +148,8 @@ async function sendExpoPush(
         channelId: "secop-alerts",
         priority: "high",
         badge: 1,
+        _contentAvailable: true,
+        mutableContent: true,
       }),
     });
 

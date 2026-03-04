@@ -37,32 +37,42 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
   const fechaCierreRaw = process.fecha_de_recepcion_de;
   const fechaCierre = fechaCierreRaw ? parseISO(fechaCierreRaw) : null;
 
-  // 3. ESTADO RESUMEN
-  const estadoResumen = process.estado_resumen;
+  // 3. ESTADO DEL PROCESO (mapeo a estados SECOP II)
+  const getEstadoProceso = (): { label: string; color: string; bg: string; icon: string } => {
+    const estadoProc = process.estado_del_procedimiento?.toLowerCase() || "";
+    const resumen = process.estado_resumen?.toLowerCase() || "";
+    const adjudicado = process.adjudicado === "Si" || process.adjudicado === "Sí" || resumen.includes("adjudicado");
 
-  const getEstadoColor = (estado?: string) => {
-    if (!estado || estado === "No Definido")
-      return { bg: "rgba(142, 142, 147, 0.08)", text: colors.textTertiary };
-    const lower = estado.toLowerCase();
-    // Adjudicado / Seleccionado → azul
-    if (lower.includes("adjudicado") || lower === "seleccionado")
-      return { bg: "rgba(0, 122, 255, 0.12)", text: "#007AFF" };
-    // Abierto para ofertar → verde
-    if (lower.includes("oferta") || lower === "publicado" || lower === "abierto")
-      return { bg: "rgba(48, 209, 88, 0.12)", text: colors.success };
-    // En evaluación → naranja
-    if (lower.includes("observacion") || lower.includes("concurso") || lower.includes("calificaci") || lower === "evaluación")
-      return { bg: "rgba(255, 149, 0, 0.10)", text: colors.warning };
-    // Cancelado / Suspendido → rojo
-    if (lower.includes("cancelado") || lower.includes("desierto") || lower === "suspendido")
-      return { bg: "rgba(255, 59, 48, 0.10)", text: colors.danger };
-    // Borrador / En aprobación → gris
-    if (lower === "borrador" || lower.includes("aprobaci"))
-      return { bg: "rgba(142, 142, 147, 0.10)", text: colors.textTertiary };
-    return { bg: "rgba(142, 142, 147, 0.08)", text: colors.textSecondary };
+    // Cancelado
+    if (estadoProc === "cancelado")
+      return { label: "Cancelado", color: colors.danger, bg: "rgba(255, 59, 48, 0.10)", icon: "close-circle" };
+    // Suspendido
+    if (estadoProc === "suspendido")
+      return { label: "Suspendido", color: colors.warning, bg: "rgba(255, 149, 0, 0.10)", icon: "pause-circle" };
+    // Borrador
+    if (estadoProc === "borrador")
+      return { label: "Borrador", color: colors.textTertiary, bg: "rgba(142, 142, 147, 0.10)", icon: "document-outline" };
+    // Adjudicado / Contratado
+    if (adjudicado || estadoProc === "seleccionado")
+      return { label: "Adjudicado", color: "#007AFF", bg: "rgba(0, 122, 255, 0.12)", icon: "checkmark-circle" };
+    // En evaluación
+    if (estadoProc === "evaluación")
+      return { label: "En evaluación", color: colors.warning, bg: "rgba(255, 149, 0, 0.10)", icon: "hourglass-outline" };
+    // En aprobación
+    if (estadoProc === "en aprobación" || estadoProc === "aprobado")
+      return { label: "En aprobación", color: colors.warning, bg: "rgba(255, 149, 0, 0.10)", icon: "time-outline" };
+    // Publicado / Abierto
+    if (estadoProc === "publicado" || estadoProc === "abierto")
+      return { label: "Publicado", color: colors.success, bg: "rgba(48, 209, 88, 0.12)", icon: "megaphone-outline" };
+    // Desierto
+    if (resumen.includes("desierto"))
+      return { label: "Desierto", color: colors.textTertiary, bg: "rgba(142, 142, 147, 0.10)", icon: "remove-circle-outline" };
+
+    // Fallback: no mostrar badge
+    return { label: "", color: colors.textTertiary, bg: "rgba(142, 142, 147, 0.08)", icon: "help-circle-outline" };
   };
 
-  const estadoStyle = getEstadoColor(estadoResumen);
+  const estadoProceso = getEstadoProceso();
 
   const styles = createStyles(colors, mainColor);
 
@@ -97,20 +107,21 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
             {typeConfig.label}
           </Text>
         </View>
-        {estadoResumen && estadoResumen !== "No Definido" && (
+        {estadoProceso.label !== "" && (
           <View style={[
             styles.estadoBadge,
-            { backgroundColor: estadoStyle.bg },
+            { backgroundColor: estadoProceso.bg },
           ]}>
-            <View style={[
-              styles.estadoDot,
-              { backgroundColor: estadoStyle.text },
-            ]} />
+            <Ionicons
+              name={estadoProceso.icon as any}
+              size={12}
+              color={estadoProceso.color}
+            />
             <Text style={[
               styles.estadoText,
-              { color: estadoStyle.text },
+              { color: estadoProceso.color },
             ]}>
-              {estadoResumen}
+              {estadoProceso.label}
             </Text>
           </View>
         )}
@@ -240,11 +251,6 @@ const createStyles = (colors: any, mainColor: string) =>
       paddingVertical: spacing.xs,
       borderRadius: 100,
       gap: scale(4),
-    },
-    estadoDot: {
-      width: scale(6),
-      height: scale(6),
-      borderRadius: scale(3),
     },
     estadoText: {
       ...typography.caption2,

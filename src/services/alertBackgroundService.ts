@@ -130,7 +130,8 @@ export async function checkAlertsForUser(userId: string): Promise<number> {
                   newProcessIds: newIds.slice(0, 10),
                   processSummaries,
                 },
-                sound: true,
+                sound: "default",
+                priority: Notifications.AndroidNotificationPriority.HIGH,
               },
               trigger: null,
             });
@@ -202,7 +203,8 @@ export async function checkObligationReminders(userId: string): Promise<number> 
                 obligationId: obl.id,
                 processId: obl.process_id,
               },
-              sound: true,
+              sound: "default",
+              priority: Notifications.AndroidNotificationPriority.HIGH,
             },
             trigger: null,
           });
