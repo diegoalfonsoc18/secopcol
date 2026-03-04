@@ -50,6 +50,7 @@ const buildQuery = (params: {
   departamento?: string;
   entidad?: string;
   estadoApertura?: string;
+  estadoProcedimiento?: string | string[];
   soloOfertables?: boolean;
   fase?: string;
   modalidad?: string | string[];
@@ -152,6 +153,20 @@ const buildQuery = (params: {
       conditions.push(`tipo_de_contrato='${escapeSoql(tipos[0])}'`);
     } else if (tipos.length > 1) {
       const orParts = tipos.map((t) => `tipo_de_contrato='${escapeSoql(t)}'`);
+      conditions.push(`(${orParts.join(" OR ")})`);
+    }
+  }
+
+  if (params.estadoProcedimiento) {
+    const estados = Array.isArray(params.estadoProcedimiento)
+      ? params.estadoProcedimiento
+      : [params.estadoProcedimiento];
+    if (estados.length === 1) {
+      conditions.push(`estado_del_procedimiento='${escapeSoql(estados[0])}'`);
+    } else if (estados.length > 1) {
+      const orParts = estados.map(
+        (e) => `estado_del_procedimiento='${escapeSoql(e)}'`,
+      );
       conditions.push(`(${orParts.join(" OR ")})`);
     }
   }
@@ -267,6 +282,7 @@ export const advancedSearch = async (params: {
   municipio?: string;
   entidad?: string;
   estadoApertura?: string;
+  estadoProcedimiento?: string | string[];
   soloOfertables?: boolean;
   fase?: string;
   modalidad?: string | string[];

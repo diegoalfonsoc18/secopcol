@@ -14,14 +14,13 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { AlertIcon, MarcadorIcon } from "../assets/icons";
+import { AlertIcon } from "../assets/icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { ProcessCard, SearchResultsSkeleton, AnimatedPressable } from "../components/index";
+import { ProcessCard, SearchResultsSkeleton } from "../components/index";
 import { SecopProcess, advancedSearch, getEntitiesByLocation } from "../api/secop";
 import { spacing, borderRadius, scale, shadows } from "../theme";
 import { useTheme } from "../context/ThemeContext";
-import { useFiltersStore, SavedFilter } from "../store/filtersStore";
 import { getDepartments, getMunicipalities } from "../services/divipola";
 import {
   CONTRACT_TYPES,
@@ -29,13 +28,22 @@ import {
 } from "../constants/contractTypes";
 import { MODALIDADES } from "../constants/filterOptions";
 
+// Estados del procedimiento SECOP II
+const ESTADOS_PROCESO = [
+  { id: "Publicado", label: "Publicado", icon: "megaphone-outline" as const, color: "#30D158" },
+  { id: "Seleccionado", label: "Adjudicado", icon: "checkmark-circle" as const, color: "#007AFF" },
+  { id: "Evaluación", label: "En evaluación", icon: "hourglass-outline" as const, color: "#FF9500" },
+  { id: "Borrador", label: "Borrador", icon: "document-outline" as const, color: "#8E8E93" },
+  { id: "Cancelado", label: "Cancelado", icon: "close-circle" as const, color: "#FF3B30" },
+  { id: "Suspendido", label: "Suspendido", icon: "pause-circle" as const, color: "#FF9500" },
+];
+
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
 export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { savedFilters, addFilter } = useFiltersStore();
   const styles = createStyles(colors);
 
   // Estados
@@ -43,11 +51,11 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
   const [municipalities, setMunicipalities] = useState<string[]>([]);
   const [loadingDepts, setLoadingDepts] = useState(true);
   const [loadingMunis, setLoadingMunis] = useState(false);
-  const [keyword, setKeyword] = useState("");
   const [selectedDepartamento, setSelectedDepartamento] = useState("");
   const [selectedMunicipio, setSelectedMunicipio] = useState("");
   const [selectedModalidad, setSelectedModalidad] = useState("");
   const [selectedTipos, setSelectedTipos] = useState<string[]>([]);
+  const [selectedEstados, setSelectedEstados] = useState<string[]>([]);
   const [entities, setEntities] = useState<string[]>([]);
   const [loadingEntities, setLoadingEntities] = useState(false);
   const [selectedEntidad, setSelectedEntidad] = useState("");
@@ -61,7 +69,6 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     const loadDepartments = async () => {
@@ -196,37 +203,19 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
       let allResults: SecopProcess[] = [];
 
       const baseParams = {
-        keyword: keyword || undefined,
         departamento: selectedDepartamento || undefined,
         municipio: selectedMunicipio || undefined,
         entidad: selectedEntidad || undefined,
         modalidad: modalidadValue,
+        estadoProcedimiento: selectedEstados.length > 0 ? selectedEstados : undefined,
       };
 
-      if (tipoValues.length === 0) {
-        const results = await advancedSearch({
-          ...baseParams,
-          limit: 50,
-        });
-        allResults = results;
-      } else if (tipoValues.length === 1) {
-        const results = await advancedSearch({
-          ...baseParams,
-          tipoContrato: tipoValues[0],
-          limit: 50,
-        });
-        allResults = results;
-      } else {
-        const promises = tipoValues.map((tipo) =>
-          advancedSearch({
-            ...baseParams,
-            tipoContrato: tipo,
-            limit: 30,
-          })
-        );
-        const resultsArrays = await Promise.all(promises);
-        allResults = resultsArrays.flat();
-      }
+      const results = await advancedSearch({
+        ...baseParams,
+        tipoContrato: tipoValues.length > 0 ? tipoValues : undefined,
+        limit: 50,
+      });
+      allResults = results;
 
       const uniqueResults = allResults.filter(
         (process, index, self) =>
@@ -255,52 +244,12 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
     handleSearchWithTipos(selectedTipos);
   };
 
-  const handleSaveFilter = () => {
-    if (
-      !keyword &&
-      !selectedDepartamento &&
-      !selectedModalidad &&
-      selectedTipos.length === 0
-    ) {
-      Alert.alert("Sin filtros", "Agrega al menos un filtro para guardar");
-      return;
-    }
-    Alert.prompt(
-      "Guardar Búsqueda",
-      "Dale un nombre a esta búsqueda:",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Guardar",
-          onPress: (name: string | undefined) => {
-            if (name && name.trim()) {
-              addFilter({
-                name: name.trim(),
-                filters: {
-                  keyword: keyword || undefined,
-                  departamento: selectedDepartamento || undefined,
-                  municipio: selectedMunicipio || undefined,
-                  modalidades: selectedModalidad ? [selectedModalidad] : [],
-                  tiposContrato: selectedTipos,
-                },
-              });
-              Alert.alert("Guardado", "Búsqueda guardada correctamente");
-            }
-          },
-        },
-      ],
-      "plain-text",
-      keyword || selectedDepartamento || "Mi búsqueda"
-    );
-  };
-
   const handleCreateAlert = () => {
     const modalidadValue = MODALIDADES.find(
       (m) => m.id === selectedModalidad
     )?.value;
 
     const alertFilters = {
-      keyword: keyword || undefined,
       departamento: selectedDepartamento || undefined,
       municipio: selectedMunicipio || undefined,
       modalidad: modalidadValue || undefined,
@@ -321,15 +270,6 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
       screen: "AlertsTab",
       params: { createWithFilters: alertFilters },
     });
-  };
-
-  const handleLoadFilter = (filter: SavedFilter) => {
-    setKeyword(filter.filters.keyword || "");
-    setSelectedDepartamento(filter.filters.departamento || "");
-    setSelectedMunicipio(filter.filters.municipio || "");
-    setSelectedModalidad(filter.filters.modalidades[0] || "");
-    setSelectedTipos(filter.filters.tiposContrato || []);
-    setShowSuggestions(false);
   };
 
   const handleSelectDept = (dept: string) => {
@@ -356,72 +296,32 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
     setEntidadSearchText("");
   };
 
-  const COMMON_SUGGESTIONS = [
-    "Construcción",
-    "Obra",
-    "Consultoría",
-    "Servicios",
-    "Suministro",
-    "Mantenimiento",
-    "Infraestructura",
-    "Transporte",
-    "Salud",
-    "Educación",
-    "Tecnología",
-    "Software",
-  ];
-
-  const getFilteredSuggestions = () => {
-    if (keyword.length === 0)
-      return { type: "saved" as const, items: savedFilters.slice(0, 5) };
-    const searchTerm = keyword.toLowerCase();
-    const matchingFilters = savedFilters
-      .filter(
-        (f) =>
-          f.name.toLowerCase().includes(searchTerm) ||
-          f.filters.keyword?.toLowerCase().includes(searchTerm)
-      )
-      .slice(0, 3);
-    const matchingCommon = COMMON_SUGGESTIONS.filter(
-      (s) =>
-        s.toLowerCase().includes(searchTerm) && s.toLowerCase() !== searchTerm
-    ).slice(0, 4);
-    return {
-      type: "mixed" as const,
-      filters: matchingFilters,
-      suggestions: matchingCommon,
-    };
-  };
-
-  const filteredSuggestions = getFilteredSuggestions();
-
-  const handleLoadSuggestion = (filter: SavedFilter) => {
-    handleLoadFilter(filter);
-  };
-
-  const handleUseSuggestion = (text: string) => {
-    setKeyword(text);
-    setShowSuggestions(false);
+  // Toggle estado del proceso
+  const handleToggleEstado = (estadoValue: string) => {
+    const newEstados = selectedEstados.includes(estadoValue)
+      ? selectedEstados.filter((e) => e !== estadoValue)
+      : [...selectedEstados, estadoValue];
+    setSelectedEstados(newEstados);
   };
 
   // Contar filtros activos
   const activeFiltersCount = [
-    keyword,
     selectedDepartamento,
     selectedMunicipio,
     selectedEntidad,
     selectedModalidad,
     ...selectedTipos,
+    ...selectedEstados,
   ].filter(Boolean).length;
 
   // Limpiar todos los filtros
   const handleClearFilters = () => {
-    setKeyword("");
     setSelectedDepartamento("");
     setSelectedMunicipio("");
     setSelectedEntidad("");
     setSelectedModalidad("");
     setSelectedTipos([]);
+    setSelectedEstados([]);
   };
 
   return (
@@ -447,98 +347,6 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
         showsVerticalScrollIndicator={false}>
         {/* Filtros */}
         <View style={styles.header}>
-          {/* Barra de búsqueda */}
-          <View style={styles.searchBarContainer}>
-            <View style={styles.searchBar}>
-              <Ionicons name="search" size={22} color={colors.textTertiary} />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Palabra clave, entidad..."
-                placeholderTextColor={colors.textTertiary}
-                value={keyword}
-                onChangeText={(text) => {
-                  setKeyword(text);
-                  setShowSuggestions(true);
-                }}
-                onFocus={() => setShowSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                returnKeyType="search"
-                onSubmitEditing={() => {
-                  setShowSuggestions(false);
-                  handleSearch();
-                }}
-              />
-              {keyword.length > 0 && (
-                <TouchableOpacity
-                  onPress={() => {
-                    setKeyword("");
-                    setShowSuggestions(true);
-                  }}>
-                  <Ionicons
-                    name="close-circle"
-                    size={20}
-                    color={colors.textTertiary}
-                  />
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {/* Sugerencias */}
-            {showSuggestions &&
-              filteredSuggestions.type === "saved" &&
-              filteredSuggestions.items.length > 0 && (
-                <View style={styles.suggestionsContainer}>
-                  <View style={styles.suggestionsHeader}>
-                    <Text style={styles.suggestionsTitle}>
-                      Búsquedas guardadas
-                    </Text>
-                    <TouchableOpacity onPress={() => setShowSuggestions(false)}>
-                      <Ionicons
-                        name="close"
-                        size={18}
-                        color={colors.textTertiary}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                  {filteredSuggestions.items.map((filter) => (
-                    <TouchableOpacity
-                      key={filter.id}
-                      style={styles.suggestionItem}
-                      onPress={() => handleLoadSuggestion(filter)}>
-                      <View style={styles.suggestionContent}>
-                        <Text style={styles.suggestionName}>{filter.name}</Text>
-                        <Text
-                          style={styles.suggestionDetails}
-                          numberOfLines={1}>
-                          {[filter.filters.keyword, filter.filters.departamento]
-                            .filter(Boolean)
-                            .join(" • ") || "Sin filtros"}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-
-            {showSuggestions &&
-              filteredSuggestions.type === "mixed" &&
-              filteredSuggestions.suggestions.length > 0 && (
-                <View style={styles.suggestionsContainer}>
-                  <View style={styles.suggestionsHeader}>
-                    <Text style={styles.suggestionsTitle}>Sugerencias</Text>
-                  </View>
-                  {filteredSuggestions.suggestions.map((suggestion, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.suggestionItem}
-                      onPress={() => handleUseSuggestion(suggestion)}>
-                      <Text style={styles.suggestionText}>{suggestion}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-          </View>
-
           {/* Ubicación */}
           <View style={styles.locationRow}>
             <TouchableOpacity
@@ -741,24 +549,65 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
             </ScrollView>
           </View>
 
+          {/* Estado del Proceso */}
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionLabel}>Estado del Proceso</Text>
+              {selectedEstados.length > 0 && (
+                <TouchableOpacity onPress={() => setSelectedEstados([])}>
+                  <Text style={styles.clearSectionText}>
+                    Limpiar ({selectedEstados.length})
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tiposChipsRow}>
+              {ESTADOS_PROCESO.map((estado) => {
+                const isActive = selectedEstados.includes(estado.id);
+                return (
+                  <TouchableOpacity
+                    key={estado.id}
+                    style={[
+                      styles.tipoChip,
+                      {
+                        backgroundColor: isActive ? estado.color : "transparent",
+                        borderWidth: 1,
+                        borderColor: isActive ? estado.color : estado.color + "30",
+                      },
+                    ]}
+                    onPress={() => handleToggleEstado(estado.id)}
+                    activeOpacity={0.7}>
+                    <Ionicons
+                      name={estado.icon}
+                      size={14}
+                      color={isActive ? "#FFF" : estado.color}
+                    />
+                    <Text
+                      style={[
+                        styles.tipoChipText,
+                        { color: isActive ? "#FFF" : colors.textSecondary },
+                      ]}>
+                      {estado.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+
           {/* Botones */}
           <View style={styles.buttonsRow}>
             <TouchableOpacity
               style={[styles.searchButton, shadows.card]}
               onPress={() => {
-                setShowSuggestions(false);
                 handleSearch();
               }}
               activeOpacity={0.8}>
               <Ionicons name="search" size={18} color="#FFFFFF" />
               <Text style={styles.searchButtonText}>Buscar</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.saveFilterButton}
-              onPress={handleSaveFilter}
-              activeOpacity={0.7}>
-              <MarcadorIcon size={20} color={colors.accent} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -1046,73 +895,6 @@ const createStyles = (colors: any) =>
       fontWeight: "600",
       color: colors.accent,
     },
-    searchBarContainer: {
-      position: "relative",
-      zIndex: 10,
-      marginBottom: spacing.md,
-    },
-    searchBar: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: "transparent",
-      borderRadius: borderRadius.md,
-      paddingHorizontal: spacing.md,
-      height: 42,
-      gap: spacing.sm,
-      borderWidth: 1,
-      borderColor: colors.separatorLight,
-    },
-    searchInput: { flex: 1, fontSize: scale(16), color: colors.textPrimary },
-    suggestionsContainer: {
-      position: "absolute",
-      top: 48,
-      left: 0,
-      right: 0,
-      backgroundColor: colors.backgroundSecondary,
-      borderRadius: borderRadius.md,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
-      shadowRadius: 12,
-      elevation: 8,
-      zIndex: 100,
-    },
-    suggestionsHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.separatorLight,
-    },
-    suggestionsTitle: {
-      flex: 1,
-      fontSize: scale(12),
-      fontWeight: "600",
-      color: colors.textTertiary,
-      textTransform: "uppercase",
-    },
-    suggestionItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.md,
-      backgroundColor: colors.backgroundSecondary,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.separatorLight,
-    },
-    suggestionContent: { flex: 1 },
-    suggestionName: {
-      fontSize: scale(15),
-      fontWeight: "500",
-      color: colors.textPrimary,
-    },
-    suggestionDetails: {
-      fontSize: scale(12),
-      color: colors.textSecondary,
-      marginTop: 2,
-    },
-    suggestionText: { flex: 1, fontSize: scale(15), color: colors.textPrimary },
     locationRow: {
       flexDirection: "row",
       gap: spacing.sm,
@@ -1215,13 +997,6 @@ const createStyles = (colors: any) =>
       gap: spacing.sm,
     },
     searchButtonText: { fontSize: scale(16), fontWeight: "600", color: "#FFFFFF" },
-    saveFilterButton: {
-      width: scale(48),
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: colors.accentLight,
-      borderRadius: borderRadius.lg,
-    },
     alertButton: {
       width: scale(48),
       alignItems: "center",
