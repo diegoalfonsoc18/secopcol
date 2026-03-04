@@ -12,6 +12,7 @@ import {
   getContractTypeColor,
   DEFAULT_CONTRACT_CONFIG,
 } from "../constants/contractTypes";
+import { GlassWrapper } from "./GlassWrapper";
 
 interface ProcessCardProps {
   process: SecopProcess;
@@ -77,7 +78,15 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
   const styles = createStyles(colors, mainColor);
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity
+      style={[styles.card, { backgroundColor: "transparent" }]}
+      onPress={onPress}
+      activeOpacity={0.8}>
+      <GlassWrapper
+        variant="card"
+        style={styles.glassInner}
+        fallbackColor={colors.backgroundSecondary}
+      >
       {/* HEADER: Número del Proceso y Entidad */}
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
@@ -98,20 +107,26 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
 
       {/* TIPO DE CONTRATO + ESTADO + FASE */}
       <View style={styles.badgesRow}>
-        <View
-          style={[styles.typeContainer, { backgroundColor: `${mainColor}15` }]}>
+        <GlassWrapper
+          variant="badge"
+          style={styles.typeContainer}
+          fallbackColor={`${mainColor}15`}
+          glassTintColor={mainColor}
+        >
           <View style={[styles.iconWrapper, { backgroundColor: mainColor }]}>
             <typeConfig.CustomIcon size={14} color="#FFF" />
           </View>
           <Text style={[styles.typeText, { color: mainColor }]}>
             {typeConfig.label}
           </Text>
-        </View>
+        </GlassWrapper>
         {estadoProceso.label !== "" && (
-          <View style={[
-            styles.estadoBadge,
-            { backgroundColor: estadoProceso.bg },
-          ]}>
+          <GlassWrapper
+            variant="badge"
+            style={styles.estadoBadge}
+            fallbackColor={estadoProceso.bg}
+            glassTintColor={estadoProceso.color}
+          >
             <Ionicons
               name={estadoProceso.icon as any}
               size={12}
@@ -123,7 +138,7 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
             ]}>
               {estadoProceso.label}
             </Text>
-          </View>
+          </GlassWrapper>
         )}
       </View>
 
@@ -186,6 +201,7 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
           )}
         </View>
       </View>
+      </GlassWrapper>
     </TouchableOpacity>
   );
 };
@@ -193,9 +209,7 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
 const createStyles = (colors: any, mainColor: string) =>
   StyleSheet.create({
     card: {
-      backgroundColor: colors.backgroundSecondary,
       borderRadius: borderRadius.lg,
-      padding: spacing.lg,
       marginBottom: spacing.lg,
       ...Platform.select({
         ios: {
@@ -209,6 +223,10 @@ const createStyles = (colors: any, mainColor: string) =>
           borderColor: colors.separatorLight,
         },
       }),
+    },
+    glassInner: {
+      borderRadius: borderRadius.lg,
+      padding: spacing.lg,
     },
     header: {
       flexDirection: "row",

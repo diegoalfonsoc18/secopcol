@@ -42,7 +42,7 @@ import {
 import { getProcessById, advancedSearch } from "../api/secop";
 import { SecopProcess } from "../types/index";
 import { Alert as AlertType, AlertFilters } from "../types/database";
-import { ProcessCard } from "../components/index";
+import { ProcessCard, GlassWrapper } from "../components/index";
 import { useHaptics } from "../hooks/useHaptics";
 import { FadeIn, SlideInUp } from "../components/Animations";
 import { getDepartments, getMunicipalities } from "../services/divipola";
@@ -1439,8 +1439,12 @@ const AlertsScreen: React.FC<{ route?: any; navigation?: any }> = ({ route, navi
   return (
     <View
       style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+      {/* Header con Glass */}
+      <GlassWrapper
+        variant="header"
+        style={[styles.header, { paddingTop: insets.top + spacing.md }]}
+        fallbackColor={colors.background}
+      >
         <Text style={[styles.title, { color: colors.textPrimary }]}>
           Alertas
         </Text>
@@ -1451,7 +1455,7 @@ const AlertsScreen: React.FC<{ route?: any; navigation?: any }> = ({ route, navi
           accessibilityRole="button">
           <Ionicons name="add" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-      </View>
+      </GlassWrapper>
 
       {/* Lista */}
       <ScrollView

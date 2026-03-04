@@ -17,7 +17,7 @@ import {
 import { AlertIcon } from "../assets/icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { ProcessCard, SearchResultsSkeleton } from "../components/index";
+import { ProcessCard, SearchResultsSkeleton, GlassWrapper } from "../components/index";
 import { SecopProcess, advancedSearch, getEntitiesByLocation } from "../api/secop";
 import { spacing, borderRadius, scale, shadows } from "../theme";
 import { useTheme } from "../context/ThemeContext";
@@ -326,8 +326,12 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
 
   return (
     <View style={styles.container}>
-      {/* Header fijo */}
-      <View style={[styles.fixedHeader, { paddingTop: insets.top + spacing.md }]}>
+      {/* Header fijo con Glass */}
+      <GlassWrapper
+        variant="header"
+        style={[styles.fixedHeader, { paddingTop: insets.top + spacing.md }]}
+        fallbackColor={colors.background}
+      >
         <View style={styles.titleRow}>
           <Text style={styles.title}>Buscar</Text>
           {activeFiltersCount > 0 && (
@@ -338,7 +342,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
             </TouchableOpacity>
           )}
         </View>
-      </View>
+      </GlassWrapper>
 
       <ScrollView
         style={styles.scrollContainer}
@@ -717,7 +721,11 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { paddingBottom: insets.bottom }]}>
+          <GlassWrapper
+            variant="regular"
+            style={[styles.modalContent, { paddingBottom: insets.bottom }]}
+            fallbackColor={colors.background}
+          >
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Departamento</Text>
               <TouchableOpacity
@@ -758,7 +766,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
                 </TouchableOpacity>
               )}
             />
-          </View>
+          </GlassWrapper>
         </KeyboardAvoidingView>
       </Modal>
 
@@ -767,7 +775,11 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { paddingBottom: insets.bottom }]}>
+          <GlassWrapper
+            variant="regular"
+            style={[styles.modalContent, { paddingBottom: insets.bottom }]}
+            fallbackColor={colors.background}
+          >
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Municipio</Text>
               <TouchableOpacity
@@ -808,7 +820,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
                 </TouchableOpacity>
               )}
             />
-          </View>
+          </GlassWrapper>
         </KeyboardAvoidingView>
       </Modal>
 
@@ -817,7 +829,11 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { paddingBottom: insets.bottom }]}>
+          <GlassWrapper
+            variant="regular"
+            style={[styles.modalContent, { paddingBottom: insets.bottom }]}
+            fallbackColor={colors.background}
+          >
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Entidad</Text>
               <TouchableOpacity
@@ -858,7 +874,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
                 </TouchableOpacity>
               )}
             />
-          </View>
+          </GlassWrapper>
         </KeyboardAvoidingView>
       </Modal>
     </View>
@@ -869,7 +885,6 @@ const createStyles = (colors: any) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     fixedHeader: {
-      backgroundColor: colors.background,
       paddingHorizontal: spacing.lg,
       paddingBottom: spacing.sm,
     },
@@ -1075,7 +1090,6 @@ const createStyles = (colors: any) =>
       justifyContent: "flex-end",
     },
     modalContent: {
-      backgroundColor: colors.background,
       borderTopLeftRadius: borderRadius.xl,
       borderTopRightRadius: borderRadius.xl,
       maxHeight: "80%",

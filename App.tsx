@@ -38,6 +38,7 @@ import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { useProcessesStore } from "./src/store/processesStore";
 import { ErrorBoundary } from "./src/components/ErrorBoundary";
+import { GlassWrapper } from "./src/components/GlassWrapper";
 import { supabase } from "./src/services/supabase";
 import { useNotificationSetup } from "./src/hooks/useNotificationSetup";
 
@@ -137,7 +138,7 @@ function TabNavigator() {
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
-          backgroundColor: colors.tabBarBackground,
+          backgroundColor: "transparent",
           borderTopWidth: 0,
           borderTopColor: colors.tabBarBorder,
           paddingTop: 8,
@@ -162,6 +163,20 @@ function TabNavigator() {
             },
           }),
         },
+        tabBarBackground: () => (
+          <GlassWrapper
+            variant="header"
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24,
+                overflow: "hidden",
+              },
+            ]}
+            fallbackColor={colors.tabBarBackground}
+          />
+        ),
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: "500",

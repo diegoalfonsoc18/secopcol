@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../context/ThemeContext";
 import { spacing, borderRadius } from "../theme";
 import { useHaptics } from "../hooks/useHaptics";
+import { GlassWrapper } from "./GlassWrapper";
 
 interface BottomSheetProps {
   title?: string;
@@ -77,6 +78,24 @@ export const BottomSheet = forwardRef<BottomSheetLib, BottomSheetProps>(
 
     const ContentWrapper = scrollable ? BottomSheetScrollView : BottomSheetView;
 
+    const renderBackground = useCallback(
+      (props: any) => (
+        <GlassWrapper
+          variant="regular"
+          style={[
+            props.style,
+            {
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              overflow: "hidden",
+            },
+          ]}
+          fallbackColor={colors.backgroundSecondary}
+        />
+      ),
+      [colors]
+    );
+
     return (
       <BottomSheetLib
         ref={ref}
@@ -86,7 +105,7 @@ export const BottomSheet = forwardRef<BottomSheetLib, BottomSheetProps>(
         backdropComponent={renderBackdrop}
         enablePanDownToClose
         handleIndicatorStyle={styles.handleIndicator}
-        backgroundStyle={styles.background}
+        backgroundComponent={renderBackground}
         style={styles.sheet}>
         {title && (
           <View style={styles.header}>

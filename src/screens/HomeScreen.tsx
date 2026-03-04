@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { ProcessCard, DashboardSkeleton, StaggeredItem, ContractTypeSelector, AnimatedPressable, ScaleIn, ObligationCard } from "../components/index";
+import { ProcessCard, DashboardSkeleton, StaggeredItem, ContractTypeSelector, AnimatedPressable, ScaleIn, ObligationCard, GlassWrapper } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess, advancedSearch, getAdvancedCount } from "../api/secop";
 import { getUpcomingObligations } from "../services/obligationService";
@@ -95,23 +95,41 @@ const ProcessListOverlay: React.FC<ProcessListOverlayProps> = ({
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents={visible ? "auto" : "none"}>
+      {/* Backdrop con blur */}
       <Animated.View
         style={[
           StyleSheet.absoluteFill,
-          { backgroundColor: "rgba(0,0,0,0.5)", opacity: overlayOpacity },
+          { opacity: overlayOpacity },
         ]}>
-        <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
+        <GlassWrapper
+          variant="overlay"
+          style={StyleSheet.absoluteFill}
+          fallbackColor="rgba(0,0,0,0.5)"
+          blurIntensity={30}
+          blurTint="dark"
+        >
+          <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
+        </GlassWrapper>
       </Animated.View>
 
+      {/* Panel con glass */}
       <Animated.View
         style={[
           overlayStyles.container,
           {
-            backgroundColor: colors.background,
             paddingBottom: insets.bottom + spacing.lg,
             transform: [{ translateY: slideAnim }],
           },
         ]}>
+        <GlassWrapper
+          variant="regular"
+          style={{
+            flex: 1,
+            borderTopLeftRadius: borderRadius.xl,
+            borderTopRightRadius: borderRadius.xl,
+          }}
+          fallbackColor={colors.background}
+        >
         {/* Header */}
         <View style={overlayStyles.header}>
           <View style={{ flex: 1 }}>
@@ -153,6 +171,7 @@ const ProcessListOverlay: React.FC<ProcessListOverlayProps> = ({
             ))}
           </ScrollView>
         )}
+        </GlassWrapper>
       </Animated.View>
     </View>
   );
@@ -458,14 +477,17 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header Animado */}
-      <Animated.View
+      {/* Header con Glass */}
+      <GlassWrapper
+        variant="header"
         style={[
           styles.header,
           {
             paddingTop: insets.top + spacing.md,
           },
-        ]}>
+        ]}
+        fallbackColor={colors.background}
+      >
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
             <Text style={styles.title}>Inicio</Text>
@@ -495,7 +517,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             )}
           </View>
         </Animated.View>
-      </Animated.View>
+      </GlassWrapper>
 
       {/* Contenido */}
       {recentLoading && recentProcesses.length === 0 ? (
@@ -732,7 +754,6 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.background,
     },
     header: {
-      backgroundColor: colors.background,
       paddingHorizontal: spacing.lg,
       paddingBottom: spacing.sm,
     },

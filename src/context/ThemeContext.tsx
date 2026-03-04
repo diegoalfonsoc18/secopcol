@@ -56,6 +56,12 @@ export const lightColors = {
   tabBarBackground: "rgba(255, 255, 255, 0.94)",
   tabBarBorder: "rgba(0, 0, 0, 0.1)",
 
+  // Glass
+  glassCardBackground: "rgba(255, 255, 255, 0.65)",
+  glassOverlayBackground: "rgba(255, 255, 255, 0.45)",
+  glassBadgeBackground: "rgba(255, 255, 255, 0.50)",
+  glassHeaderBackground: "rgba(242, 242, 247, 0.75)",
+
   // Button
   buttonBackground: "#ffff",
 };
@@ -91,6 +97,12 @@ export const darkColors = {
   // Tab Bar
   tabBarBackground: "rgba(28, 28, 30, 0.94)",
   tabBarBorder: "rgba(255, 255, 255, 0.1)",
+
+  // Glass
+  glassCardBackground: "rgba(28, 28, 30, 0.65)",
+  glassOverlayBackground: "rgba(0, 0, 0, 0.45)",
+  glassBadgeBackground: "rgba(44, 44, 46, 0.50)",
+  glassHeaderBackground: "rgba(0, 0, 0, 0.75)",
 
   // Button
   buttonBackground: "#fff",
