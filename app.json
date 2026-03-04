@@ -3,6 +3,7 @@
     "name": "Secopcol",
     "slug": "secopcol",
     "scheme": "secopcol",
+    "userInterfaceStyle": "automatic",
     "icon": "./assets/images/icon.png",
     "ios": {
       "supportsTablet": true,
