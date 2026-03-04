@@ -9,6 +9,9 @@ import {
   ConcesionIcon,
   SegurosIcon,
   ComodatoIcon,
+  ServicioFincancieroIcon,
+  VentaMueblesIcon,
+  AcuerdoMarcoIcon,
   OtroIcon,
 } from "../assets/icons";
 
@@ -105,7 +108,7 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     id: "Acuerdo Marco de Precios",
     label: "Acuerdo Marco",
     description: "Contratos marco de precios",
-    CustomIcon: OtroIcon,
+    CustomIcon: AcuerdoMarcoIcon,
     color: "#0EA5E9", // Sky
   },
   {
@@ -119,14 +122,14 @@ export const CONTRACT_TYPES: ContractTypeConfig[] = [
     id: "Servicios financieros",
     label: "Serv. financieros",
     description: "Servicios del sector financiero",
-    CustomIcon: OtroIcon,
+    CustomIcon: ServicioFincancieroIcon,
     color: "#059669", // Esmeralda oscuro
   },
   {
     id: "Venta muebles",
     label: "Venta muebles",
     description: "Enajenación de bienes muebles",
-    CustomIcon: OtroIcon,
+    CustomIcon: VentaMueblesIcon,
     color: "#D97706", // Ámbar oscuro
   },
   {
