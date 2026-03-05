@@ -140,21 +140,19 @@ function TabNavigator() {
         tabBarStyle: {
           backgroundColor: "transparent",
           borderTopWidth: 0,
-          borderTopColor: colors.tabBarBorder,
-          paddingTop: 8,
-          paddingBottom: Platform.OS === "ios" ? 24 : insets.bottom + 12,
-          height: Platform.OS === "ios" ? 88 : 70 + insets.bottom,
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
+          borderTopColor: "transparent",
+          height: 70,
+          borderRadius: 35,
           overflow: "hidden",
           position: "absolute",
-          bottom: 0,
+          bottom: insets.bottom > 0 ? insets.bottom - 10 : 12,
+          marginHorizontal: 16,
           left: 0,
           right: 0,
           ...Platform.select({
             ios: {
               shadowColor: "#000",
-              shadowOffset: { width: 0, height: -4 },
+              shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.15,
               shadowRadius: 12,
             },
@@ -169,21 +167,26 @@ function TabNavigator() {
             style={[
               StyleSheet.absoluteFill,
               {
-                borderTopLeftRadius: 24,
-                borderTopRightRadius: 24,
+                borderRadius: 35,
                 overflow: "hidden",
               },
             ]}
             fallbackColor={colors.tabBarBackground}
           />
         ),
+        tabBarShowLabel: true,
+        tabBarItemStyle: {
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+        },
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: "500",
-          marginTop: 2,
+          marginBottom: 8,
         },
         tabBarIconStyle: {
-          marginTop: 4,
+          marginTop: 8,
         },
       }}
       initialRouteName="Home">

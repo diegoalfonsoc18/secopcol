@@ -167,16 +167,21 @@ const AlertCard: React.FC<AlertCardProps> = ({
       <TouchableOpacity
         style={[
           styles.alertCard,
-          { backgroundColor: colors.backgroundSecondary },
+          { backgroundColor: "transparent" },
         ]}
         onPress={() => onEdit(alert)}
         activeOpacity={0.7}>
+        <GlassWrapper
+          variant="card"
+          style={styles.alertGlassInner}
+          fallbackColor={colors.backgroundSecondary}
+        >
         <View style={styles.alertHeader}>
           <View style={styles.alertTitleRow}>
             <AlertIcon
               size={22}
-              filled={true} // Activa la versión SÓLIDA
-              activeColor={colors.accent} // El color que tendrá el relleno
+              filled={true}
+              activeColor={colors.accent}
             />
             <Text
               style={[styles.alertName, { color: colors.textPrimary }]}
@@ -197,7 +202,7 @@ const AlertCard: React.FC<AlertCardProps> = ({
           numberOfLines={2}>
           {getFiltersSummary()}
         </Text>
-
+        </GlassWrapper>
       </TouchableOpacity>
     </Swipeable>
   );
@@ -1593,7 +1598,6 @@ const styles = StyleSheet.create({
 
   // Alert Card
   alertCard: {
-    padding: spacing.lg,
     borderRadius: borderRadius.lg,
     marginBottom: spacing.lg,
     ...Platform.select({
@@ -1608,6 +1612,10 @@ const styles = StyleSheet.create({
         borderColor: "rgba(0,0,0,0.06)",
       },
     }),
+  },
+  alertGlassInner: {
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
   },
   alertHeader: {
     flexDirection: "row",

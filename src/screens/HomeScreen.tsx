@@ -493,11 +493,17 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             <Text style={styles.title}>Inicio</Text>
           </View>
 
-          <TouchableOpacity
-            style={[styles.headerButton, { borderWidth: 1.5, borderColor: colors.accent + "30" }]}
-            onPress={() => navigation.navigate("AppSettings")}>
-            <Ionicons name="settings-outline" size={22} color={colors.accent} />
-          </TouchableOpacity>
+          <GlassWrapper
+            variant="badge"
+            style={styles.headerButton}
+            fallbackColor={colors.accent + "15"}
+          >
+            <TouchableOpacity
+              style={{ width: "100%", height: "100%", justifyContent: "center", alignItems: "center" }}
+              onPress={() => navigation.navigate("AppSettings")}>
+              <Ionicons name="settings-outline" size={22} color={colors.accent} />
+            </TouchableOpacity>
+          </GlassWrapper>
         </View>
 
         <Animated.View style={{ opacity: subtitleOpacity }}>
