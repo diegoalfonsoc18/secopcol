@@ -134,7 +134,9 @@ export const GlassTabBar: React.FC<BottomTabBarProps> = ({
           });
         };
 
-        const color = isFocused ? colors.accent : (isDark ? "#E5E5EA" : "#1C1C1E");
+        const color = isFocused
+          ? (isDark ? "#FFFFFF" : "#000000")
+          : (isDark ? "#FFFFFF" : "#3A3A3C");
 
         return (
           <TouchableOpacity

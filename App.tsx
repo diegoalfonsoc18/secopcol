@@ -145,11 +145,11 @@ function TabNavigator() {
         options={{
           tabBarLabel: "Inicio",
           tabBarIcon: ({ focused }) => {
-            const iconColor = focused ? colors.accent : (isDark ? "#E5E5EA" : "#1C1C1E");
+            const iconColor = focused ? (isDark ? "#FFFFFF" : "#000000") : (isDark ? "#FFFFFF" : "#3A3A3C");
             return (
               <HomeIcon
                 size={20}
-                filled={false}
+                filled={focused}
                 color={iconColor}
                 activeColor={iconColor}
               />
@@ -163,11 +163,11 @@ function TabNavigator() {
         options={{
           tabBarLabel: "Buscar",
           tabBarIcon: ({ focused }) => {
-            const iconColor = focused ? colors.accent : (isDark ? "#E5E5EA" : "#1C1C1E");
+            const iconColor = focused ? (isDark ? "#FFFFFF" : "#000000") : (isDark ? "#FFFFFF" : "#3A3A3C");
             return (
               <SearchIcon
                 size={20}
-                filled={false}
+                filled={focused}
                 color={iconColor}
                 activeColor={iconColor}
               />
@@ -190,11 +190,11 @@ function TabNavigator() {
             lineHeight: 18,
           },
           tabBarIcon: ({ focused }) => {
-            const iconColor = focused ? colors.accent : (isDark ? "#E5E5EA" : "#1C1C1E");
+            const iconColor = focused ? (isDark ? "#FFFFFF" : "#000000") : (isDark ? "#FFFFFF" : "#3A3A3C");
             return (
               <FavoritesIcon
                 size={20}
-                filled={false}
+                filled={focused}
                 color={iconColor}
                 activeColor={iconColor}
               />
@@ -208,11 +208,11 @@ function TabNavigator() {
         options={{
           tabBarLabel: "Alertas",
           tabBarIcon: ({ focused }) => {
-            const iconColor = focused ? colors.accent : (isDark ? "#E5E5EA" : "#1C1C1E");
+            const iconColor = focused ? (isDark ? "#FFFFFF" : "#000000") : (isDark ? "#FFFFFF" : "#3A3A3C");
             return (
               <AlertIcon
                 size={20}
-                filled={false}
+                filled={focused}
                 color={iconColor}
                 activeColor={iconColor}
               />
