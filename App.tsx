@@ -39,6 +39,7 @@ import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { useProcessesStore } from "./src/store/processesStore";
 import { ErrorBoundary } from "./src/components/ErrorBoundary";
 import { GlassWrapper } from "./src/components/GlassWrapper";
+import { GlassTabBar } from "./src/components/GlassTabBar";
 import { supabase } from "./src/services/supabase";
 import { useNotificationSetup } from "./src/hooks/useNotificationSetup";
 
@@ -126,68 +127,16 @@ function AlertsStackNavigator() {
 // TAB NAVIGATOR
 // ============================================
 function TabNavigator() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { favorites } = useProcessesStore();
   const favoritesCount = favorites.length;
   const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
+      tabBar={(props) => <GlassTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: {
-          backgroundColor: "transparent",
-          borderTopWidth: 0,
-          borderTopColor: "transparent",
-          height: 70,
-          borderRadius: 35,
-          overflow: "hidden",
-          position: "absolute",
-          bottom: insets.bottom > 0 ? insets.bottom - 10 : 12,
-          marginHorizontal: 16,
-          left: 0,
-          right: 0,
-          ...Platform.select({
-            ios: {
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.15,
-              shadowRadius: 12,
-            },
-            android: {
-              elevation: 15,
-            },
-          }),
-        },
-        tabBarBackground: () => (
-          <GlassWrapper
-            variant="header"
-            style={[
-              StyleSheet.absoluteFill,
-              {
-                borderRadius: 35,
-                overflow: "hidden",
-              },
-            ]}
-            fallbackColor={colors.tabBarBackground}
-          />
-        ),
-        tabBarShowLabel: true,
-        tabBarItemStyle: {
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-        },
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: "500",
-          marginBottom: 8,
-        },
-        tabBarIconStyle: {
-          marginTop: 8,
-        },
       }}
       initialRouteName="Home">
       <Tab.Screen
@@ -195,14 +144,17 @@ function TabNavigator() {
         component={HomeStackNavigator}
         options={{
           tabBarLabel: "Inicio",
-          tabBarIcon: ({ focused, color }) => (
-            <HomeIcon
-              size={22}
-              filled={focused} // 🔥 cambia automáticamente
-              color={colors.textSecondary} // outline
-              activeColor={colors.accent} // solid
-            />
-          ),
+          tabBarIcon: ({ focused }) => {
+            const iconColor = focused ? colors.accent : (isDark ? "#E5E5EA" : "#1C1C1E");
+            return (
+              <HomeIcon
+                size={20}
+                filled={false}
+                color={iconColor}
+                activeColor={iconColor}
+              />
+            );
+          },
         }}
       />
       <Tab.Screen
@@ -210,14 +162,17 @@ function TabNavigator() {
         component={SearchStackNavigator}
         options={{
           tabBarLabel: "Buscar",
-          tabBarIcon: ({ focused, color }) => (
-            <SearchIcon
-              size={25}
-              filled={focused} // 🔥 cambia automáticamente
-              color={colors.textSecondary} // outline
-              activeColor={colors.accent} // solid
-            />
-          ),
+          tabBarIcon: ({ focused }) => {
+            const iconColor = focused ? colors.accent : (isDark ? "#E5E5EA" : "#1C1C1E");
+            return (
+              <SearchIcon
+                size={20}
+                filled={false}
+                color={iconColor}
+                activeColor={iconColor}
+              />
+            );
+          },
         }}
       />
       <Tab.Screen
@@ -234,14 +189,17 @@ function TabNavigator() {
             height: 18,
             lineHeight: 18,
           },
-          tabBarIcon: ({ focused, color }) => (
-            <FavoritesIcon
-              size={24}
-              filled={focused} // 🔥 cambia automáticamente
-              color={colors.textSecondary} // outline
-              activeColor={colors.accent} // solid
-            />
-          ),
+          tabBarIcon: ({ focused }) => {
+            const iconColor = focused ? colors.accent : (isDark ? "#E5E5EA" : "#1C1C1E");
+            return (
+              <FavoritesIcon
+                size={20}
+                filled={false}
+                color={iconColor}
+                activeColor={iconColor}
+              />
+            );
+          },
         }}
       />
       <Tab.Screen
@@ -249,14 +207,17 @@ function TabNavigator() {
         component={AlertsStackNavigator}
         options={{
           tabBarLabel: "Alertas",
-          tabBarIcon: ({ focused, color }) => (
-            <AlertIcon
-              size={23}
-              filled={focused} // 🔥 cambia automáticamente
-              color={colors.textSecondary} // outline
-              activeColor={colors.accent} // solid
-            />
-          ),
+          tabBarIcon: ({ focused }) => {
+            const iconColor = focused ? colors.accent : (isDark ? "#E5E5EA" : "#1C1C1E");
+            return (
+              <AlertIcon
+                size={20}
+                filled={false}
+                color={iconColor}
+                activeColor={iconColor}
+              />
+            );
+          },
         }}
       />
     </Tab.Navigator>

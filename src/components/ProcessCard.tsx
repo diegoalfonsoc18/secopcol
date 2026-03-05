@@ -12,7 +12,6 @@ import {
   getContractTypeColor,
   DEFAULT_CONTRACT_CONFIG,
 } from "../constants/contractTypes";
-import { GlassWrapper } from "./GlassWrapper";
 
 interface ProcessCardProps {
   process: SecopProcess;
@@ -79,14 +78,9 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
 
   return (
     <TouchableOpacity
-      style={[styles.card, { backgroundColor: "transparent" }]}
+      style={[styles.card, { backgroundColor: colors.backgroundSecondary }]}
       onPress={onPress}
       activeOpacity={0.8}>
-      <GlassWrapper
-        variant="card"
-        style={styles.glassInner}
-        fallbackColor={colors.backgroundSecondary}
-      >
       {/* HEADER: Número del Proceso y Entidad */}
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
@@ -191,7 +185,6 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
           )}
         </View>
       </View>
-      </GlassWrapper>
     </TouchableOpacity>
   );
 };
@@ -200,6 +193,7 @@ const createStyles = (colors: any, mainColor: string) =>
   StyleSheet.create({
     card: {
       borderRadius: borderRadius.lg,
+      padding: spacing.lg,
       marginBottom: spacing.lg,
       ...Platform.select({
         ios: {

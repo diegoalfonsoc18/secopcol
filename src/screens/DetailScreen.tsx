@@ -25,7 +25,6 @@ import { analyzeProcess, AnalysisResult } from "../services/aiAnalysis";
 import { getProponentesByProcess, SecopProponente } from "../api/secop";
 import { useObligationsStore } from "../store/obligationsStore";
 import { useAuth } from "../context/AuthContext";
-import { GlassWrapper } from "../components/GlassWrapper";
 
 // ============================================
 // UTILIDADES
@@ -408,11 +407,9 @@ _Enviado desde SECOP Colombia App_`;
 
   return (
     <View style={styles.container}>
-      {/* Header con Glass */}
-      <GlassWrapper
-        variant="header"
-        style={[styles.header, { paddingTop: insets.top + spacing.sm }]}
-        fallbackColor={colors.background}
+      {/* Header */}
+      <View
+        style={[styles.header, { paddingTop: insets.top + spacing.sm, backgroundColor: colors.background }]}
       >
         <TouchableOpacity
           onPress={() => {
@@ -446,7 +443,7 @@ _Enviado desde SECOP Colombia App_`;
             />
           </TouchableOpacity>
         </View>
-      </GlassWrapper>
+      </View>
 
       <ScrollView
         style={styles.scrollView}

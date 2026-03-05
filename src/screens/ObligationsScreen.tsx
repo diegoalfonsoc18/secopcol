@@ -16,7 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { CalendarGrid } from "../components/CalendarGrid";
 import { ObligationCard } from "../components/ObligationCard";
 import { ObligationFormModal, ObligationFormData } from "../components/ObligationFormModal";
-import { AnimatedPressable, FadeIn, StaggeredItem, GlassWrapper } from "../components/index";
+import { AnimatedPressable, FadeIn, StaggeredItem } from "../components/index";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { useHaptics } from "../hooks/useHaptics";
@@ -207,11 +207,9 @@ export const ObligationsScreen: React.FC<{ navigation: any }> = ({ navigation })
 
   return (
     <View style={styles.container}>
-      {/* Header con Glass */}
-      <GlassWrapper
-        variant="header"
-        style={[styles.header, { paddingTop: insets.top + spacing.md }]}
-        fallbackColor={colors.background}
+      {/* Header */}
+      <View
+        style={[styles.header, { paddingTop: insets.top + spacing.md, backgroundColor: colors.background }]}
       >
         <View style={styles.headerRow}>
           <TouchableOpacity
@@ -269,7 +267,7 @@ export const ObligationsScreen: React.FC<{ navigation: any }> = ({ navigation })
             </AnimatedPressable>
           ))}
         </View>
-      </GlassWrapper>
+      </View>
 
       {/* Contenido */}
       <ScrollView

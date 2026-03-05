@@ -39,3 +39,4 @@ export { CalendarGrid } from "./CalendarGrid";
 export { ObligationCard } from "./ObligationCard";
 export { ObligationFormModal } from "./ObligationFormModal";
 export { GlassWrapper, useGlassAvailability } from "./GlassWrapper";
+export { GlassTabBar } from "./GlassTabBar";

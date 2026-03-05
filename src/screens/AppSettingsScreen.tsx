@@ -13,7 +13,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { spacing, borderRadius } from "../theme";
-import { GlassWrapper } from "../components/GlassWrapper";
 
 type ThemeMode = "light" | "dark" | "system";
 
@@ -74,11 +73,9 @@ export const AppSettingsScreen: React.FC<{ navigation: any }> = ({
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header con Glass */}
-      <GlassWrapper
-        variant="header"
-        style={[styles.header, { paddingTop: insets.top + spacing.md }]}
-        fallbackColor={colors.background}
+      {/* Header */}
+      <View
+        style={[styles.header, { paddingTop: insets.top + spacing.md, backgroundColor: colors.background }]}
       >
         <TouchableOpacity
           style={styles.backButton}
@@ -89,7 +86,7 @@ export const AppSettingsScreen: React.FC<{ navigation: any }> = ({
           Ajustes
         </Text>
         <View style={{ width: 40 }} />
-      </GlassWrapper>
+      </View>
 
       <ScrollView
         style={styles.scrollView}

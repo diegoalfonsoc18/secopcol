@@ -326,11 +326,9 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
 
   return (
     <View style={styles.container}>
-      {/* Header fijo con Glass */}
-      <GlassWrapper
-        variant="header"
-        style={[styles.fixedHeader, { paddingTop: insets.top + spacing.md }]}
-        fallbackColor={colors.background}
+      {/* Header fijo */}
+      <View
+        style={[styles.fixedHeader, { paddingTop: insets.top + spacing.md, backgroundColor: colors.background }]}
       >
         <View style={styles.titleRow}>
           <Text style={styles.title}>Buscar</Text>
@@ -342,7 +340,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
             </TouchableOpacity>
           )}
         </View>
-      </GlassWrapper>
+      </View>
 
       <ScrollView
         style={styles.scrollContainer}

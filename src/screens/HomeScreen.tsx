@@ -225,7 +225,7 @@ const overlayStyles = StyleSheet.create({
 // ============================================
 export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const haptics = useHaptics();
   const { user, preferences } = useAuth();
   useProcessesStore(); // mantener store inicializado
@@ -477,16 +477,15 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header con Glass */}
-      <GlassWrapper
-        variant="header"
+      {/* Header */}
+      <View
         style={[
           styles.header,
           {
             paddingTop: insets.top + spacing.md,
+            backgroundColor: colors.background,
           },
         ]}
-        fallbackColor={colors.background}
       >
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
@@ -523,7 +522,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             )}
           </View>
         </Animated.View>
-      </GlassWrapper>
+      </View>
 
       {/* Contenido */}
       {recentLoading && recentProcesses.length === 0 ? (

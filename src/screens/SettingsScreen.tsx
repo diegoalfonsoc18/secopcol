@@ -18,7 +18,6 @@ import { spacing, borderRadius } from "../theme";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { useHaptics } from "../hooks/useHaptics";
-import { GlassWrapper } from "../components/GlassWrapper";
 import {
   getDepartments,
   getMunicipalities,
@@ -543,11 +542,9 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
 
   return (
     <View style={styles.container}>
-      {/* Header con Glass */}
-      <GlassWrapper
-        variant="header"
-        style={[styles.header, { paddingTop: insets.top + spacing.md }]}
-        fallbackColor={colors.background}
+      {/* Header */}
+      <View
+        style={[styles.header, { paddingTop: insets.top + spacing.md, backgroundColor: colors.background }]}
       >
         <TouchableOpacity
           style={styles.backButton}
@@ -556,7 +553,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notificaciones</Text>
         <View style={{ width: 40 }} />
-      </GlassWrapper>
+      </View>
 
       <ScrollView
         style={styles.scrollView}

@@ -98,12 +98,15 @@ export const GlassWrapper: React.FC<GlassWrapperProps> = ({
   const resolvedFallback =
     fallbackColor ?? colors.tabBarBackground;
 
+  // Resolver estilo de glass: en dark mode usar "clear" para evitar fondo gris
+  const resolvedGlassStyle = isDark ? "clear" : preset.glassStyle;
+
   // Tier 1: Native Liquid Glass (iOS 26+, solo dev builds)
   if (!disabled && _glassAvailable && GlassView) {
     return (
       <GlassView
         style={[style, { overflow: "hidden" }]}
-        glassEffectStyle={preset.glassStyle}
+        glassEffectStyle={resolvedGlassStyle}
         tintColor={glassTintColor}
       >
         {children}

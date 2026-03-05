@@ -42,7 +42,7 @@ import {
 import { getProcessById, advancedSearch } from "../api/secop";
 import { SecopProcess } from "../types/index";
 import { Alert as AlertType, AlertFilters } from "../types/database";
-import { ProcessCard, GlassWrapper } from "../components/index";
+import { ProcessCard } from "../components/index";
 import { useHaptics } from "../hooks/useHaptics";
 import { FadeIn, SlideInUp } from "../components/Animations";
 import { getDepartments, getMunicipalities } from "../services/divipola";
@@ -167,15 +167,10 @@ const AlertCard: React.FC<AlertCardProps> = ({
       <TouchableOpacity
         style={[
           styles.alertCard,
-          { backgroundColor: "transparent" },
+          { backgroundColor: colors.backgroundSecondary },
         ]}
         onPress={() => onEdit(alert)}
         activeOpacity={0.7}>
-        <GlassWrapper
-          variant="card"
-          style={styles.alertGlassInner}
-          fallbackColor={colors.backgroundSecondary}
-        >
         <View style={styles.alertHeader}>
           <View style={styles.alertTitleRow}>
             <AlertIcon
@@ -202,7 +197,6 @@ const AlertCard: React.FC<AlertCardProps> = ({
           numberOfLines={2}>
           {getFiltersSummary()}
         </Text>
-        </GlassWrapper>
       </TouchableOpacity>
     </Swipeable>
   );
@@ -1444,11 +1438,9 @@ const AlertsScreen: React.FC<{ route?: any; navigation?: any }> = ({ route, navi
   return (
     <View
       style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header con Glass */}
-      <GlassWrapper
-        variant="header"
-        style={[styles.header, { paddingTop: insets.top + spacing.md }]}
-        fallbackColor={colors.background}
+      {/* Header */}
+      <View
+        style={[styles.header, { paddingTop: insets.top + spacing.md, backgroundColor: colors.background }]}
       >
         <Text style={[styles.title, { color: colors.textPrimary }]}>
           Alertas
@@ -1460,7 +1452,7 @@ const AlertsScreen: React.FC<{ route?: any; navigation?: any }> = ({ route, navi
           accessibilityRole="button">
           <Ionicons name="add" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-      </GlassWrapper>
+      </View>
 
       {/* Lista */}
       <ScrollView
@@ -1599,6 +1591,7 @@ const styles = StyleSheet.create({
   // Alert Card
   alertCard: {
     borderRadius: borderRadius.lg,
+    padding: spacing.lg,
     marginBottom: spacing.lg,
     ...Platform.select({
       ios: {
@@ -1612,10 +1605,6 @@ const styles = StyleSheet.create({
         borderColor: "rgba(0,0,0,0.06)",
       },
     }),
-  },
-  alertGlassInner: {
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
   },
   alertHeader: {
     flexDirection: "row",

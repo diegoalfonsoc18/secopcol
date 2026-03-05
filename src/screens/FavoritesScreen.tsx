@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Swipeable } from "react-native-gesture-handler";
-import { ProcessCard, StaggeredItem, GlassWrapper } from "../components/index";
+import { ProcessCard, StaggeredItem } from "../components/index";
 import { useProcessesStore } from "../store/processesStore";
 import { SecopProcess } from "../types/index";
 import { spacing, borderRadius, scale, typography } from "../theme";
@@ -230,16 +230,15 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
 
   return (
     <View style={styles.container}>
-      {/* Header con Glass */}
-      <GlassWrapper
-        variant="header"
+      {/* Header */}
+      <View
         style={[
           styles.header,
           {
             paddingTop: insets.top + spacing.md,
+            backgroundColor: colors.background,
           },
         ]}
-        fallbackColor={colors.background}
       >
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
@@ -277,7 +276,7 @@ export const FavoritesScreen: React.FC<{ navigation: any }> = ({
         <Animated.Text style={[styles.subtitle, { opacity: subtitleOpacity }]}>
           Procesos guardados
         </Animated.Text>
-      </GlassWrapper>
+      </View>
 
       {/* Lista de favoritos */}
       <Animated.FlatList
