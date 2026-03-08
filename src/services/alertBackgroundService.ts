@@ -146,11 +146,11 @@ export async function checkAlertsForUser(userId: string): Promise<number> {
           last_results_ids: currentIds,
         });
       } catch (error) {
-        console.error(`Error checking alert ${alert.id}:`, error);
+        if (__DEV__) { console.error(`Error checking alert ${alert.id}:`, error); }
       }
     }
   } catch (error) {
-    console.error("Error in checkAlertsForUser:", error);
+    if (__DEV__) { console.error("Error in checkAlertsForUser:", error); }
   }
 
   return notificationsSent;
@@ -221,7 +221,7 @@ export async function checkObligationReminders(userId: string): Promise<number> 
     // Guardar estado de notificaciones enviadas
     await AsyncStorage.setItem(OBLIGATION_NOTIF_KEY, JSON.stringify(sentMap));
   } catch (error) {
-    console.error("Error checking obligation reminders:", error);
+    if (__DEV__) { console.error("Error checking obligation reminders:", error); }
   }
 
   return notificationsSent;
@@ -258,7 +258,7 @@ TaskManager.defineTask(ALERT_CHECK_TASK, async () => {
 
     return BackgroundTask.BackgroundTaskResult.Success;
   } catch (error) {
-    console.error("Background alert check failed:", error);
+    if (__DEV__) { console.error("Background alert check failed:", error); }
     return BackgroundTask.BackgroundTaskResult.Failed;
   }
 });
@@ -278,11 +278,11 @@ export async function registerBackgroundAlertCheck(): Promise<void> {
       minimumInterval: 15, // minutos (minimo 15 en Android)
     });
 
-    console.log("Background alert check registered");
+    if (__DEV__) { console.log("Background alert check registered"); }
   } catch (error) {
     // Background tasks are not supported in Expo Go — warn instead of error
     // to avoid triggering the red error overlay in dev mode
-    console.warn("Background alert check not available:", error);
+    if (__DEV__) { console.warn("Background alert check not available:", error); }
   }
 }
 
@@ -295,8 +295,8 @@ export async function unregisterBackgroundAlertCheck(): Promise<void> {
     if (!isRegistered) return;
 
     await BackgroundTask.unregisterTaskAsync(ALERT_CHECK_TASK);
-    console.log("Background alert check unregistered");
+    if (__DEV__) { console.log("Background alert check unregistered"); }
   } catch (error) {
-    console.error("Error unregistering background alert check:", error);
+    if (__DEV__) { console.error("Error unregistering background alert check:", error); }
   }
 }

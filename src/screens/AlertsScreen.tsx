@@ -1265,7 +1265,7 @@ const AlertsScreen: React.FC<{ route?: any; navigation?: any }> = ({ route, navi
       const data = await getAlerts(user.id);
       setAlerts(data);
     } catch (error) {
-      console.error("Error loading alerts:", error);
+      if (__DEV__) { console.error("Error loading alerts:", error); }
     } finally {
       setIsLoading(false);
       setRefreshing(false);
@@ -1352,7 +1352,7 @@ const AlertsScreen: React.FC<{ route?: any; navigation?: any }> = ({ route, navi
         });
         setAlertResults(results);
       } catch (error) {
-        console.error("Error fetching alert results:", error);
+        if (__DEV__) { console.error("Error fetching alert results:", error); }
         setAlertResults([]);
       } finally {
         setAlertResultsLoading(false);

@@ -40,7 +40,7 @@ const fetchSecop = async (query: string): Promise<SecopProcess[]> => {
     const data = await response.json();
     return data as SecopProcess[];
   } catch (error) {
-    console.error("Error fetching SECOP data:", error);
+    if (__DEV__) { console.error("Error fetching SECOP data:", error); }
     throw error;
   }
 };

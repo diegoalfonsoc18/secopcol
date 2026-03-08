@@ -102,17 +102,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log(
-        "Auth event:",
-        event,
-        "Session:",
-        !!session,
-        "User:",
-        !!session?.user
-      );
+      if (__DEV__) {
+        console.log(
+          "Auth event:",
+          event,
+          "Session:",
+          !!session,
+          "User:",
+          !!session?.user
+        );
+      }
 
       if (event === "SIGNED_IN" && session?.user) {
-        console.log("Calling loadUserData...");
+        if (__DEV__) { console.log("Calling loadUserData..."); }
         await loadUserData(session.user);
       } else if (event === "SIGNED_OUT") {
         setUser(null);
@@ -129,7 +131,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   // CARGAR DATOS DEL USUARIO (Corregido)
   // ============================================
   const loadUserData = async (supabaseUser: SupabaseUser) => {
-    console.log("Cargando datos para:", supabaseUser.id);
+    if (__DEV__) { console.log("Cargando datos para:", supabaseUser.id); }
     try {
       // Intentamos leer ambos al tiempo
       const [profileRes, prefsRes] = await Promise.all([
@@ -167,7 +169,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         });
       }
     } catch (error) {
-      console.error("Error en loadUserData:", error);
+      if (__DEV__) { console.error("Error en loadUserData:", error); }
     } finally {
       setIsLoading(false);
     }
@@ -283,7 +285,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
       return { success: true };
     } catch (error: any) {
-      console.error("Google login error:", error);
+      if (__DEV__) { console.error("Google login error:", error); }
       return { success: false, error: error.message };
     }
   };
@@ -297,7 +299,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       setUser(null);
       setPreferences(DEFAULT_PREFERENCES);
     } catch (error) {
-      console.error("Logout error:", error);
+      if (__DEV__) { console.error("Logout error:", error); }
     }
   };
 
@@ -321,7 +323,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           .eq("user_id", user.id);
       }
     } catch (error) {
-      console.error("Error updating preferences:", error);
+      if (__DEV__) { console.error("Error updating preferences:", error); }
     }
   };
 
@@ -357,7 +359,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         avatarUrl: updates.avatarUrl || user.avatarUrl,
       });
     } catch (error) {
-      console.error("Error updating profile:", error);
+      if (__DEV__) { console.error("Error updating profile:", error); }
     }
   };
 
@@ -373,7 +375,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         .update({ push_token: token })
         .eq("id", user.id);
     } catch (error) {
-      console.error("Error saving push token:", error);
+      if (__DEV__) { console.error("Error saving push token:", error); }
     }
   };
 

@@ -20,7 +20,7 @@ export const getAlerts = async (userId: string): Promise<Alert[]> => {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching alerts:", error);
+    if (__DEV__) { console.error("Error fetching alerts:", error); }
     return [];
   }
   return data || [];
@@ -37,7 +37,7 @@ export const getAlert = async (alertId: string): Promise<Alert | null> => {
     .single();
 
   if (error) {
-    console.error("Error fetching alert:", error);
+    if (__DEV__) { console.error("Error fetching alert:", error); }
     return null;
   }
   return data;
@@ -136,7 +136,7 @@ export const getAlertHistory = async (
     .limit(limit);
 
   if (error) {
-    console.error("Error fetching alert history:", error);
+    if (__DEV__) { console.error("Error fetching alert history:", error); }
     return [];
   }
   return data || [];

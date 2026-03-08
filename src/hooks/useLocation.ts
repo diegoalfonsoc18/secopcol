@@ -138,7 +138,7 @@ export const useLocation = () => {
           municipio = address.city || address.subregion || null;
         }
       } catch (geocodeError) {
-        console.log("Error en geocoding:", geocodeError);
+        if (__DEV__) { console.log("Error en geocoding:", geocodeError); }
       }
 
       const nearby = getNearbyDepartamentos(latitude, longitude, 250);
@@ -154,7 +154,7 @@ export const useLocation = () => {
         permissionDenied: false,
       });
     } catch (error) {
-      console.log("Ubicación no disponible:", error);
+      if (__DEV__) { console.log("Ubicación no disponible:", error); }
       setState((prev) => ({
         ...prev,
         loading: false,

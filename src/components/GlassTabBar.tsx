@@ -96,15 +96,9 @@ export const GlassTabBar: React.FC<BottomTabBarProps> = ({
             },
           ]}
         >
-          <View
-            style={[
-              styles.bubble,
-              {
-                backgroundColor: isDark
-                  ? "rgba(255, 255, 255, 0.12)"
-                  : "rgba(0, 0, 0, 0.07)",
-              },
-            ]}
+          <GlassWrapper
+            variant="badge"
+            style={styles.bubble}
           />
         </Animated.View>
       )}

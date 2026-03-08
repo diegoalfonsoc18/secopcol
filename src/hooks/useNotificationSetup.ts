@@ -29,7 +29,7 @@ export function useNotificationSetup() {
         // 1. Pedir permisos de notificacion
         const granted = await requestNotificationPermissions();
         if (!granted) {
-          console.log("Notification permissions not granted");
+          if (__DEV__) { console.log("Notification permissions not granted"); }
           return;
         }
 
@@ -47,7 +47,7 @@ export function useNotificationSetup() {
           }
         } catch (error) {
           // Push token puede fallar en desarrollo/simulador, no es critico
-          console.log("Could not get push token:", error);
+          if (__DEV__) { console.log("Could not get push token:", error); }
         }
 
         // 3. Guardar userId en AsyncStorage para el background task
@@ -60,13 +60,13 @@ export function useNotificationSetup() {
         await scheduleBackgroundCheck();
 
         // 6. Verificacion inmediata al abrir la app
-        checkAlertsForUser(user.id).catch((error) =>
-          console.error("Initial alert check failed:", error)
-        );
+        checkAlertsForUser(user.id).catch((error) => {
+          if (__DEV__) { console.error("Initial alert check failed:", error); }
+        });
 
         initialized.current = true;
       } catch (error) {
-        console.error("Notification setup error:", error);
+        if (__DEV__) { console.error("Notification setup error:", error); }
       }
     };
 
@@ -83,9 +83,9 @@ export function useNotificationSetup() {
         nextAppState === "active"
       ) {
         // La app volvio a foreground — verificar alertas inmediatamente
-        checkAlertsForUser(user.id).catch((error) =>
-          console.error("Resume alert check failed:", error)
-        );
+        checkAlertsForUser(user.id).catch((error) => {
+          if (__DEV__) { console.error("Resume alert check failed:", error); }
+        });
       }
       appState.current = nextAppState;
     };

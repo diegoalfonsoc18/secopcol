@@ -171,7 +171,7 @@ async function sendExpoPush(
 // ============================================
 serve(async (req: Request) => {
   const headers = {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": "https://drwxgdwtlcvgiihwvgxd.supabase.co",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Content-Type": "application/json",

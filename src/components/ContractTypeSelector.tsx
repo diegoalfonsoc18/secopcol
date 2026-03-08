@@ -134,7 +134,7 @@ export const ContractTypeSelector: React.FC<ContractTypeSelectorProps> = ({
       await updatePreferences({ selectedContractTypes: selectedTypes });
       handleClose();
     } catch (error) {
-      console.error("Error updating preferences:", error);
+      if (__DEV__) { console.error("Error updating preferences:", error); }
       haptics.error();
     } finally {
       setLoading(false);

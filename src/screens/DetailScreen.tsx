@@ -220,7 +220,7 @@ _Enviado desde SECOP Colombia App_`;
         url: url || undefined,
       });
     } catch (error) {
-      console.error("Error sharing:", error);
+      if (__DEV__) { console.error("Error sharing:", error); }
     }
   };
 
@@ -248,7 +248,7 @@ _Enviado desde SECOP Colombia App_`;
       setAnalysis(result);
       haptics.success();
     } catch (error) {
-      console.error("Error analyzing:", error);
+      if (__DEV__) { console.error("Error analyzing:", error); }
       haptics.error();
       Alert.alert(
         "Error",
