@@ -188,9 +188,10 @@ serve(async (req: Request) => {
 
   try {
     // 1. Obtener todas las alertas activas con push_token del usuario
+    // Usar left join (sin !inner) para no filtrar alertas sin push_token
     const { data: alerts, error: alertsError } = await supabase
       .from("alerts")
-      .select("*, profiles!inner(push_token)")
+      .select("*, profiles(push_token)")
       .eq("is_active", true);
 
     if (alertsError) {
@@ -237,8 +238,14 @@ serve(async (req: Request) => {
         const newIds = currentIds.filter((id) => !previousIds.has(id));
 
         // 5. Enviar push notification si hay procesos nuevos
-        if (newIds.length > 0 && alert.profiles?.push_token) {
-          const pushToken = alert.profiles.push_token;
+        if (newIds.length > 0) {
+          const pushToken = alert.profiles?.push_token;
+
+          if (!pushToken) {
+            console.warn(
+              `Alert ${alert.id} (user ${alert.user_id}): ${newIds.length} new processes found but NO push_token — skipping notification`
+            );
+          }
 
           // Obtener detalles de los procesos nuevos para el body
           const newProcesses = processes.filter(
@@ -259,22 +266,25 @@ serve(async (req: Request) => {
             fase: p.fase || null,
           }));
 
-          const sent = await sendExpoPush(pushToken, {
-            title: `${alert.name} — ${newIds.length} nuevo${newIds.length > 1 ? "s" : ""}`,
-            body,
-            data: {
-              type: "alert_match",
-              alertId: alert.id,
-              newProcessIds: newIds.slice(0, 10),
-              processSummaries,
-            },
-          });
+          let sent = false;
+          if (pushToken) {
+            sent = await sendExpoPush(pushToken, {
+              title: `${alert.name} — ${newIds.length} nuevo${newIds.length > 1 ? "s" : ""}`,
+              body,
+              data: {
+                type: "alert_match",
+                alertId: alert.id,
+                newProcessIds: newIds.slice(0, 10),
+                processSummaries,
+              },
+            });
 
-          if (sent) {
-            notificationsSent++;
+            if (sent) {
+              notificationsSent++;
+            }
           }
 
-          // 6. Insertar en alert_history
+          // 6. Insertar en alert_history (siempre, haya o no push_token)
           await supabase.from("alert_history").insert({
             alert_id: alert.id,
             user_id: alert.user_id,

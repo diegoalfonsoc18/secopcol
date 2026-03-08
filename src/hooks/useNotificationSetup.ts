@@ -34,6 +34,9 @@ export function useNotificationSetup() {
         }
 
         // 2. Obtener y guardar push token (siempre actualizar para mantener frescura)
+        // IMPORTANTE: await completo antes de registrar background task
+        // para que el cron job encuentre el token en la DB
+        let tokenSaved = false;
         try {
           const projectId =
             Constants.expoConfig?.extra?.eas?.projectId;
@@ -44,16 +47,21 @@ export function useNotificationSetup() {
 
           if (tokenData.data) {
             await savePushToken(tokenData.data);
+            tokenSaved = true;
           }
         } catch (error) {
           // Push token puede fallar en desarrollo/simulador, no es critico
           if (__DEV__) { console.log("Could not get push token:", error); }
         }
 
+        if (!tokenSaved && __DEV__) {
+          console.warn("Push token NOT saved — notifications will not work");
+        }
+
         // 3. Guardar userId en AsyncStorage para el background task
         await saveUserIdForBackground(user.id);
 
-        // 4. Registrar background fetch
+        // 4. Registrar background fetch (solo despues de guardar token)
         await registerBackgroundAlertCheck();
 
         // 5. Programar recordatorio diario como fallback (9:00 AM)
