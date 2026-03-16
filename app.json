@@ -8,6 +8,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.secopcol.app",
+      "userInterfaceStyle": "automatic",
       "icon": {
         "light": "./assets/secopcol-exports/Light-iOS-Default-1024x1024@1x.png",
         "dark": "./assets/secopcol-exports/Secopcol-iOS-Dark-1024x1024@1x.png",

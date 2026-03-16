@@ -33,8 +33,10 @@ interface ProcessListOverlayProps {
   visible: boolean;
   title: string;
   processes: SecopProcess[];
+  totalCount?: number;
   onClose: () => void;
   onViewProcess: (process: SecopProcess) => void;
+  onViewMore?: () => void;
   colors: any;
 }
 
@@ -42,8 +44,10 @@ const ProcessListOverlay: React.FC<ProcessListOverlayProps> = ({
   visible,
   title,
   processes,
+  totalCount,
   onClose,
   onViewProcess,
+  onViewMore,
   colors,
 }) => {
   const insets = useSafeAreaInsets();
@@ -172,6 +176,23 @@ const ProcessListOverlay: React.FC<ProcessListOverlayProps> = ({
                 />
               </View>
             ))}
+            {totalCount != null && totalCount > processes.length && onViewMore && (
+              <TouchableOpacity
+                onPress={() => { onClose(); setTimeout(onViewMore, 300); }}
+                style={{
+                  paddingVertical: spacing.md,
+                  paddingHorizontal: spacing.lg,
+                  borderRadius: borderRadius.lg,
+                  backgroundColor: colors.accent + "15",
+                  alignItems: "center",
+                  marginTop: spacing.sm,
+                  marginBottom: spacing.lg,
+                }}>
+                <Text style={{ color: colors.accent, fontWeight: "600", fontSize: scale(14) }}>
+                  Ver los {totalCount.toLocaleString()} en Búsqueda
+                </Text>
+              </TouchableOpacity>
+            )}
           </ScrollView>
         )}
       </Animated.View>
@@ -254,6 +275,8 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     visible: boolean;
     title: string;
     processes: SecopProcess[];
+    totalCount?: number;
+    searchParams?: Record<string, any>;
   }>({ visible: false, title: "", processes: [] });
 
   // Cargar obligaciones proximas
@@ -410,9 +433,9 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   );
 
   const openCardModal = useCallback(
-    (title: string, procs: SecopProcess[]) => {
+    (title: string, procs: SecopProcess[], totalCount?: number, searchParams?: Record<string, any>) => {
       haptics.light();
-      setCardModal({ visible: true, title, processes: procs });
+      setCardModal({ visible: true, title, processes: procs, totalCount, searchParams });
     },
     [haptics]
   );
@@ -434,7 +457,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           ...(selectedTypes.length > 0 && { tipoContrato: selectedTypes }),
           limit: 100,
         });
-        openCardModal("Nuevos esta semana", results);
+        openCardModal("Nuevos esta semana", results, newTodayCount, { recentDays: 7 });
       },
       show: true,
     },
@@ -452,7 +475,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           ...(selectedTypes.length > 0 && { tipoContrato: selectedTypes }),
           limit: 100,
         });
-        openCardModal("Cierran hoy", results);
+        openCardModal("Cierran hoy", results, closingCount, { closingWithinDays: 0, estadoApertura: "Abierto" });
       },
       show: true,
     },
@@ -471,7 +494,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           ...(selectedTypes.length > 0 && { tipoContrato: selectedTypes }),
           limit: 100,
         });
-        openCardModal("Sin ofertas · Cierran en 3 días", results);
+        openCardModal("Sin ofertas · Cierran en 3 días", results, noOffersCount, { closingWithinDays: 3, estadoApertura: "Abierto", noOffers: true });
       },
       show: true,
     },
@@ -735,11 +758,13 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         visible={cardModal.visible}
         title={cardModal.title}
         processes={cardModal.processes}
+        totalCount={cardModal.totalCount}
         onClose={() => setCardModal({ visible: false, title: "", processes: [] })}
         onViewProcess={(process) => {
           setCardModal({ visible: false, title: "", processes: [] });
           setTimeout(() => handleProcessPress(process), 300);
         }}
+        onViewMore={cardModal.searchParams ? () => navigateToSearch(cardModal.searchParams) : undefined}
         colors={colors}
       />
 

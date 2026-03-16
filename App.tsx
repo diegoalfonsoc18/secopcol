@@ -38,7 +38,6 @@ import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { useProcessesStore } from "./src/store/processesStore";
 import { ErrorBoundary } from "./src/components/ErrorBoundary";
-import { GlassWrapper } from "./src/components/GlassWrapper";
 import { GlassTabBar } from "./src/components/GlassTabBar";
 import { supabase } from "./src/services/supabase";
 import { useNotificationSetup } from "./src/hooks/useNotificationSetup";
