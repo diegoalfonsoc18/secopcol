@@ -121,15 +121,16 @@ const ProcessListOverlay: React.FC<ProcessListOverlayProps> = ({
             transform: [{ translateY: slideAnim }],
           },
         ]}>
+        {/* Glass background */}
         <GlassWrapper
           variant="regular"
           style={{
-            flex: 1,
+            ...StyleSheet.absoluteFillObject,
             borderTopLeftRadius: borderRadius.xl,
             borderTopRightRadius: borderRadius.xl,
           }}
           fallbackColor={colors.background}
-        >
+        />
         {/* Header */}
         <View style={overlayStyles.header}>
           <View style={{ flex: 1 }}>
@@ -159,8 +160,10 @@ const ProcessListOverlay: React.FC<ProcessListOverlayProps> = ({
           </View>
         ) : (
           <ScrollView
-            style={overlayStyles.list}
-            showsVerticalScrollIndicator={false}>
+            style={{ flex: 1 }}
+            contentContainerStyle={{ padding: spacing.lg }}
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled>
             {processes.map((process, index) => (
               <View key={`${process.id_del_proceso}-${index}`} style={{ marginBottom: spacing.md }}>
                 <ProcessCard
@@ -171,7 +174,6 @@ const ProcessListOverlay: React.FC<ProcessListOverlayProps> = ({
             ))}
           </ScrollView>
         )}
-        </GlassWrapper>
       </Animated.View>
     </View>
   );

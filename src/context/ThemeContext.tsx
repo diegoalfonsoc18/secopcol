@@ -3,9 +3,10 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useCallback,
   ReactNode,
 } from "react";
-import { useColorScheme } from "react-native";
+import { useColorScheme, Appearance } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // ============================================
@@ -121,6 +122,10 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({
   const systemColorScheme = useColorScheme();
   const [mode, setModeState] = useState<ThemeMode>("system");
   const [isLoaded, setIsLoaded] = useState(false);
+  // Track system scheme changes explicitly (useColorScheme can miss updates)
+  const [systemScheme, setSystemScheme] = useState<string | null | undefined>(
+    () => Appearance.getColorScheme()
+  );
 
   // Cargar preferencia guardada
   useEffect(() => {
@@ -132,9 +137,25 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({
     });
   }, []);
 
+  // Listen for system appearance changes
+  useEffect(() => {
+    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      setSystemScheme(colorScheme);
+    });
+    return () => subscription.remove();
+  }, []);
+
+  // Sync with useColorScheme hook value
+  useEffect(() => {
+    if (systemColorScheme) {
+      setSystemScheme(systemColorScheme);
+    }
+  }, [systemColorScheme]);
+
   // Determinar si es modo oscuro
+  const resolvedSystemScheme = systemScheme || systemColorScheme || "light";
   const isDark =
-    mode === "system" ? systemColorScheme === "dark" : mode === "dark";
+    mode === "system" ? resolvedSystemScheme === "dark" : mode === "dark";
 
   // Colores actuales
   const colors = isDark ? darkColors : lightColors;
