@@ -5,7 +5,7 @@ import * as TaskManager from "expo-task-manager";
 import * as BackgroundTask from "expo-background-task";
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getAlerts, getAlert, updateAlertResults } from "./alertService";
+import { getAlerts } from "./alertService";
 import { advancedSearch } from "../api/secop";
 import { getObligations, checkOverdue, OBLIGATION_TYPE_CONFIG } from "./obligationService";
 
@@ -81,70 +81,44 @@ export async function checkAlertsForUser(userId: string): Promise<number> {
           (p) => p.id_del_proceso && newIds.includes(p.id_del_proceso)
         );
 
-        // Enviar notificacion local si hay procesos nuevos
-        // Primero verificar si el servidor ya envio push para esta alerta
-        // (deduplicacion cliente/servidor)
+        // Enviar notificacion local si hay procesos nuevos (fallback del push del servidor)
         if (newIds.length > 0) {
-          let shouldSendLocal = true;
+          const processLines = newProcesses.slice(0, 3).map(
+            (p) => `• ${(p.nombre_del_procedimiento || p.entidad || "").substring(0, 60)}`
+          );
+          const extra = newIds.length > 3 ? `\n...y ${newIds.length - 3} más` : "";
+          const body = processLines.join("\n") + extra;
 
-          try {
-            const freshAlert = await getAlert(alert.id);
-            if (freshAlert?.last_check) {
-              const serverLastCheck = new Date(freshAlert.last_check);
-              const clientLastCheck = alert.last_check
-                ? new Date(alert.last_check)
-                : new Date(0);
-              // Si el servidor ya checkeo mas recientemente, no enviar local
-              if (serverLastCheck > clientLastCheck) {
-                shouldSendLocal = false;
-              }
-            }
-          } catch {
-            // Si falla la verificacion, enviar local como fallback
-          }
+          const processSummaries = newProcesses.slice(0, 5).map((p) => ({
+            id: p.id_del_proceso,
+            nombre: (p.nombre_del_procedimiento || "").substring(0, 100),
+            entidad: (p.entidad || "").substring(0, 80),
+            precio: p.precio_base || null,
+            fase: p.fase || null,
+          }));
 
-          if (shouldSendLocal) {
-            // Construir body con resumen de los procesos encontrados
-            const processLines = newProcesses.slice(0, 3).map(
-              (p) => `• ${(p.nombre_del_procedimiento || p.entidad || "").substring(0, 60)}`
-            );
-            const extra = newIds.length > 3 ? `\n...y ${newIds.length - 3} más` : "";
-            const body = processLines.join("\n") + extra;
-
-            // Incluir resumen de procesos en el data para mostrar en la app
-            const processSummaries = newProcesses.slice(0, 5).map((p) => ({
-              id: p.id_del_proceso,
-              nombre: (p.nombre_del_procedimiento || "").substring(0, 100),
-              entidad: (p.entidad || "").substring(0, 80),
-              precio: p.precio_base || null,
-              fase: p.fase || null,
-            }));
-
-            await Notifications.scheduleNotificationAsync({
-              content: {
-                title: `${alert.name} — ${newIds.length} nuevo${newIds.length > 1 ? "s" : ""}`,
-                body,
-                data: {
-                  type: "alert_match",
-                  alertId: alert.id,
-                  newProcessIds: newIds.slice(0, 10),
-                  processSummaries,
-                },
-                sound: "default",
-                priority: Notifications.AndroidNotificationPriority.HIGH,
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: `${alert.name} — ${newIds.length} nuevo${newIds.length > 1 ? "s" : ""}`,
+              body,
+              data: {
+                type: "alert_match",
+                alertId: alert.id,
+                newProcessIds: newIds.slice(0, 10),
+                processSummaries,
               },
-              trigger: null,
-            });
-            notificationsSent++;
-          }
+              sound: "default",
+              priority: Notifications.AndroidNotificationPriority.HIGH,
+            },
+            trigger: null,
+          });
+          notificationsSent++;
         }
 
-        // Actualizar resultados en Supabase
-        await updateAlertResults(alert.id, {
-          last_check: now.toISOString(),
-          last_results_count: currentIds.length,
-          last_results_ids: currentIds,
-        });
+        // NO actualizar last_check ni last_results_ids desde el cliente.
+        // Solo el servidor (edge function via cron) debe actualizar estos campos,
+        // para que el cron pueda detectar procesos nuevos y enviar push notifications
+        // cuando la app está cerrada.
       } catch (error) {
         if (__DEV__) { console.error(`Error checking alert ${alert.id}:`, error); }
       }
