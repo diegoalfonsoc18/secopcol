@@ -23,9 +23,9 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 interface AlertFilters {
   keyword?: string;
   departamento?: string;
-  municipio?: string;
-  modalidad?: string;
-  tipo_contrato?: string;
+  municipio?: string | string[];
+  modalidad?: string | string[];
+  tipo_contrato?: string | string[];
   fase?: string;
 }
 
@@ -36,12 +36,12 @@ function buildSecopUrl(filters: AlertFilters, limit = 20): string {
   const conditions: string[] = [];
 
   if (filters.municipio) {
-    const clean = filters.municipio
-      .replace(/,?\s*D\.?C\.?/gi, "")
-      .replace(/,/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-    conditions.push(`upper(ciudad_entidad) LIKE upper('%${escapeSoql(clean)}%')`);
+    const munis = Array.isArray(filters.municipio) ? filters.municipio : [filters.municipio];
+    const muniConds = munis.map(m => {
+      const clean = m.replace(/,?\s*D\.?C\.?/gi, "").replace(/,/g, "").replace(/\s+/g, " ").trim();
+      return `upper(ciudad_entidad) LIKE upper('%${escapeSoql(clean)}%')`;
+    });
+    conditions.push(muniConds.length === 1 ? muniConds[0] : `(${muniConds.join(" OR ")})`);
   }
 
   if (filters.departamento) {

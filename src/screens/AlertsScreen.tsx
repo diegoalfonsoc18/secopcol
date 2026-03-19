@@ -241,7 +241,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
   const [name, setName] = useState("");
   const [keyword, setKeyword] = useState("");
   const [selectedDepartamento, setSelectedDepartamento] = useState("");
-  const [selectedMunicipio, setSelectedMunicipio] = useState("");
+  const [selectedMunicipios, setSelectedMunicipios] = useState<string[]>([]);
   const [selectedModalidades, setSelectedModalidades] = useState<string[]>([]);
   const [selectedTipos, setSelectedTipos] = useState<string[]>([]);
 
@@ -290,7 +290,8 @@ const AlertModal: React.FC<AlertModalProps> = ({
       setName(alert.name);
       setKeyword(alert.filters.keyword || "");
       setSelectedDepartamento(alert.filters.departamento || "");
-      setSelectedMunicipio(alert.filters.municipio || "");
+      const muniVal = alert.filters.municipio;
+      setSelectedMunicipios(Array.isArray(muniVal) ? muniVal : muniVal ? [muniVal] : []);
       // Buscar los IDs de modalidad/tipo por sus valores (soporta string o string[])
       const modValues = Array.isArray(alert.filters.modalidad)
         ? alert.filters.modalidad
@@ -309,7 +310,8 @@ const AlertModal: React.FC<AlertModalProps> = ({
       setName("");
       setKeyword(initialFilters.keyword || "");
       setSelectedDepartamento(initialFilters.departamento || "");
-      setSelectedMunicipio(initialFilters.municipio || "");
+      const muniVal2 = initialFilters.municipio;
+      setSelectedMunicipios(Array.isArray(muniVal2) ? muniVal2 : muniVal2 ? [muniVal2] : []);
       const modVal = Array.isArray(initialFilters.modalidad)
         ? initialFilters.modalidad
         : initialFilters.modalidad ? [initialFilters.modalidad] : [];
@@ -327,7 +329,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
       setName("");
       setKeyword("");
       setSelectedDepartamento("");
-      setSelectedMunicipio("");
+      setSelectedMunicipios([]);
       setSelectedModalidades([]);
       setSelectedTipos([]);
     }
@@ -354,7 +356,8 @@ const AlertModal: React.FC<AlertModalProps> = ({
     const filters: AlertFilters = {};
     if (keyword.trim()) filters.keyword = keyword.trim();
     if (selectedDepartamento) filters.departamento = selectedDepartamento;
-    if (selectedMunicipio) filters.municipio = selectedMunicipio;
+    if (selectedMunicipios.length === 1) filters.municipio = selectedMunicipios[0];
+    else if (selectedMunicipios.length > 1) filters.municipio = selectedMunicipios;
     if (selectedModalidades.length > 0) {
       const values = selectedModalidades
         .map(id => MODALIDADES.find(m => m.id === id)?.value)
@@ -378,19 +381,19 @@ const AlertModal: React.FC<AlertModalProps> = ({
   const handleSelectDept = (dept: string) => {
     if (selectedDepartamento === dept) {
       setSelectedDepartamento("");
-      setSelectedMunicipio("");
+      setSelectedMunicipios([]);
     } else {
       setSelectedDepartamento(dept);
-      setSelectedMunicipio("");
+      setSelectedMunicipios([]);
     }
     setShowDeptModal(false);
     setDeptSearchText("");
   };
 
   const handleSelectMuni = (muni: string) => {
-    setSelectedMunicipio(selectedMunicipio === muni ? "" : muni);
-    setShowMuniModal(false);
-    setMuniSearchText("");
+    setSelectedMunicipios(prev =>
+      prev.includes(muni) ? prev.filter(m => m !== muni) : [...prev, muni]
+    );
   };
 
   return (
@@ -506,7 +509,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
                 style={[
                   styles.locationButton,
                   { borderColor: colors.separatorLight },
-                  selectedMunicipio && {
+                  selectedMunicipios.length > 0 && {
                     backgroundColor: colors.accentLight,
                     borderColor: colors.accent,
                   },
@@ -522,20 +525,24 @@ const AlertModal: React.FC<AlertModalProps> = ({
                       name="business-outline"
                       size={16}
                       color={
-                        selectedMunicipio ? colors.accent : colors.textSecondary
+                        selectedMunicipios.length > 0 ? colors.accent : colors.textSecondary
                       }
                     />
                     <Text
                       style={[
                         styles.locationText,
                         { color: colors.textSecondary },
-                        selectedMunicipio && {
+                        selectedMunicipios.length > 0 && {
                           color: colors.accent,
                           fontWeight: "500",
                         },
                       ]}
                       numberOfLines={1}>
-                      {selectedMunicipio || "Municipio"}
+                      {selectedMunicipios.length === 0
+                        ? "Municipio"
+                        : selectedMunicipios.length === 1
+                        ? selectedMunicipios[0]
+                        : `${selectedMunicipios.length} municipios`}
                     </Text>
                     <Ionicons
                       name="chevron-down"
@@ -763,14 +770,18 @@ const AlertModal: React.FC<AlertModalProps> = ({
             ]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-                Municipio
+                {selectedMunicipios.length > 0
+                  ? `${selectedMunicipios.length} seleccionado${selectedMunicipios.length > 1 ? "s" : ""}`
+                  : "Municipios"}
               </Text>
               <TouchableOpacity
                 onPress={() => {
                   setShowMuniModal(false);
                   setMuniSearchText("");
                 }}>
-                <Ionicons name="close" size={24} color={colors.textPrimary} />
+                <Text style={{ color: colors.accent, fontWeight: "600", fontSize: 16 }}>
+                  Listo
+                </Text>
               </TouchableOpacity>
             </View>
             <View
@@ -816,7 +827,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
                     ]}>
                     {item}
                   </Text>
-                  {selectedMunicipio === item && (
+                  {selectedMunicipios.includes(item) && (
                     <Ionicons
                       name="checkmark"
                       size={20}

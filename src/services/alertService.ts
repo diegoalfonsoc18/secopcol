@@ -183,7 +183,8 @@ export const formatAlertFilters = (filters: AlertFilters): string => {
     parts.push(filters.departamento);
   }
   if (filters.municipio) {
-    parts.push(filters.municipio);
+    const m = filters.municipio;
+    parts.push(Array.isArray(m) ? m.join(", ") : m);
   }
   if (filters.tipo_contrato) {
     const tc = filters.tipo_contrato;

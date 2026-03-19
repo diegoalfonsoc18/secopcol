@@ -46,7 +46,7 @@ const fetchSecop = async (query: string): Promise<SecopProcess[]> => {
 };
 // Construir query SoQL para filtros
 const buildQuery = (params: {
-  municipio?: string;
+  municipio?: string | string[];
   departamento?: string;
   entidad?: string;
   estadoApertura?: string;
@@ -91,14 +91,12 @@ const buildQuery = (params: {
   }
 
   if (params.municipio) {
-    const cleanMunicipio = params.municipio
-      .replace(/,?\s*D\.?C\.?/gi, "")
-      .replace(/,/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-    conditions.push(
-      `upper(ciudad_entidad) LIKE upper('%${escapeSoql(cleanMunicipio)}%')`,
-    );
+    const munis = Array.isArray(params.municipio) ? params.municipio : [params.municipio];
+    const muniConditions = munis.map(m => {
+      const clean = m.replace(/,?\s*D\.?C\.?/gi, "").replace(/,/g, "").replace(/\s+/g, " ").trim();
+      return `upper(ciudad_entidad) LIKE upper('%${escapeSoql(clean)}%')`;
+    });
+    conditions.push(muniConditions.length === 1 ? muniConditions[0] : `(${muniConditions.join(" OR ")})`);
   }
 
   if (params.departamento) {
@@ -279,7 +277,7 @@ export const getProcessesByModality = async (
 export const advancedSearch = async (params: {
   keyword?: string;
   departamento?: string;
-  municipio?: string;
+  municipio?: string | string[];
   entidad?: string;
   estadoApertura?: string;
   estadoProcedimiento?: string | string[];
@@ -304,7 +302,7 @@ export const advancedSearch = async (params: {
 // Conteo rápido usando count(*) — mismos filtros que advancedSearch
 export const getAdvancedCount = async (params: {
   departamento?: string;
-  municipio?: string;
+  municipio?: string | string[];
   estadoApertura?: string;
   soloOfertables?: boolean;
   tipoContrato?: string | string[];

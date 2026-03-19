@@ -5,7 +5,7 @@
 export interface AlertFilters {
   keyword?: string;
   departamento?: string;
-  municipio?: string;
+  municipio?: string | string[];
   modalidad?: string | string[];
   tipo_contrato?: string | string[];
   fase?: string;
