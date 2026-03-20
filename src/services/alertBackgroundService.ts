@@ -15,6 +15,15 @@ import { getObligations, checkOverdue, OBLIGATION_TYPE_CONFIG } from "./obligati
 export const ALERT_CHECK_TASK = "SECOP_ALERT_CHECK";
 const USER_ID_KEY = "secop-alert-user-id";
 
+// Estados de proceso que indican que aún está vigente/abierto
+const ESTADOS_VIGENTES = new Set([
+  "Publicado",
+  "Evaluación",
+  "Abierto",
+  "En aprobación",
+  "Aprobado",
+]);
+
 // ============================================
 // PERSISTIR USER ID PARA BACKGROUND
 // ============================================
@@ -68,8 +77,13 @@ export async function checkAlertsForUser(userId: string): Promise<number> {
           limit: 20,
         });
 
+        // Solo considerar procesos con estado vigente/abierto
+        const activeProcesses = processes.filter((p) =>
+          ESTADOS_VIGENTES.has(p.estado_del_procedimiento || "")
+        );
+
         // Obtener IDs de resultados actuales
-        const currentIds = processes
+        const currentIds = activeProcesses
           .map((p) => p.id_del_proceso || "")
           .filter(Boolean);
 
@@ -78,7 +92,7 @@ export async function checkAlertsForUser(userId: string): Promise<number> {
         const newIds = currentIds.filter((id) => !previousIds.has(id));
 
         // Obtener los procesos nuevos con sus detalles
-        const newProcesses = processes.filter(
+        const newProcesses = activeProcesses.filter(
           (p) => p.id_del_proceso && newIds.includes(p.id_del_proceso)
         );
 

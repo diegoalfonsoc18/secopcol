@@ -26,33 +26,60 @@ interface AlertFilters {
   municipio?: string | string[];
   modalidad?: string | string[];
   tipo_contrato?: string | string[];
+  estado_del_procedimiento?: string | string[];
   fase?: string;
 }
 
 // Escapar comillas simples para prevenir SoQL injection
 const escapeSoql = (val: string) => val.replace(/'/g, "''");
+const removeAccents = (val: string) => val.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+// Estados de proceso que indican que aún está vigente/abierto
+const ESTADOS_VIGENTES = new Set([
+  "Publicado",
+  "Evaluación",
+  "Abierto",
+  "En aprobación",
+  "Aprobado",
+]);
 
 function buildSecopUrl(filters: AlertFilters, limit = 20): string {
   const conditions: string[] = [];
 
-  if (filters.municipio) {
-    const munis = Array.isArray(filters.municipio) ? filters.municipio : [filters.municipio];
-    const muniConds = munis.map(m => {
-      const clean = m.replace(/,?\s*D\.?C\.?/gi, "").replace(/,/g, "").replace(/\s+/g, " ").trim();
-      return `upper(ciudad_entidad) LIKE upper('%${escapeSoql(clean)}%')`;
-    });
-    conditions.push(muniConds.length === 1 ? muniConds[0] : `(${muniConds.join(" OR ")})`);
-  }
+  // Ubicación: combinar dept + municipio para incluir entidades con "No Definido"
+  {
+    const locationParts: string[] = [];
+    const entityNameParts: string[] = [];
 
-  if (filters.departamento) {
-    const clean = filters.departamento
-      .replace(/,?\s*D\.?C\.?/gi, "")
-      .replace(/,/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-    conditions.push(
-      `upper(departamento_entidad) LIKE upper('%${escapeSoql(clean)}%')`
-    );
+    if (filters.departamento) {
+      const clean = filters.departamento
+        .replace(/,?\s*D\.?C\.?/gi, "").replace(/,/g, "").replace(/\s+/g, " ").trim();
+      locationParts.push(`upper(departamento_entidad) LIKE upper('%${escapeSoql(clean)}%')`);
+    }
+
+    if (filters.municipio) {
+      const munis = Array.isArray(filters.municipio) ? filters.municipio : [filters.municipio];
+      const muniConds = munis.map(m => {
+        const clean = m.replace(/,?\s*D\.?C\.?/gi, "").replace(/,/g, "").replace(/\s+/g, " ").trim();
+        return `upper(ciudad_entidad) LIKE upper('%${escapeSoql(clean)}%')`;
+      });
+      locationParts.push(muniConds.length === 1 ? muniConds[0] : `(${muniConds.join(" OR ")})`);
+
+      const entityConds = munis.map(m => {
+        const clean = removeAccents(m.replace(/,?\s*D\.?C\.?/gi, "").replace(/,/g, "").replace(/\s+/g, " ").trim());
+        return `upper(entidad) LIKE upper('%${escapeSoql(clean)}%')`;
+      });
+      entityNameParts.push(...entityConds);
+    }
+
+    if (locationParts.length > 0) {
+      const locationFilter = locationParts.join(" AND ");
+      if (entityNameParts.length > 0) {
+        conditions.push(`(${locationFilter} OR ${entityNameParts.join(" OR ")})`);
+      } else {
+        conditions.push(locationFilter);
+      }
+    }
   }
 
   if (filters.fase) {
@@ -60,11 +87,35 @@ function buildSecopUrl(filters: AlertFilters, limit = 20): string {
   }
 
   if (filters.modalidad) {
-    conditions.push(`modalidad_de_contratacion='${escapeSoql(filters.modalidad)}'`);
+    const mods = Array.isArray(filters.modalidad) ? filters.modalidad : [filters.modalidad];
+    if (mods.length === 1) {
+      conditions.push(`modalidad_de_contratacion='${escapeSoql(mods[0])}'`);
+    } else if (mods.length > 1) {
+      const orParts = mods.map(m => `modalidad_de_contratacion='${escapeSoql(m)}'`);
+      conditions.push(`(${orParts.join(" OR ")})`);
+    }
   }
 
   if (filters.tipo_contrato) {
-    conditions.push(`tipo_de_contrato='${escapeSoql(filters.tipo_contrato)}'`);
+    const tipos = Array.isArray(filters.tipo_contrato) ? filters.tipo_contrato : [filters.tipo_contrato];
+    if (tipos.length === 1) {
+      conditions.push(`tipo_de_contrato='${escapeSoql(tipos[0])}'`);
+    } else if (tipos.length > 1) {
+      const orParts = tipos.map(t => `tipo_de_contrato='${escapeSoql(t)}'`);
+      conditions.push(`(${orParts.join(" OR ")})`);
+    }
+  }
+
+  if (filters.estado_del_procedimiento) {
+    const estados = Array.isArray(filters.estado_del_procedimiento)
+      ? filters.estado_del_procedimiento
+      : [filters.estado_del_procedimiento];
+    if (estados.length === 1) {
+      conditions.push(`estado_del_procedimiento='${escapeSoql(estados[0])}'`);
+    } else if (estados.length > 1) {
+      const orParts = estados.map(e => `estado_del_procedimiento='${escapeSoql(e)}'`);
+      conditions.push(`(${orParts.join(" OR ")})`);
+    }
   }
 
   if (filters.keyword) {
@@ -94,6 +145,7 @@ interface SecopResult {
   entidad?: string;
   precio_base?: string | number;
   fase?: string;
+  estado_del_procedimiento?: string;
 }
 
 async function querySecop(
@@ -229,7 +281,13 @@ serve(async (req: Request) => {
 
         // 3. Consultar SECOP con los filtros de la alerta
         const processes = await querySecop(alert.filters);
-        const currentIds = processes
+
+        // Solo considerar procesos con estado vigente/abierto
+        const activeProcesses = processes.filter((p) =>
+          ESTADOS_VIGENTES.has(p.estado_del_procedimiento || "")
+        );
+
+        const currentIds = activeProcesses
           .map((p) => p.id_del_proceso || "")
           .filter(Boolean);
 
@@ -248,7 +306,7 @@ serve(async (req: Request) => {
           }
 
           // Obtener detalles de los procesos nuevos para el body
-          const newProcesses = processes.filter(
+          const newProcesses = activeProcesses.filter(
             (p) => p.id_del_proceso && newIds.includes(p.id_del_proceso)
           );
           const processLines = newProcesses.slice(0, 3).map(
