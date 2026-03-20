@@ -173,11 +173,6 @@ const AlertCard: React.FC<AlertCardProps> = ({
         activeOpacity={0.7}>
         <View style={styles.alertHeader}>
           <View style={styles.alertTitleRow}>
-            <AlertIcon
-              size={22}
-              filled={true}
-              activeColor={colors.accent}
-            />
             <Text
               style={[styles.alertName, { color: colors.textPrimary }]}
               numberOfLines={1}>

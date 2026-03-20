@@ -1,5 +1,5 @@
 // GlassWrapper: Componente utilitario para efectos de vidrio con fallback 3 niveles
-// Tier 1: GlassView (iOS 26+ nativo)
+// Tier 1: LiquidGlassView (@callstack/liquid-glass, iOS 26+)
 // Tier 2: BlurView (expo-blur, iOS + Android SDK 31+) — solo en dev builds
 // Tier 3: View con color semi-transparente (fallback universal / Expo Go)
 
@@ -11,14 +11,14 @@ import { useTheme } from "../context/ThemeContext";
 // Detectar si estamos en Expo Go (BlurView no funciona bien ahi)
 const isExpoGo = Constants.appOwnership === "expo";
 
-// Intentar importar expo-glass-effect (solo disponible iOS 26+)
-let GlassView: any = null;
-let isGlassEffectAPIAvailable: (() => boolean) | null = null;
+// Intentar importar @callstack/liquid-glass (solo iOS 26+)
+let LiquidGlassView: any = null;
+let isLiquidGlassSupported = false;
 
 try {
-  const glassModule = require("expo-glass-effect");
-  GlassView = glassModule.GlassView;
-  isGlassEffectAPIAvailable = glassModule.isGlassEffectAPIAvailable;
+  const lgModule = require("@callstack/liquid-glass");
+  LiquidGlassView = lgModule.LiquidGlassView;
+  isLiquidGlassSupported = lgModule.isLiquidGlassSupported === true;
 } catch {}
 
 // Intentar importar expo-blur
@@ -32,8 +32,8 @@ try {
 const _glassAvailable =
   !isExpoGo &&
   Platform.OS === "ios" &&
-  isGlassEffectAPIAvailable != null &&
-  isGlassEffectAPIAvailable();
+  isLiquidGlassSupported &&
+  LiquidGlassView != null;
 
 // BlurView solo disponible en dev builds, no en Expo Go
 const _blurAvailable = !isExpoGo && BlurView != null;
@@ -44,9 +44,10 @@ const _blurAvailable = !isExpoGo && BlurView != null;
 export type GlassVariant = "regular" | "card" | "badge" | "header" | "overlay";
 
 interface VariantPreset {
-  glassStyle: string;
+  glassEffect: "regular" | "clear";
   blurIntensity: number;
   blurTint: "light" | "dark" | "default";
+  interactive: boolean;
 }
 
 interface GlassWrapperProps {
@@ -59,7 +60,7 @@ interface GlassWrapperProps {
   blurIntensity?: number;
   /** Override tint del BlurView */
   blurTint?: "light" | "dark" | "default";
-  /** Override tint color para GlassView */
+  /** Override tint color para LiquidGlassView */
   glassTintColor?: string;
   /** Color de fondo cuando no hay blur ni glass disponible */
   fallbackColor?: string;
@@ -69,11 +70,11 @@ interface GlassWrapperProps {
 // PRESETS POR VARIANTE
 // ============================================
 const VARIANT_PRESETS: Record<GlassVariant, VariantPreset> = {
-  regular: { glassStyle: "regular", blurIntensity: 80, blurTint: "default" },
-  card: { glassStyle: "regular", blurIntensity: 60, blurTint: "default" },
-  badge: { glassStyle: "clear", blurIntensity: 40, blurTint: "default" },
-  header: { glassStyle: "regular", blurIntensity: 90, blurTint: "default" },
-  overlay: { glassStyle: "regular", blurIntensity: 30, blurTint: "dark" },
+  regular: { glassEffect: "regular", blurIntensity: 80, blurTint: "default", interactive: false },
+  card: { glassEffect: "regular", blurIntensity: 60, blurTint: "default", interactive: false },
+  badge: { glassEffect: "clear", blurIntensity: 40, blurTint: "default", interactive: true },
+  header: { glassEffect: "regular", blurIntensity: 90, blurTint: "default", interactive: false },
+  overlay: { glassEffect: "regular", blurIntensity: 30, blurTint: "dark", interactive: false },
 };
 
 // ============================================
@@ -98,19 +99,21 @@ export const GlassWrapper: React.FC<GlassWrapperProps> = ({
   const resolvedFallback =
     fallbackColor ?? colors.tabBarBackground;
 
-  // Resolver estilo de glass: en dark mode usar "clear" para evitar fondo gris
-  const resolvedGlassStyle = isDark ? "clear" : preset.glassStyle;
+  // Resolver efecto glass: en dark mode usar "clear" para evitar fondo gris
+  const resolvedGlassEffect = isDark ? "clear" : preset.glassEffect;
 
-  // Tier 1: Native Liquid Glass (iOS 26+, solo dev builds)
-  if (!disabled && _glassAvailable && GlassView) {
+  // Tier 1: @callstack/liquid-glass (iOS 26+)
+  if (!disabled && _glassAvailable && LiquidGlassView) {
     return (
-      <GlassView
+      <LiquidGlassView
         style={[style, { overflow: "hidden" }]}
-        glassEffectStyle={resolvedGlassStyle}
+        effect={resolvedGlassEffect}
+        interactive={preset.interactive}
         tintColor={glassTintColor}
+        colorScheme={isDark ? "dark" : "light"}
       >
         {children}
-      </GlassView>
+      </LiquidGlassView>
     );
   }
 

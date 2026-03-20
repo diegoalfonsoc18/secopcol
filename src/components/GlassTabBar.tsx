@@ -29,7 +29,10 @@ export const GlassTabBar: React.FC<BottomTabBarProps> = ({
   const tabWidth = containerWidth > 0 ? containerWidth / numTabs : 0;
 
   const bubbleX = useRef(new Animated.Value(0)).current;
+  const bubbleScaleX = useRef(new Animated.Value(1)).current;
+  const bubbleScaleY = useRef(new Animated.Value(1)).current;
   const isFirstRender = useRef(true);
+  const prevIndex = useRef(state.index);
 
   // Animar la burbuja cuando cambia el tab activo o cuando se mide el container
   useEffect(() => {
@@ -42,14 +45,49 @@ export const GlassTabBar: React.FC<BottomTabBarProps> = ({
       bubbleX.setValue(targetX);
       isFirstRender.current = false;
     } else {
-      // Animacion spring al cambiar de tab
-      Animated.spring(bubbleX, {
-        toValue: targetX,
-        useNativeDriver: false,
-        friction: 7,
-        tension: 80,
-      }).start();
+      const distance = Math.abs(state.index - prevIndex.current);
+      // Efecto líquido sutil
+      const stretchX = 1 + distance * 0.08;
+      const squishY = 1 - distance * 0.04;
+
+      Animated.parallel([
+        // Mover con spring suave
+        Animated.spring(bubbleX, {
+          toValue: targetX,
+          useNativeDriver: false,
+          friction: 7,
+          tension: 80,
+        }),
+        // Estiramiento sutil al moverse y vuelta a normal
+        Animated.sequence([
+          Animated.timing(bubbleScaleX, {
+            toValue: stretchX,
+            duration: 100,
+            useNativeDriver: false,
+          }),
+          Animated.spring(bubbleScaleX, {
+            toValue: 1,
+            useNativeDriver: false,
+            friction: 5,
+            tension: 120,
+          }),
+        ]),
+        Animated.sequence([
+          Animated.timing(bubbleScaleY, {
+            toValue: squishY,
+            duration: 100,
+            useNativeDriver: false,
+          }),
+          Animated.spring(bubbleScaleY, {
+            toValue: 1,
+            useNativeDriver: false,
+            friction: 5,
+            tension: 120,
+          }),
+        ]),
+      ]).start();
     }
+    prevIndex.current = state.index;
   }, [state.index, tabWidth]);
 
   const handleContainerLayout = useCallback((e: any) => {
@@ -85,7 +123,7 @@ export const GlassTabBar: React.FC<BottomTabBarProps> = ({
         fallbackColor={colors.tabBarBackground}
       />
 
-      {/* Burbuja animada */}
+      {/* Burbuja animada con efecto líquido */}
       {tabWidth > 0 && (
         <Animated.View
           style={[
@@ -93,6 +131,10 @@ export const GlassTabBar: React.FC<BottomTabBarProps> = ({
             {
               left: bubbleX,
               width: tabWidth,
+              transform: [
+                { scaleX: bubbleScaleX },
+                { scaleY: bubbleScaleY },
+              ],
             },
           ]}
         >
@@ -206,7 +248,7 @@ const styles = StyleSheet.create({
   },
   bubble: {
     flex: 1,
-    borderRadius: 20,
+    borderRadius: 22,
   },
   tab: {
     flex: 1,

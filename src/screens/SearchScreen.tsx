@@ -42,7 +42,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
   const [loadingDepts, setLoadingDepts] = useState(true);
   const [loadingMunis, setLoadingMunis] = useState(false);
   const [selectedDepartamento, setSelectedDepartamento] = useState("");
-  const [selectedMunicipio, setSelectedMunicipio] = useState("");
+  const [selectedMunicipios, setSelectedMunicipios] = useState<string[]>([]);
   const [selectedModalidad, setSelectedModalidad] = useState("");
   const [selectedTipos, setSelectedTipos] = useState<string[]>([]);
   const [selectedEstados, setSelectedEstados] = useState<string[]>([]);
@@ -78,7 +78,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
     }
     const loadMunicipalities = async () => {
       setLoadingMunis(true);
-      setSelectedMunicipio("");
+      setSelectedMunicipios([]);
       const data = await getMunicipalities(selectedDepartamento);
       setMunicipalities(data);
       setLoadingMunis(false);
@@ -87,7 +87,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
   }, [selectedDepartamento]);
 
   useEffect(() => {
-    if (!selectedMunicipio) {
+    if (selectedMunicipios.length === 0) {
       setEntities([]);
       setSelectedEntidad("");
       return;
@@ -95,15 +95,16 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
     const loadEntities = async () => {
       setLoadingEntities(true);
       setSelectedEntidad("");
+      // Cargar entidades del primer municipio seleccionado
       const data = await getEntitiesByLocation({
         departamento: selectedDepartamento,
-        municipio: selectedMunicipio,
+        municipio: selectedMunicipios[0],
       });
       setEntities(data);
       setLoadingEntities(false);
     };
     loadEntities();
-  }, [selectedDepartamento, selectedMunicipio]);
+  }, [selectedDepartamento, selectedMunicipios]);
 
   // Consumir params de navegacion desde HomeScreen
   const pendingSearchRef = React.useRef<{ tipos: string[] } | null>(null);
@@ -195,7 +196,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
 
       const baseParams = {
         departamento: selectedDepartamento || undefined,
-        municipio: selectedMunicipio || undefined,
+        municipio: selectedMunicipios.length > 0 ? selectedMunicipios : undefined,
         entidad: selectedEntidad || undefined,
         entidadSearch: entidadInput.trim() || undefined,
         modalidad: modalidadValue,
@@ -243,7 +244,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
 
     const alertFilters = {
       departamento: selectedDepartamento || undefined,
-      municipio: selectedMunicipio || undefined,
+      municipio: selectedMunicipios.length > 0 ? selectedMunicipios : undefined,
       modalidad: modalidadValue || undefined,
       tipos_contrato: selectedTipos.length > 0 ? selectedTipos : undefined,
     };
@@ -267,19 +268,21 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
   const handleSelectDept = (dept: string) => {
     if (selectedDepartamento === dept) {
       setSelectedDepartamento("");
-      setSelectedMunicipio("");
+      setSelectedMunicipios([]);
     } else {
       setSelectedDepartamento(dept);
-      setSelectedMunicipio("");
+      setSelectedMunicipios([]);
     }
     setShowDeptModal(false);
     setDeptSearchText("");
   };
 
   const handleSelectMuni = (muni: string) => {
-    setSelectedMunicipio(selectedMunicipio === muni ? "" : muni);
-    setShowMuniModal(false);
-    setMuniSearchText("");
+    setSelectedMunicipios(prev =>
+      prev.includes(muni)
+        ? prev.filter(m => m !== muni)
+        : [...prev, muni]
+    );
   };
 
   const handleSelectEntidad = (entidad: string) => {
@@ -299,7 +302,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
   // Contar filtros activos
   const activeFiltersCount = [
     selectedDepartamento,
-    selectedMunicipio,
+    ...selectedMunicipios,
     selectedEntidad,
     entidadInput,
     selectedModalidad,
@@ -310,7 +313,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
   // Limpiar todos los filtros
   const handleClearFilters = () => {
     setSelectedDepartamento("");
-    setSelectedMunicipio("");
+    setSelectedMunicipios([]);
     setSelectedEntidad("");
     setEntidadInput("");
     setSelectedModalidad("");
@@ -385,7 +388,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
             <TouchableOpacity
               style={[
                 styles.locationButton,
-                selectedMunicipio && styles.locationButtonActive,
+                selectedMunicipios.length > 0 && styles.locationButtonActive,
                 !selectedDepartamento && styles.locationButtonDisabled,
               ]}
               onPress={() => selectedDepartamento && setShowMuniModal(true)}
@@ -398,16 +401,20 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
                     name="business-outline"
                     size={16}
                     color={
-                      selectedMunicipio ? colors.accent : colors.textSecondary
+                      selectedMunicipios.length > 0 ? colors.accent : colors.textSecondary
                     }
                   />
                   <Text
                     style={[
                       styles.locationText,
-                      selectedMunicipio && styles.locationTextActive,
+                      selectedMunicipios.length > 0 && styles.locationTextActive,
                     ]}
                     numberOfLines={1}>
-                    {selectedMunicipio || "Municipio"}
+                    {selectedMunicipios.length > 0
+                      ? selectedMunicipios.length === 1
+                        ? selectedMunicipios[0]
+                        : `${selectedMunicipios.length} municipios`
+                      : "Municipio"}
                   </Text>
                   <Ionicons
                     name="chevron-down"
@@ -424,10 +431,10 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
             style={[
               styles.entidadButton,
               selectedEntidad && styles.locationButtonActive,
-              !selectedMunicipio && styles.locationButtonDisabled,
+              selectedMunicipios.length === 0 && styles.locationButtonDisabled,
             ]}
-            onPress={() => selectedMunicipio && setShowEntidadModal(true)}
-            disabled={!selectedMunicipio || loadingEntities}>
+            onPress={() => selectedMunicipios.length > 0 && setShowEntidadModal(true)}
+            disabled={selectedMunicipios.length === 0 || loadingEntities}>
             {loadingEntities ? (
               <ActivityIndicator size="small" color={colors.textTertiary} />
             ) : (
@@ -665,32 +672,6 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
                 <Text style={styles.resultsCount}>
                   {processes.length} resultados
                 </Text>
-                {selectedTipos.length > 0 && (
-                  <View style={styles.activeTypesRow}>
-                    {selectedTipos.slice(0, 3).map((tipoId) => {
-                      const config = CONTRACT_TYPES.find(
-                        (t) => t.id === tipoId
-                      );
-                      if (!config) return null;
-                      const typeColor = getContractTypeColor(config);
-                      return (
-                        <View
-                          key={tipoId}
-                          style={[
-                            styles.activeTypeBadge,
-                            { backgroundColor: `${typeColor}20` },
-                          ]}>
-                          <config.CustomIcon size={12} color={typeColor} />
-                        </View>
-                      );
-                    })}
-                    {selectedTipos.length > 3 && (
-                      <Text style={styles.moreTypesText}>
-                        +{selectedTipos.length - 3}
-                      </Text>
-                    )}
-                  </View>
-                )}
               </View>
               {processes.map((process, index) => (
                 <ProcessCard
@@ -799,13 +780,19 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
             fallbackColor={colors.background}
           >
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Municipio</Text>
+              <Text style={styles.modalTitle}>
+                {selectedMunicipios.length > 0
+                  ? `${selectedMunicipios.length} seleccionado${selectedMunicipios.length > 1 ? "s" : ""}`
+                  : "Municipios"}
+              </Text>
               <TouchableOpacity
                 onPress={() => {
                   setShowMuniModal(false);
                   setMuniSearchText("");
                 }}>
-                <Ionicons name="close" size={24} color={colors.textPrimary} />
+                <Text style={{ color: colors.accent, fontWeight: "600", fontSize: 16 }}>
+                  Listo
+                </Text>
               </TouchableOpacity>
             </View>
             <View style={styles.modalSearchBar}>
@@ -818,25 +805,43 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
                 onChangeText={setMuniSearchText}
                 autoFocus
               />
+              {muniSearchText.length > 0 && (
+                <TouchableOpacity onPress={() => setMuniSearchText("")}>
+                  <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
+                </TouchableOpacity>
+              )}
             </View>
             <FlatList
               data={filteredMunicipalities}
               keyExtractor={(item) => item}
               keyboardShouldPersistTaps="handled"
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.modalItem}
-                  onPress={() => handleSelectMuni(item)}>
-                  <Text style={styles.modalItemText}>{item}</Text>
-                  {selectedMunicipio === item && (
-                    <Ionicons
-                      name="checkmark"
-                      size={20}
-                      color={colors.accent}
-                    />
-                  )}
-                </TouchableOpacity>
-              )}
+              renderItem={({ item }) => {
+                const isSelected = selectedMunicipios.includes(item);
+                return (
+                  <TouchableOpacity
+                    style={styles.modalItem}
+                    onPress={() => handleSelectMuni(item)}>
+                    <Text style={[
+                      styles.modalItemText,
+                      isSelected && { color: colors.accent, fontWeight: "600" },
+                    ]}>{item}</Text>
+                    {isSelected && (
+                      <Ionicons
+                        name="checkmark"
+                        size={20}
+                        color={colors.accent}
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+              ListEmptyComponent={
+                <View style={{ alignItems: "center", paddingVertical: spacing.xl }}>
+                  <Text style={{ color: colors.textTertiary }}>
+                    No se encontraron resultados
+                  </Text>
+                </View>
+              }
             />
           </GlassWrapper>
         </KeyboardAvoidingView>
