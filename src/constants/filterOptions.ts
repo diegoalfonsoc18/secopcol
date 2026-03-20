@@ -28,6 +28,23 @@ export const MODALIDADES: FilterOption[] = [
   { id: "info_proveedores", label: "Solicitud info proveedores", value: "Solicitud de información a los Proveedores" },
 ];
 
+// Estados del procedimiento SECOP II
+export interface EstadoOption {
+  id: string;
+  label: string;
+  icon: keyof typeof import("@expo/vector-icons").Ionicons.glyphMap;
+  color: string;
+}
+
+export const ESTADOS_PROCESO: EstadoOption[] = [
+  { id: "Publicado", label: "Publicado", icon: "megaphone-outline", color: "#30D158" },
+  { id: "Seleccionado", label: "Adjudicado", icon: "checkmark-circle", color: "#007AFF" },
+  { id: "Evaluación", label: "En evaluación", icon: "hourglass-outline", color: "#FF9500" },
+  { id: "Borrador", label: "Borrador", icon: "document-outline", color: "#8E8E93" },
+  { id: "Cancelado", label: "Cancelado", icon: "close-circle", color: "#FF3B30" },
+  { id: "Suspendido", label: "Suspendido", icon: "pause-circle", color: "#FF9500" },
+];
+
 // Todos los tipos de contrato en SECOP II
 export const TIPOS_CONTRATO: FilterOption[] = [
   { id: "servicios", label: "Prestación de servicios", value: "Prestación de servicios" },

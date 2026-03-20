@@ -48,7 +48,7 @@ import { FadeIn, SlideInUp } from "../components/Animations";
 import { getDepartments, getMunicipalities } from "../services/divipola";
 import { AlertIcon } from "../assets/icons";
 import { spacing, scale, borderRadius, typography } from "../theme";
-import { MODALIDADES } from "../constants/filterOptions";
+import { MODALIDADES, ESTADOS_PROCESO } from "../constants/filterOptions";
 import {
   CONTRACT_TYPES,
   getContractTypeColor,
@@ -210,7 +210,7 @@ interface AlertModalProps {
   alert?: AlertType | null;
   initialFilters?: AlertFilters;
   onClose: () => void;
-  onSave: (data: { name: string; filters: AlertFilters }) => void;
+  onSave: (data: { name: string; filters: AlertFilters }) => void | Promise<void>;
   colors: any;
 }
 
@@ -244,6 +244,8 @@ const AlertModal: React.FC<AlertModalProps> = ({
   const [selectedMunicipios, setSelectedMunicipios] = useState<string[]>([]);
   const [selectedModalidades, setSelectedModalidades] = useState<string[]>([]);
   const [selectedTipos, setSelectedTipos] = useState<string[]>([]);
+  const [selectedEstados, setSelectedEstados] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
 
   // Estados DIVIPOLA
   const [departments, setDepartments] = useState<string[]>([]);
@@ -305,6 +307,12 @@ const AlertModal: React.FC<AlertModalProps> = ({
       setSelectedTipos(
         tipoValues.filter(v => CONTRACT_TYPES.some(t => t.id === v))
       );
+      const estadoValues = Array.isArray(alert.filters.estado_del_procedimiento)
+        ? alert.filters.estado_del_procedimiento
+        : alert.filters.estado_del_procedimiento ? [alert.filters.estado_del_procedimiento] : [];
+      setSelectedEstados(
+        estadoValues.filter(v => ESTADOS_PROCESO.some(e => e.id === v))
+      );
     } else if (initialFilters) {
       // Nueva alerta con filtros iniciales (desde SearchScreen)
       setName("");
@@ -324,6 +332,12 @@ const AlertModal: React.FC<AlertModalProps> = ({
       setSelectedTipos(
         tipoVal.filter(v => CONTRACT_TYPES.some(t => t.id === v))
       );
+      const estadoVal = Array.isArray(initialFilters.estado_del_procedimiento)
+        ? initialFilters.estado_del_procedimiento
+        : initialFilters.estado_del_procedimiento ? [initialFilters.estado_del_procedimiento] : [];
+      setSelectedEstados(
+        estadoVal.filter(v => ESTADOS_PROCESO.some(e => e.id === v))
+      );
     } else {
       // Nueva alerta vacía
       setName("");
@@ -332,7 +346,9 @@ const AlertModal: React.FC<AlertModalProps> = ({
       setSelectedMunicipios([]);
       setSelectedModalidades([]);
       setSelectedTipos([]);
+      setSelectedEstados([]);
     }
+    setSaving(false);
   }, [alert, initialFilters, visible]);
 
   const filteredDepartments = deptSearchText
@@ -347,7 +363,8 @@ const AlertModal: React.FC<AlertModalProps> = ({
       )
     : municipalities;
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (saving) return;
     if (!name.trim()) {
       Alert.alert("Error", "El nombre es requerido");
       return;
@@ -369,13 +386,22 @@ const AlertModal: React.FC<AlertModalProps> = ({
       if (selectedTipos.length === 1) filters.tipo_contrato = selectedTipos[0];
       else filters.tipo_contrato = selectedTipos;
     }
+    if (selectedEstados.length > 0) {
+      if (selectedEstados.length === 1) filters.estado_del_procedimiento = selectedEstados[0];
+      else filters.estado_del_procedimiento = selectedEstados;
+    }
 
     if (Object.keys(filters).length === 0) {
       Alert.alert("Error", "Debes agregar al menos un filtro");
       return;
     }
 
-    onSave({ name: name.trim(), filters });
+    setSaving(true);
+    try {
+      await onSave({ name: name.trim(), filters });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSelectDept = (dept: string) => {
@@ -413,9 +439,9 @@ const AlertModal: React.FC<AlertModalProps> = ({
             <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
               {alert ? "Editar Alerta" : "Nueva Alerta"}
             </Text>
-            <TouchableOpacity onPress={handleSave}>
-              <Text style={[styles.modalSave, { color: colors.accent }]}>
-                Guardar
+            <TouchableOpacity onPress={handleSave} disabled={saving}>
+              <Text style={[styles.modalSave, { color: colors.accent, opacity: saving ? 0.4 : 1 }]}>
+                {saving ? "Guardando..." : "Guardar"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -643,6 +669,56 @@ const AlertModal: React.FC<AlertModalProps> = ({
                         { color: isActive ? "#FFF" : colors.textSecondary },
                       ]}>
                       {config.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            {/* Estado del procedimiento */}
+            <Text
+              style={[
+                styles.inputLabel,
+                { color: colors.textSecondary, marginTop: spacing.lg },
+              ]}>
+              Estado del proceso
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tiposChipsRow}>
+              {ESTADOS_PROCESO.map((estado) => {
+                const isActive = selectedEstados.includes(estado.id);
+                return (
+                  <TouchableOpacity
+                    key={estado.id}
+                    style={[
+                      styles.tipoChip,
+                      {
+                        backgroundColor: isActive ? estado.color : "transparent",
+                        borderWidth: 1,
+                        borderColor: isActive ? estado.color : estado.color + "30",
+                      },
+                    ]}
+                    onPress={() =>
+                      setSelectedEstados(prev =>
+                        prev.includes(estado.id)
+                          ? prev.filter(id => id !== estado.id)
+                          : [...prev, estado.id]
+                      )
+                    }
+                    activeOpacity={0.7}>
+                    <Ionicons
+                      name={estado.icon as any}
+                      size={14}
+                      color={isActive ? "#FFF" : estado.color}
+                    />
+                    <Text
+                      style={[
+                        styles.tipoChipText,
+                        { color: isActive ? "#FFF" : colors.textSecondary },
+                      ]}>
+                      {estado.label}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -1265,6 +1341,7 @@ const AlertsScreen: React.FC<{ route?: any; navigation?: any }> = ({ route, navi
   const [showAlertResults, setShowAlertResults] = useState(false);
 
   const swipeableRefs = useRef<Map<string, Swipeable>>(new Map());
+  const savingRef = useRef(false);
 
   // Cargar alertas y limpiar badge
   const loadAlerts = useCallback(async () => {
@@ -1412,31 +1489,36 @@ const AlertsScreen: React.FC<{ route?: any; navigation?: any }> = ({ route, navi
   );
 
   const handleSave = async (data: { name: string; filters: AlertFilters }) => {
-    if (!user) return;
+    if (!user || savingRef.current) return;
+    savingRef.current = true;
 
-    if (editingAlert) {
-      const { error } = await updateAlert(editingAlert.id, data);
-      if (!error) {
-        setAlerts((prev) =>
-          prev.map((a) => (a.id === editingAlert.id ? { ...a, ...data } : a)),
+    try {
+      if (editingAlert) {
+        const { error } = await updateAlert(editingAlert.id, data);
+        if (!error) {
+          setAlerts((prev) =>
+            prev.map((a) => (a.id === editingAlert.id ? { ...a, ...data } : a)),
+          );
+          haptics.success();
+        }
+      } else {
+        const { alert, error } = await createAlert(
+          user.id,
+          data.name,
+          data.filters,
         );
-        haptics.success();
+        if (alert && !error) {
+          setAlerts((prev) => [alert, ...prev]);
+          haptics.success();
+        }
       }
-    } else {
-      const { alert, error } = await createAlert(
-        user.id,
-        data.name,
-        data.filters,
-      );
-      if (alert && !error) {
-        setAlerts((prev) => [alert, ...prev]);
-        haptics.success();
-      }
-    }
 
-    setModalVisible(false);
-    setEditingAlert(null);
-    setInitialFilters(undefined);
+      setModalVisible(false);
+      setEditingAlert(null);
+      setInitialFilters(undefined);
+    } finally {
+      savingRef.current = false;
+    }
   };
 
   const handleNewAlert = () => {

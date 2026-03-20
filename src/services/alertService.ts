@@ -194,6 +194,10 @@ export const formatAlertFilters = (filters: AlertFilters): string => {
     const mod = filters.modalidad;
     parts.push(Array.isArray(mod) ? mod.join(", ") : mod);
   }
+  if (filters.estado_del_procedimiento) {
+    const est = filters.estado_del_procedimiento;
+    parts.push(Array.isArray(est) ? est.join(", ") : est);
+  }
 
   return parts.length > 0 ? parts.join(" • ") : "Todos los procesos";
 };

@@ -26,17 +26,7 @@ import {
   CONTRACT_TYPES,
   getContractTypeColor,
 } from "../constants/contractTypes";
-import { MODALIDADES } from "../constants/filterOptions";
-
-// Estados del procedimiento SECOP II
-const ESTADOS_PROCESO = [
-  { id: "Publicado", label: "Publicado", icon: "megaphone-outline" as const, color: "#30D158" },
-  { id: "Seleccionado", label: "Adjudicado", icon: "checkmark-circle" as const, color: "#007AFF" },
-  { id: "Evaluación", label: "En evaluación", icon: "hourglass-outline" as const, color: "#FF9500" },
-  { id: "Borrador", label: "Borrador", icon: "document-outline" as const, color: "#8E8E93" },
-  { id: "Cancelado", label: "Cancelado", icon: "close-circle" as const, color: "#FF3B30" },
-  { id: "Suspendido", label: "Suspendido", icon: "pause-circle" as const, color: "#FF9500" },
-];
+import { MODALIDADES, ESTADOS_PROCESO } from "../constants/filterOptions";
 
 // ============================================
 // COMPONENTE PRINCIPAL
