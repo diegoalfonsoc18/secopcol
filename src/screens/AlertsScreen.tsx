@@ -48,7 +48,7 @@ import { FadeIn, SlideInUp } from "../components/Animations";
 import { getDepartments, getMunicipalities } from "../services/divipola";
 import { AlertIcon } from "../assets/icons";
 import { spacing, scale, borderRadius, typography } from "../theme";
-import { MODALIDADES, ESTADOS_PROCESO } from "../constants/filterOptions";
+import { MODALIDADES } from "../constants/filterOptions";
 import {
   CONTRACT_TYPES,
   getContractTypeColor,
@@ -244,7 +244,6 @@ const AlertModal: React.FC<AlertModalProps> = ({
   const [selectedMunicipios, setSelectedMunicipios] = useState<string[]>([]);
   const [selectedModalidades, setSelectedModalidades] = useState<string[]>([]);
   const [selectedTipos, setSelectedTipos] = useState<string[]>([]);
-  const [selectedEstados, setSelectedEstados] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   // Estados DIVIPOLA
@@ -307,12 +306,6 @@ const AlertModal: React.FC<AlertModalProps> = ({
       setSelectedTipos(
         tipoValues.filter(v => CONTRACT_TYPES.some(t => t.id === v))
       );
-      const estadoValues = Array.isArray(alert.filters.estado_del_procedimiento)
-        ? alert.filters.estado_del_procedimiento
-        : alert.filters.estado_del_procedimiento ? [alert.filters.estado_del_procedimiento] : [];
-      setSelectedEstados(
-        estadoValues.filter(v => ESTADOS_PROCESO.some(e => e.id === v))
-      );
     } else if (initialFilters) {
       // Nueva alerta con filtros iniciales (desde SearchScreen)
       setName("");
@@ -332,12 +325,6 @@ const AlertModal: React.FC<AlertModalProps> = ({
       setSelectedTipos(
         tipoVal.filter(v => CONTRACT_TYPES.some(t => t.id === v))
       );
-      const estadoVal = Array.isArray(initialFilters.estado_del_procedimiento)
-        ? initialFilters.estado_del_procedimiento
-        : initialFilters.estado_del_procedimiento ? [initialFilters.estado_del_procedimiento] : [];
-      setSelectedEstados(
-        estadoVal.filter(v => ESTADOS_PROCESO.some(e => e.id === v))
-      );
     } else {
       // Nueva alerta vacía
       setName("");
@@ -346,7 +333,6 @@ const AlertModal: React.FC<AlertModalProps> = ({
       setSelectedMunicipios([]);
       setSelectedModalidades([]);
       setSelectedTipos([]);
-      setSelectedEstados([]);
     }
     setSaving(false);
   }, [alert, initialFilters, visible]);
@@ -386,11 +372,6 @@ const AlertModal: React.FC<AlertModalProps> = ({
       if (selectedTipos.length === 1) filters.tipo_contrato = selectedTipos[0];
       else filters.tipo_contrato = selectedTipos;
     }
-    if (selectedEstados.length > 0) {
-      if (selectedEstados.length === 1) filters.estado_del_procedimiento = selectedEstados[0];
-      else filters.estado_del_procedimiento = selectedEstados;
-    }
-
     if (Object.keys(filters).length === 0) {
       Alert.alert("Error", "Debes agregar al menos un filtro");
       return;
@@ -676,55 +657,6 @@ const AlertModal: React.FC<AlertModalProps> = ({
             </ScrollView>
 
             {/* Estado del procedimiento */}
-            <Text
-              style={[
-                styles.inputLabel,
-                { color: colors.textSecondary, marginTop: spacing.lg },
-              ]}>
-              Estado del proceso
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.tiposChipsRow}>
-              {ESTADOS_PROCESO.map((estado) => {
-                const isActive = selectedEstados.includes(estado.id);
-                return (
-                  <TouchableOpacity
-                    key={estado.id}
-                    style={[
-                      styles.tipoChip,
-                      {
-                        backgroundColor: isActive ? estado.color : "transparent",
-                        borderWidth: 1,
-                        borderColor: isActive ? estado.color : estado.color + "30",
-                      },
-                    ]}
-                    onPress={() =>
-                      setSelectedEstados(prev =>
-                        prev.includes(estado.id)
-                          ? prev.filter(id => id !== estado.id)
-                          : [...prev, estado.id]
-                      )
-                    }
-                    activeOpacity={0.7}>
-                    <Ionicons
-                      name={estado.icon as any}
-                      size={14}
-                      color={isActive ? "#FFF" : estado.color}
-                    />
-                    <Text
-                      style={[
-                        styles.tipoChipText,
-                        { color: isActive ? "#FFF" : colors.textSecondary },
-                      ]}>
-                      {estado.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-
             {/* Info */}
             <View
               style={[styles.infoBox, { backgroundColor: colors.accentLight }]}>

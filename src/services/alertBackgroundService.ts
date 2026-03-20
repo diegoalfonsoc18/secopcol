@@ -73,7 +73,6 @@ export async function checkAlertsForUser(userId: string): Promise<number> {
           municipio: alert.filters.municipio,
           modalidad: alert.filters.modalidad,
           tipoContrato: alert.filters.tipo_contrato,
-          estadoProcedimiento: alert.filters.estado_del_procedimiento,
           limit: 20,
         });
 

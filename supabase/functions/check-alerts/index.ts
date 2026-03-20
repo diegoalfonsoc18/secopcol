@@ -26,7 +26,6 @@ interface AlertFilters {
   municipio?: string | string[];
   modalidad?: string | string[];
   tipo_contrato?: string | string[];
-  estado_del_procedimiento?: string | string[];
   fase?: string;
 }
 
@@ -102,18 +101,6 @@ function buildSecopUrl(filters: AlertFilters, limit = 20): string {
       conditions.push(`tipo_de_contrato='${escapeSoql(tipos[0])}'`);
     } else if (tipos.length > 1) {
       const orParts = tipos.map(t => `tipo_de_contrato='${escapeSoql(t)}'`);
-      conditions.push(`(${orParts.join(" OR ")})`);
-    }
-  }
-
-  if (filters.estado_del_procedimiento) {
-    const estados = Array.isArray(filters.estado_del_procedimiento)
-      ? filters.estado_del_procedimiento
-      : [filters.estado_del_procedimiento];
-    if (estados.length === 1) {
-      conditions.push(`estado_del_procedimiento='${escapeSoql(estados[0])}'`);
-    } else if (estados.length > 1) {
-      const orParts = estados.map(e => `estado_del_procedimiento='${escapeSoql(e)}'`);
       conditions.push(`(${orParts.join(" OR ")})`);
     }
   }
