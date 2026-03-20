@@ -6,6 +6,8 @@ import { SecopProcess } from "../types/index";
 const SECOP_API_URL = "https://www.datos.gov.co/resource/p6dx-8zbt.json";
 // Escapar comillas simples para prevenir SoQL injection
 const escapeSoql = (val: string) => val.replace(/'/g, "''");
+// Remover tildes/acentos para comparaciones más flexibles
+const removeAccents = (val: string) => val.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 // App Token (aumenta límite de requests)
 // Se lee de variable de entorno para no exponer el token en el código fuente
@@ -49,6 +51,7 @@ const buildQuery = (params: {
   municipio?: string | string[];
   departamento?: string;
   entidad?: string;
+  entidadSearch?: string;
   estadoApertura?: string;
   estadoProcedimiento?: string | string[];
   soloOfertables?: boolean;
@@ -90,28 +93,55 @@ const buildQuery = (params: {
     conditions.push(`fecha_de_recepcion_de < '${escapeSoql(fmtDate(end))}'`);
   }
 
-  if (params.municipio) {
-    const munis = Array.isArray(params.municipio) ? params.municipio : [params.municipio];
-    const muniConditions = munis.map(m => {
-      const clean = m.replace(/,?\s*D\.?C\.?/gi, "").replace(/,/g, "").replace(/\s+/g, " ").trim();
-      return `upper(ciudad_entidad) LIKE upper('%${escapeSoql(clean)}%')`;
-    });
-    conditions.push(muniConditions.length === 1 ? muniConditions[0] : `(${muniConditions.join(" OR ")})`);
-  }
+  // Ubicación: combinar dept + municipio en un solo bloque para incluir
+  // entidades con "No Definido" cuyo nombre contiene el municipio
+  {
+    const locationParts: string[] = [];
+    const entityNameParts: string[] = [];
 
-  if (params.departamento) {
-    const cleanDepartamento = params.departamento
-      .replace(/,?\s*D\.?C\.?/gi, "")
-      .replace(/,/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-    conditions.push(
-      `upper(departamento_entidad) LIKE upper('%${escapeSoql(cleanDepartamento)}%')`,
-    );
+    if (params.departamento) {
+      const cleanDept = params.departamento
+        .replace(/,?\s*D\.?C\.?/gi, "").replace(/,/g, "").replace(/\s+/g, " ").trim();
+      locationParts.push(`upper(departamento_entidad) LIKE upper('%${escapeSoql(cleanDept)}%')`);
+    }
+
+    if (params.municipio) {
+      const munis = Array.isArray(params.municipio) ? params.municipio : [params.municipio];
+      const muniLocationParts = munis.map(m => {
+        const clean = m.replace(/,?\s*D\.?C\.?/gi, "").replace(/,/g, "").replace(/\s+/g, " ").trim();
+        return `upper(ciudad_entidad) LIKE upper('%${escapeSoql(clean)}%')`;
+      });
+      locationParts.push(muniLocationParts.length === 1 ? muniLocationParts[0] : `(${muniLocationParts.join(" OR ")})`);
+
+      // También buscar en nombre de entidad sin tildes (para entidades con ubicación "No Definido")
+      const muniEntityParts = munis.map(m => {
+        const clean = removeAccents(m.replace(/,?\s*D\.?C\.?/gi, "").replace(/,/g, "").replace(/\s+/g, " ").trim());
+        return `upper(entidad) LIKE upper('%${escapeSoql(clean)}%')`;
+      });
+      entityNameParts.push(...muniEntityParts);
+    }
+
+    if (locationParts.length > 0) {
+      const locationFilter = locationParts.join(" AND ");
+      if (entityNameParts.length > 0) {
+        // (filtro ubicación normal) OR (nombre entidad contiene municipio)
+        conditions.push(`(${locationFilter} OR ${entityNameParts.join(" OR ")})`);
+      } else {
+        conditions.push(locationFilter);
+      }
+    }
   }
 
   if (params.entidad) {
     conditions.push(`entidad='${escapeSoql(params.entidad)}'`);
+  }
+
+  if (params.entidadSearch) {
+    const term = escapeSoql(params.entidadSearch.trim());
+    // Buscar por nombre de entidad o NIT
+    conditions.push(
+      `(upper(entidad) LIKE upper('%${term}%') OR nit_entidad LIKE '%${term}%')`,
+    );
   }
 
   if (params.estadoApertura) {
@@ -279,6 +309,7 @@ export const advancedSearch = async (params: {
   departamento?: string;
   municipio?: string | string[];
   entidad?: string;
+  entidadSearch?: string;
   estadoApertura?: string;
   estadoProcedimiento?: string | string[];
   soloOfertables?: boolean;
@@ -393,20 +424,30 @@ export const getEntitiesByLocation = async (params: {
   municipio?: string;
 }): Promise<string[]> => {
   try {
-    const conditions: string[] = [];
-    if (params.municipio) {
-      conditions.push(
-        `upper(ciudad_entidad) LIKE upper('%${escapeSoql(params.municipio)}%')`,
-      );
-    }
+    const locationParts: string[] = [];
+    const entityNameParts: string[] = [];
+
     if (params.departamento) {
-      conditions.push(
+      locationParts.push(
         `upper(departamento_entidad) LIKE upper('%${escapeSoql(params.departamento)}%')`,
       );
     }
-    if (conditions.length === 0) return [];
+    if (params.municipio) {
+      locationParts.push(
+        `upper(ciudad_entidad) LIKE upper('%${escapeSoql(params.municipio)}%')`,
+      );
+      entityNameParts.push(
+        `upper(entidad) LIKE upper('%${escapeSoql(removeAccents(params.municipio))}%')`,
+      );
+    }
+    if (locationParts.length === 0) return [];
 
-    const where = encodeURIComponent(conditions.join(" AND "));
+    const locationFilter = locationParts.join(" AND ");
+    const whereClause = entityNameParts.length > 0
+      ? `(${locationFilter} OR ${entityNameParts.join(" OR ")})`
+      : locationFilter;
+
+    const where = encodeURIComponent(whereClause);
     const url = `${SECOP_API_URL}?$select=entidad&$group=entidad&$order=entidad&$where=${where}&$limit=500`;
     const response = await fetch(url, { headers: getHeaders() });
     if (!response.ok) return [];

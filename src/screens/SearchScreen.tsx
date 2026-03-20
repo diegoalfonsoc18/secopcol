@@ -49,6 +49,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
   const [entities, setEntities] = useState<string[]>([]);
   const [loadingEntities, setLoadingEntities] = useState(false);
   const [selectedEntidad, setSelectedEntidad] = useState("");
+  const [entidadInput, setEntidadInput] = useState("");
   const [showDeptModal, setShowDeptModal] = useState(false);
   const [showMuniModal, setShowMuniModal] = useState(false);
   const [showEntidadModal, setShowEntidadModal] = useState(false);
@@ -196,6 +197,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
         departamento: selectedDepartamento || undefined,
         municipio: selectedMunicipio || undefined,
         entidad: selectedEntidad || undefined,
+        entidadSearch: entidadInput.trim() || undefined,
         modalidad: modalidadValue,
         estadoProcedimiento: selectedEstados.length > 0 ? selectedEstados : undefined,
       };
@@ -299,6 +301,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
     selectedDepartamento,
     selectedMunicipio,
     selectedEntidad,
+    entidadInput,
     selectedModalidad,
     ...selectedTipos,
     ...selectedEstados,
@@ -309,6 +312,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
     setSelectedDepartamento("");
     setSelectedMunicipio("");
     setSelectedEntidad("");
+    setEntidadInput("");
     setSelectedModalidad("");
     setSelectedTipos([]);
     setSelectedEstados([]);
@@ -451,6 +455,32 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
               </>
             )}
           </TouchableOpacity>
+
+          {/* Buscar entidad por nombre o NIT */}
+          <View style={styles.entidadInputContainer}>
+            <Ionicons
+              name="search-outline"
+              size={16}
+              color={entidadInput ? colors.accent : colors.textTertiary}
+              style={{ marginRight: spacing.xs }}
+            />
+            <TextInput
+              style={[styles.entidadInputText, { color: colors.text }]}
+              placeholder="Buscar entidad por nombre o NIT"
+              placeholderTextColor={colors.textTertiary}
+              value={entidadInput}
+              onChangeText={setEntidadInput}
+              returnKeyType="search"
+              onSubmitEditing={handleSearch}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {entidadInput.length > 0 && (
+              <TouchableOpacity onPress={() => setEntidadInput("")}>
+                <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
+              </TouchableOpacity>
+            )}
+          </View>
 
           {/* Modalidades */}
           <View style={styles.sectionContainer}>
@@ -927,6 +957,22 @@ const createStyles = (colors: any) =>
       borderWidth: 1,
       borderColor: colors.separatorLight,
       marginBottom: spacing.md,
+    },
+    entidadInputContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "transparent",
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.md,
+      height: 42,
+      borderWidth: 1,
+      borderColor: colors.separatorLight,
+      marginBottom: spacing.md,
+    },
+    entidadInputText: {
+      flex: 1,
+      fontSize: scale(14),
+      padding: 0,
     },
     locationButtonActive: {
       backgroundColor: colors.accentLight,
