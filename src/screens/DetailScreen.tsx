@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Linking,
   ScrollView,
@@ -10,7 +10,10 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Modal,
+  StatusBar,
 } from "react-native";
+import { WebView } from "react-native-webview";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useProcessesStore } from "../store/processesStore";
@@ -98,6 +101,10 @@ export const DetailScreen = ({ route, navigation }: any) => {
   const [showObligationForm, setShowObligationForm] = useState(false);
   const [proponentes, setProponentes] = useState<SecopProponente[]>([]);
   const [loadingProponentes, setLoadingProponentes] = useState(true);
+  const [showWebView, setShowWebView] = useState(false);
+  const [webViewLoading, setWebViewLoading] = useState(true);
+
+  const processUrl = getProcessUrl(process.urlproceso);
 
   useEffect(() => {
     const fetchProponentes = async () => {
@@ -717,6 +724,28 @@ _Enviado desde SECOP Colombia App_`;
           )}
         </Section>
 
+        {/* Botón Ver Documentos */}
+        {processUrl && (
+          <TouchableOpacity
+            style={[styles.secopButton, { backgroundColor: colors.accent, marginBottom: spacing.sm }]}
+            onPress={() => {
+              haptics.medium();
+              setWebViewLoading(true);
+              setShowWebView(true);
+            }}
+            accessibilityLabel="Ver documentos del proceso"
+            accessibilityRole="button">
+            <Ionicons
+              name="document-text-outline"
+              size={20}
+              color="#FFFFFF"
+            />
+            <Text style={[styles.secopButtonText, { color: "#FFFFFF" }]}>
+              Ver documentos del proceso
+            </Text>
+          </TouchableOpacity>
+        )}
+
         {/* Botón Ver en SECOP */}
         <TouchableOpacity
           style={styles.secopButton}
@@ -731,6 +760,101 @@ _Enviado desde SECOP Colombia App_`;
           <Text style={styles.secopButtonText}>Ver en SECOP II</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Modal: WebView SECOP */}
+      <Modal
+        visible={showWebView}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowWebView(false)}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
+          {/* Header */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingTop: Platform.OS === "ios" ? insets.top : StatusBar.currentHeight || 0,
+              paddingHorizontal: spacing.md,
+              paddingBottom: spacing.sm,
+              backgroundColor: colors.backgroundSecondary,
+              borderBottomWidth: StyleSheet.hairlineWidth,
+              borderBottomColor: colors.separatorLight,
+            }}>
+            <TouchableOpacity onPress={() => setShowWebView(false)}>
+              <Ionicons name="close" size={28} color={colors.text} />
+            </TouchableOpacity>
+            <Text
+              style={{
+                flex: 1,
+                textAlign: "center",
+                fontSize: scale(15),
+                fontWeight: "600",
+                color: colors.text,
+                marginHorizontal: spacing.sm,
+              }}
+              numberOfLines={1}>
+              Documentos del proceso
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                if (processUrl) Linking.openURL(processUrl);
+              }}>
+              <Ionicons name="open-outline" size={22} color={colors.accent} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Loading indicator */}
+          {webViewLoading && (
+            <View
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                justifyContent: "center",
+                alignItems: "center",
+                zIndex: 10,
+              }}>
+              <ActivityIndicator size="large" color={colors.accent} />
+              <Text style={{ color: colors.textSecondary, marginTop: spacing.sm, fontSize: scale(13) }}>
+                Cargando documentos...
+              </Text>
+            </View>
+          )}
+
+          {/* WebView */}
+          {processUrl && (
+            <WebView
+              source={{ uri: processUrl }}
+              style={{ flex: 1, opacity: webViewLoading ? 0 : 1 }}
+              onLoadEnd={() => setWebViewLoading(false)}
+              startInLoadingState={false}
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+              sharedCookiesEnabled={true}
+              allowsInlineMediaPlayback={true}
+              thirdPartyCookiesEnabled={true}
+              userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
+              originWhitelist={["*"]}
+              setSupportMultipleWindows={false}
+              onShouldStartLoadWithRequest={(request) => {
+                // Permitir navegación dentro de SECOP
+                if (request.url.includes("secop.gov.co") || request.url.includes("colombiacompra")) {
+                  return true;
+                }
+                // Abrir links externos en el navegador
+                if (request.url !== processUrl && !request.url.includes("secop.gov.co")) {
+                  Linking.openURL(request.url);
+                  return false;
+                }
+                return true;
+              }}
+            />
+          )}
+        </View>
+      </Modal>
 
       {/* Modal: Agregar Obligación Tributaria */}
       <ObligationFormModal
