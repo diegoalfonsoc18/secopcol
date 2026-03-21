@@ -1357,12 +1357,19 @@ const AlertsScreen: React.FC<{ route?: any; navigation?: any }> = ({ route, navi
       setAlertResults([]);
 
       try {
+        // Solo procesos desde que se creó la alerta (máximo 15 días)
+        const alertCreated = new Date(alert.created_at);
+        const fifteenDaysAgo = new Date();
+        fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+        const fromDate = alertCreated > fifteenDaysAgo ? alertCreated : fifteenDaysAgo;
+
         const results = await advancedSearch({
           keyword: alert.filters.keyword,
           departamento: alert.filters.departamento,
           municipio: alert.filters.municipio,
           modalidad: alert.filters.modalidad,
           tipoContrato: alert.filters.tipo_contrato,
+          publishedAfter: fromDate.toISOString(),
           limit: 20,
         });
         setAlertResults(results);

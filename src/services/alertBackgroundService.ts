@@ -66,13 +66,19 @@ export async function checkAlertsForUser(userId: string): Promise<number> {
           }
         }
 
-        // Consultar SECOP con los filtros de la alerta
+        // Solo procesos publicados desde que se creó la alerta (máximo 15 días atrás)
+        const alertCreated = new Date(alert.created_at);
+        const fifteenDaysAgo = new Date();
+        fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+        const fromDate = alertCreated > fifteenDaysAgo ? alertCreated : fifteenDaysAgo;
+
         const processes = await advancedSearch({
           keyword: alert.filters.keyword,
           departamento: alert.filters.departamento,
           municipio: alert.filters.municipio,
           modalidad: alert.filters.modalidad,
           tipoContrato: alert.filters.tipo_contrato,
+          publishedAfter: fromDate.toISOString(),
           limit: 20,
         });
 

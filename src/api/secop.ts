@@ -66,6 +66,7 @@ const buildQuery = (params: {
   requireDate?: boolean;
   recentDays?: number;
   closingWithinDays?: number;
+  publishedAfter?: string; // ISO date string: solo procesos publicados después de esta fecha
 }): string => {
   const conditions: string[] = [];
 
@@ -82,6 +83,14 @@ const buildQuery = (params: {
     );
   } else if (params.requireDate !== false) {
     conditions.push("fecha_de_ultima_publicaci IS NOT NULL");
+  }
+
+  // Filtrar procesos publicados después de una fecha específica (para alertas)
+  if (params.publishedAfter) {
+    const afterDate = new Date(params.publishedAfter);
+    conditions.push(
+      `fecha_de_ultima_publicaci >= '${escapeSoql(fmtDate(afterDate))}'`,
+    );
   }
 
   // Filtrar por fecha de cierre (0 = cierra hoy, N = cierra en los próximos N días)
@@ -319,6 +328,7 @@ export const advancedSearch = async (params: {
   noOffers?: boolean;
   recentDays?: number;
   closingWithinDays?: number;
+  publishedAfter?: string;
   limit?: number;
   offset?: number;
 }): Promise<SecopProcess[]> => {

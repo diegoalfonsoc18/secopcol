@@ -100,7 +100,7 @@ export const GlassTabBar: React.FC<BottomTabBarProps> = ({
       style={[
         styles.container,
         {
-          bottom: insets.bottom > 0 ? insets.bottom - 20 : 8,
+          bottom: insets.bottom > 0 ? insets.bottom : 12,
           ...Platform.select({
             ios: {
               shadowColor: "#000",
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     top: 4,
     bottom: 4,
     zIndex: 0,
-    paddingHorizontal: 6,
+    paddingHorizontal: 0,
   },
   bubble: {
     flex: 1,
