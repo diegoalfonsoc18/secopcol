@@ -18,7 +18,7 @@ export const getFavorites = async (userId: string): Promise<Favorite[]> => {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching favorites:", error);
+    if (__DEV__) console.error("Error fetching favorites:", error);
     return [];
   }
   return data || [];
@@ -116,7 +116,7 @@ export const getSavedFilters = async (
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching saved filters:", error);
+    if (__DEV__) console.error("Error fetching saved filters:", error);
     return [];
   }
   return data || [];

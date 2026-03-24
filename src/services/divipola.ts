@@ -33,7 +33,7 @@ export async function getDepartments(): Promise<string[]> {
     );
 
     if (!response.ok) {
-      console.warn("DIVIPOLA API no disponible, usando datos locales");
+      if (__DEV__) console.warn("DIVIPOLA API no disponible, usando datos locales");
       return FALLBACK_DEPARTMENTS;
     }
 
@@ -41,7 +41,7 @@ export async function getDepartments(): Promise<string[]> {
     departmentsCache = data.map((d) => d.dpto);
     return departmentsCache;
   } catch (error) {
-    console.error("Error loading departments:", error);
+    if (__DEV__) console.error("Error loading departments:", error);
     return FALLBACK_DEPARTMENTS;
   }
 }
@@ -67,7 +67,7 @@ export async function getMunicipalities(
     );
 
     if (!response.ok) {
-      console.warn(`DIVIPOLA API no disponible para ${departamento}, usando datos locales`);
+      if (__DEV__) console.warn(`DIVIPOLA API no disponible para ${departamento}, usando datos locales`);
       return FALLBACK_MUNICIPALITIES[departamento] || [];
     }
 
@@ -76,7 +76,7 @@ export async function getMunicipalities(
     municipalitiesCache.set(departamento, municipalities);
     return municipalities;
   } catch (error) {
-    console.error(`Error loading municipalities for ${departamento}:`, error);
+    if (__DEV__) console.error(`Error loading municipalities for ${departamento}:`, error);
     return FALLBACK_MUNICIPALITIES[departamento] || [];
   }
 }

@@ -96,6 +96,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       } else {
         setIsLoading(false);
       }
+    }).catch((error) => {
+      if (__DEV__) {
+        console.error('Error getting session:', error);
+      }
+      setIsLoading(false);
     });
 
     // Escuchar cambios de autenticación

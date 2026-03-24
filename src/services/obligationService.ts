@@ -15,7 +15,7 @@ export const getObligations = async (userId: string): Promise<ContractObligation
     .order("due_date", { ascending: true });
 
   if (error) {
-    console.error("Error fetching obligations:", error);
+    if (__DEV__) console.error("Error fetching obligations:", error);
     return [];
   }
   return data || [];
@@ -36,7 +36,7 @@ export const getObligationsByProcess = async (
     .order("due_date", { ascending: true });
 
   if (error) {
-    console.error("Error fetching obligations by process:", error);
+    if (__DEV__) console.error("Error fetching obligations by process:", error);
     return [];
   }
   return data || [];
@@ -64,7 +64,7 @@ export const getUpcomingObligations = async (
     .order("due_date", { ascending: true });
 
   if (error) {
-    console.error("Error fetching upcoming obligations:", error);
+    if (__DEV__) console.error("Error fetching upcoming obligations:", error);
     return [];
   }
   return data || [];
@@ -228,7 +228,7 @@ export const getObligationsByMonth = async (
     .order("due_date", { ascending: true });
 
   if (error) {
-    console.error("Error fetching obligations by month:", error);
+    if (__DEV__) console.error("Error fetching obligations by month:", error);
     return [];
   }
   return data || [];

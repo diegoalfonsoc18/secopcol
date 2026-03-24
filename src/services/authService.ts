@@ -114,7 +114,7 @@ export const getProfile = async (userId: string): Promise<Profile | null> => {
     .single();
 
   if (error) {
-    console.error("Error fetching profile:", error);
+    if (__DEV__) console.error("Error fetching profile:", error);
     return null;
   }
   return data;
@@ -163,7 +163,7 @@ const createInitialPreferences = async (userId: string): Promise<void> => {
       favorite_contract_types: [],
     });
   } catch (error) {
-    console.error("Error creating initial preferences:", error);
+    if (__DEV__) console.error("Error creating initial preferences:", error);
   }
 };
 
@@ -180,7 +180,7 @@ export const getPreferences = async (
     .single();
 
   if (error) {
-    console.error("Error fetching preferences:", error);
+    if (__DEV__) console.error("Error fetching preferences:", error);
     return null;
   }
   return data;

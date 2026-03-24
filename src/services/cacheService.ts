@@ -102,7 +102,7 @@ export const setCache = async <T>(
     };
     await AsyncStorage.setItem(key, JSON.stringify(entry));
   } catch (error) {
-    console.error("Error saving to cache:", error);
+    if (__DEV__) console.error("Error saving to cache:", error);
   }
 };
 
@@ -124,7 +124,7 @@ export const getCache = async <T>(key: string): Promise<T | null> => {
 
     return entry.data;
   } catch (error) {
-    console.error("Error reading from cache:", error);
+    if (__DEV__) console.error("Error reading from cache:", error);
     return null;
   }
 };
@@ -136,7 +136,7 @@ export const removeCache = async (key: string): Promise<void> => {
   try {
     await AsyncStorage.removeItem(key);
   } catch (error) {
-    console.error("Error removing from cache:", error);
+    if (__DEV__) console.error("Error removing from cache:", error);
   }
 };
 
@@ -149,7 +149,7 @@ export const clearAllCache = async (): Promise<void> => {
     const cacheKeys = keys.filter((k) => k.startsWith("cache_"));
     await AsyncStorage.multiRemove(cacheKeys);
   } catch (error) {
-    console.error("Error clearing cache:", error);
+    if (__DEV__) console.error("Error clearing cache:", error);
   }
 };
 
@@ -334,7 +334,7 @@ export const setLastSyncTime = async (): Promise<void> => {
   try {
     await AsyncStorage.setItem(CACHE_KEYS.LAST_SYNC, new Date().toISOString());
   } catch (error) {
-    console.error("Error saving last sync time:", error);
+    if (__DEV__) console.error("Error saving last sync time:", error);
   }
 };
 

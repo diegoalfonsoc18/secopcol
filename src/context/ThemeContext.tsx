@@ -134,6 +134,11 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({
         setModeState(saved as ThemeMode);
       }
       setIsLoaded(true);
+    }).catch((error) => {
+      if (__DEV__) {
+        console.error('Error loading theme preference:', error);
+      }
+      setIsLoaded(true);
     });
   }, []);
 

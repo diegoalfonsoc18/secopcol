@@ -67,7 +67,7 @@ export const useObligationsStore = create<ObligationsState>()(
         } catch (error) {
           const message = error instanceof Error ? error.message : "Error cargando obligaciones";
           set({ error: message, loading: false });
-          console.error("Error fetching obligations:", message);
+          if (__DEV__) console.error("Error fetching obligations:", message);
         }
       },
 

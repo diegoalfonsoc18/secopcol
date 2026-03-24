@@ -56,7 +56,7 @@ export const OnboardingScreen: React.FC = () => {
     try {
       await completeOnboarding(selectedTypes);
     } catch (error) {
-      console.error("Error completing onboarding:", error);
+      if (__DEV__) console.error("Error completing onboarding:", error);
     } finally {
       setLoading(false);
     }

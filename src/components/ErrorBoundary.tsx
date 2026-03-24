@@ -41,8 +41,10 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({ errorInfo });
 
     // Aquí podrías enviar el error a un servicio como Sentry
-    console.error("ErrorBoundary caught an error:", error);
-    console.error("Component stack:", errorInfo.componentStack);
+    if (__DEV__) {
+      console.error("ErrorBoundary caught an error:", error);
+      console.error("Component stack:", errorInfo.componentStack);
+    }
   }
 
   handleRetry = (): void => {

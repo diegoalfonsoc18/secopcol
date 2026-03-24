@@ -114,8 +114,7 @@ export const GlassTabBar: React.FC<BottomTabBarProps> = ({
           }),
         },
       ]}
-      onLayout={handleContainerLayout}
-    >
+      onLayout={handleContainerLayout}>
       {/* Fondo glass del tab bar completo */}
       <GlassWrapper
         variant="header"
@@ -131,17 +130,10 @@ export const GlassTabBar: React.FC<BottomTabBarProps> = ({
             {
               left: bubbleX,
               width: tabWidth,
-              transform: [
-                { scaleX: bubbleScaleX },
-                { scaleY: bubbleScaleY },
-              ],
+              transform: [{ scaleX: bubbleScaleX }, { scaleY: bubbleScaleY }],
             },
-          ]}
-        >
-          <GlassWrapper
-            variant="badge"
-            style={styles.bubble}
-          />
+          ]}>
+          <GlassWrapper variant="badge" style={styles.bubble} />
         </Animated.View>
       )}
 
@@ -171,8 +163,12 @@ export const GlassTabBar: React.FC<BottomTabBarProps> = ({
         };
 
         const color = isFocused
-          ? (isDark ? "#FFFFFF" : "#000000")
-          : (isDark ? "#FFFFFF" : "#3A3A3C");
+          ? isDark
+            ? "#FFFFFF"
+            : "#000000"
+          : isDark
+            ? "#FFFFFF"
+            : "#3A3A3C";
 
         return (
           <TouchableOpacity
@@ -183,19 +179,11 @@ export const GlassTabBar: React.FC<BottomTabBarProps> = ({
             onPress={onPress}
             onLongPress={onLongPress}
             style={styles.tab}
-            activeOpacity={0.7}
-          >
+            activeOpacity={0.7}>
             {/* Badge */}
             {options.tabBarBadge !== undefined && (
-              <View
-                style={[
-                  styles.badge,
-                  options.tabBarBadgeStyle as any,
-                ]}
-              >
-                <Text style={styles.badgeText}>
-                  {options.tabBarBadge}
-                </Text>
+              <View style={[styles.badge, options.tabBarBadgeStyle as any]}>
+                <Text style={styles.badgeText}>{options.tabBarBadge}</Text>
               </View>
             )}
 
@@ -207,13 +195,7 @@ export const GlassTabBar: React.FC<BottomTabBarProps> = ({
             })}
 
             {/* Label */}
-            <Text
-              style={[
-                styles.label,
-                { color },
-              ]}
-              numberOfLines={1}
-            >
+            <Text style={[styles.label, { color }]} numberOfLines={1}>
               {typeof label === "string" ? label : route.name}
             </Text>
           </TouchableOpacity>
@@ -241,10 +223,10 @@ const styles = StyleSheet.create({
   },
   bubbleContainer: {
     position: "absolute",
-    top: 4,
-    bottom: 4,
+    top: 6,
+    bottom: 6,
     zIndex: 0,
-    paddingHorizontal: 0,
+    paddingHorizontal: 4,
   },
   bubble: {
     flex: 1,

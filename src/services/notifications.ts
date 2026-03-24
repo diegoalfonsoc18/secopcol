@@ -129,7 +129,7 @@ export const TIPOS_CONTRATO = [
 // ============================================
 export async function requestNotificationPermissions(): Promise<boolean> {
   if (!Device.isDevice) {
-    console.log("Notificaciones no disponibles en simulador");
+    if (__DEV__) console.log("Notificaciones no disponibles en simulador");
     return false;
   }
 
@@ -167,7 +167,7 @@ export async function getNotificationSettings(): Promise<NotificationSettings> {
       return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
     }
   } catch (error) {
-    console.error("Error loading settings:", error);
+    if (__DEV__) console.error("Error loading settings:", error);
   }
   return DEFAULT_SETTINGS;
 }
@@ -176,7 +176,7 @@ async function saveSettings(settings: NotificationSettings): Promise<void> {
   try {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   } catch (error) {
-    console.error("Error saving settings:", error);
+    if (__DEV__) console.error("Error saving settings:", error);
   }
 }
 
@@ -292,7 +292,7 @@ export async function checkForNewProcesses(): Promise<SecopProcess[]> {
 
       allNewProcesses.push(...newOnes);
     } catch (error) {
-      console.error(`Error checking ${municipality}:`, error);
+      if (__DEV__) console.error(`Error checking ${municipality}:`, error);
     }
   }
 

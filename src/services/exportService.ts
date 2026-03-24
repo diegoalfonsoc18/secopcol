@@ -106,7 +106,7 @@ export const exportToCSV = async (
 
     return result.action === Share.sharedAction;
   } catch (error) {
-    console.error("Error exportando CSV:", error);
+    if (__DEV__) console.error("Error exportando CSV:", error);
     throw error;
   }
 };

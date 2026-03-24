@@ -181,7 +181,7 @@ export const useProcessesStore = create<ProcessesState>()(
               isOffline: true,
             });
           }
-          console.error("❌ Error cargando procesos:", message);
+          if (__DEV__) console.error("❌ Error cargando procesos:", message);
         }
       },
 
@@ -244,7 +244,7 @@ export const useProcessesStore = create<ProcessesState>()(
               isOffline: true,
             });
           }
-          console.error("❌ Error buscando procesos:", message);
+          if (__DEV__) console.error("❌ Error buscando procesos:", message);
         }
       },
 

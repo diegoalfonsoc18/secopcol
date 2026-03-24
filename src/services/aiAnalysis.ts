@@ -35,7 +35,7 @@ export const analyzeProcess = async (
   });
 
   if (error) {
-    console.error("Error analyzing process:", error);
+    if (__DEV__) console.error("Error analyzing process:", error);
     throw new Error(error.message);
   }
 
