@@ -14,6 +14,8 @@ import { getObligations, checkOverdue, OBLIGATION_TYPE_CONFIG } from "./obligati
 // ============================================
 export const ALERT_CHECK_TASK = "SECOP_ALERT_CHECK";
 const USER_ID_KEY = "secop-alert-user-id";
+const NOTIFIED_IDS_KEY = "secop-alert-notified-ids";
+const LAST_LOCAL_CHECK_KEY = "secop-alert-last-local-check";
 
 // Estados de proceso que indican que aún está vigente/abierto
 const ESTADOS_VIGENTES = new Set([
@@ -66,11 +68,15 @@ export async function checkAlertsForUser(userId: string): Promise<number> {
           }
         }
 
-        // Solo procesos publicados desde que se creó la alerta (máximo 15 días atrás)
+        // Solo procesos publicados desde el último chequeo local o creación de la alerta
         const alertCreated = new Date(alert.created_at);
+        const lastLocalCheckRaw = await AsyncStorage.getItem(`${LAST_LOCAL_CHECK_KEY}-${alert.id}`);
+        // Usar el más reciente entre: último chequeo local, creación de alerta, o máximo 15 días
         const fifteenDaysAgo = new Date();
         fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
-        const fromDate = alertCreated > fifteenDaysAgo ? alertCreated : fifteenDaysAgo;
+        const lastLocalCheck = lastLocalCheckRaw ? new Date(lastLocalCheckRaw) : null;
+        const candidates = [alertCreated, fifteenDaysAgo, ...(lastLocalCheck ? [lastLocalCheck] : [])];
+        const fromDate = candidates.reduce((latest, d) => d > latest ? d : latest);
 
         const processes = await advancedSearch({
           keyword: alert.filters.keyword,
@@ -92,9 +98,11 @@ export async function checkAlertsForUser(userId: string): Promise<number> {
           .map((p) => p.id_del_proceso || "")
           .filter(Boolean);
 
-        // Detectar nuevos procesos comparando con los anteriores
+        // Detectar nuevos procesos comparando con los anteriores (servidor + local)
         const previousIds = new Set(alert.last_results_ids || []);
-        const newIds = currentIds.filter((id) => !previousIds.has(id));
+        const localNotifiedRaw = await AsyncStorage.getItem(`${NOTIFIED_IDS_KEY}-${alert.id}`);
+        const localNotified = new Set<string>(localNotifiedRaw ? JSON.parse(localNotifiedRaw) : []);
+        const newIds = currentIds.filter((id) => !previousIds.has(id) && !localNotified.has(id));
 
         // Obtener los procesos nuevos con sus detalles
         const newProcesses = activeProcesses.filter(
@@ -135,10 +143,19 @@ export async function checkAlertsForUser(userId: string): Promise<number> {
           notificationsSent++;
         }
 
-        // NO actualizar last_check ni last_results_ids desde el cliente.
-        // Solo el servidor (edge function via cron) debe actualizar estos campos,
-        // para que el cron pueda detectar procesos nuevos y enviar push notifications
-        // cuando la app está cerrada.
+        // Guardar IDs notificados localmente para no repetir al reabrir la app
+        if (newIds.length > 0) {
+          const allNotified = [...localNotified, ...newIds];
+          // Mantener máximo 200 IDs para no crecer indefinidamente
+          const trimmed = allNotified.slice(-200);
+          await AsyncStorage.setItem(`${NOTIFIED_IDS_KEY}-${alert.id}`, JSON.stringify(trimmed));
+        }
+
+        // Guardar fecha del último chequeo local para no traer procesos viejos
+        await AsyncStorage.setItem(`${LAST_LOCAL_CHECK_KEY}-${alert.id}`, now.toISOString());
+
+        // NO actualizar last_check ni last_results_ids en Supabase desde el cliente.
+        // Solo el servidor (edge function via cron) debe actualizar estos campos.
       } catch (error) {
         if (__DEV__) { console.error(`Error checking alert ${alert.id}:`, error); }
       }
