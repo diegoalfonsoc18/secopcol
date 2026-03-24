@@ -58,15 +58,24 @@ function buildSecopUrl(filters: AlertFilters, limit = 20): string {
 
     if (filters.municipio) {
       const munis = Array.isArray(filters.municipio) ? filters.municipio : [filters.municipio];
-      const muniConds = munis.map(m => {
+      const muniConds = munis.flatMap(m => {
         const clean = m.replace(/,?\s*D\.?C\.?/gi, "").replace(/,/g, "").replace(/\s+/g, " ").trim();
-        return `upper(ciudad_entidad) LIKE upper('%${escapeSoql(clean)}%')`;
+        const noAccent = removeAccents(clean);
+        const parts = [`upper(ciudad_entidad) = upper('${escapeSoql(clean)}')`];
+        if (noAccent !== clean) {
+          parts.push(`upper(ciudad_entidad) = upper('${escapeSoql(noAccent)}')`);
+        }
+        return parts;
       });
       locationParts.push(muniConds.length === 1 ? muniConds[0] : `(${muniConds.join(" OR ")})`);
 
-      const entityConds = munis.map(m => {
+      const entityConds = munis.flatMap(m => {
         const clean = removeAccents(m.replace(/,?\s*D\.?C\.?/gi, "").replace(/,/g, "").replace(/\s+/g, " ").trim());
-        return `upper(entidad) LIKE upper('%${escapeSoql(clean)}%')`;
+        return [
+          `upper(entidad) LIKE upper('% ${escapeSoql(clean)}')`,
+          `upper(entidad) LIKE upper('% ${escapeSoql(clean)} %')`,
+          `upper(entidad) LIKE upper('${escapeSoql(clean)} %')`,
+        ];
       });
       entityNameParts.push(...entityConds);
     }

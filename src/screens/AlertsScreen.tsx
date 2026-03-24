@@ -332,15 +332,17 @@ const AlertModal: React.FC<AlertModalProps> = ({
     setSaving(false);
   }, [alert, initialFilters, visible]);
 
+  const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
   const filteredDepartments = deptSearchText
     ? departments.filter((d) =>
-        d.toLowerCase().includes(deptSearchText.toLowerCase()),
+        normalize(d).includes(normalize(deptSearchText)),
       )
     : departments;
 
   const filteredMunicipalities = muniSearchText
     ? municipalities.filter((m) =>
-        m.toLowerCase().includes(muniSearchText.toLowerCase()),
+        normalize(m).includes(normalize(muniSearchText)),
       )
     : municipalities;
 

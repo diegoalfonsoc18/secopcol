@@ -145,21 +145,23 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
     }
   }, [selectedDepartamento, selectedTipos]);
 
+  const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
   const filteredDepartments = deptSearchText
     ? departments.filter((d) =>
-        d.toLowerCase().includes(deptSearchText.toLowerCase())
+        normalize(d).includes(normalize(deptSearchText))
       )
     : departments;
 
   const filteredMunicipalities = muniSearchText
     ? municipalities.filter((m) =>
-        m.toLowerCase().includes(muniSearchText.toLowerCase())
+        normalize(m).includes(normalize(muniSearchText))
       )
     : municipalities;
 
   const filteredEntities = entidadSearchText
     ? entities.filter((e) =>
-        e.toLowerCase().includes(entidadSearchText.toLowerCase())
+        normalize(e).includes(normalize(entidadSearchText))
       )
     : entities;
 

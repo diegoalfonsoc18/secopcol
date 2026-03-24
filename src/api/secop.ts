@@ -36,7 +36,10 @@ const fetchSecop = async (query: string): Promise<SecopProcess[]> => {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      if (response.status === 503 || response.status === 502) {
+        throw new Error("El servidor de SECOP no está disponible en este momento. Intenta de nuevo en unos minutos.");
+      }
+      throw new Error(`Error al conectar con SECOP (${response.status}). Intenta de nuevo.`);
     }
 
     const data = await response.json();
@@ -116,16 +119,26 @@ const buildQuery = (params: {
 
     if (params.municipio) {
       const munis = Array.isArray(params.municipio) ? params.municipio : [params.municipio];
-      const muniLocationParts = munis.map(m => {
+      const muniLocationParts = munis.flatMap(m => {
         const clean = m.replace(/,?\s*D\.?C\.?/gi, "").replace(/,/g, "").replace(/\s+/g, " ").trim();
-        return `upper(ciudad_entidad) LIKE upper('%${escapeSoql(clean)}%')`;
+        const noAccent = removeAccents(clean);
+        // Match exacto para evitar falsos positivos (ej: "Umbita" matcheando "Cumbitara")
+        const parts = [`upper(ciudad_entidad) = upper('${escapeSoql(clean)}')`];
+        if (noAccent !== clean) {
+          parts.push(`upper(ciudad_entidad) = upper('${escapeSoql(noAccent)}')`);
+        }
+        return parts;
       });
       locationParts.push(muniLocationParts.length === 1 ? muniLocationParts[0] : `(${muniLocationParts.join(" OR ")})`);
 
-      // También buscar en nombre de entidad sin tildes (para entidades con ubicación "No Definido")
-      const muniEntityParts = munis.map(m => {
+      // También buscar en nombre de entidad (palabra completa para evitar falsos positivos)
+      const muniEntityParts = munis.flatMap(m => {
         const clean = removeAccents(m.replace(/,?\s*D\.?C\.?/gi, "").replace(/,/g, "").replace(/\s+/g, " ").trim());
-        return `upper(entidad) LIKE upper('%${escapeSoql(clean)}%')`;
+        return [
+          `upper(entidad) LIKE upper('% ${escapeSoql(clean)}')`,
+          `upper(entidad) LIKE upper('% ${escapeSoql(clean)} %')`,
+          `upper(entidad) LIKE upper('${escapeSoql(clean)} %')`,
+        ];
       });
       entityNameParts.push(...muniEntityParts);
     }
@@ -443,11 +456,16 @@ export const getEntitiesByLocation = async (params: {
       );
     }
     if (params.municipio) {
-      locationParts.push(
-        `upper(ciudad_entidad) LIKE upper('%${escapeSoql(params.municipio)}%')`,
-      );
+      const noAccent = removeAccents(params.municipio);
+      const ciudadParts = [`upper(ciudad_entidad) = upper('${escapeSoql(params.municipio)}')`];
+      if (noAccent !== params.municipio) {
+        ciudadParts.push(`upper(ciudad_entidad) = upper('${escapeSoql(noAccent)}')`);
+      }
+      locationParts.push(ciudadParts.length === 1 ? ciudadParts[0] : `(${ciudadParts.join(" OR ")})`);
       entityNameParts.push(
-        `upper(entidad) LIKE upper('%${escapeSoql(removeAccents(params.municipio))}%')`,
+        `upper(entidad) LIKE upper('% ${escapeSoql(noAccent)}')`,
+        `upper(entidad) LIKE upper('% ${escapeSoql(noAccent)} %')`,
+        `upper(entidad) LIKE upper('${escapeSoql(noAccent)} %')`,
       );
     }
     if (locationParts.length === 0) return [];

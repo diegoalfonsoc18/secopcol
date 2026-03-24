@@ -32,7 +32,10 @@ export async function getDepartments(): Promise<string[]> {
       }
     );
 
-    if (!response.ok) return FALLBACK_DEPARTMENTS;
+    if (!response.ok) {
+      console.warn("DIVIPOLA API no disponible, usando datos locales");
+      return FALLBACK_DEPARTMENTS;
+    }
 
     const data: { dpto: string }[] = await response.json();
     departmentsCache = data.map((d) => d.dpto);
@@ -57,13 +60,16 @@ export async function getMunicipalities(
     const response = await fetch(
       `${DIVIPOLA_API}?dpto=${encodeURIComponent(
         departamento
-      )}&$select=nom_mpio&$order=nom_mpio`,
+      )}&$select=nom_mpio&$order=nom_mpio&$limit=500`,
       {
         headers: { Accept: "application/json" },
       }
     );
 
-    if (!response.ok) return FALLBACK_MUNICIPALITIES[departamento] || [];
+    if (!response.ok) {
+      console.warn(`DIVIPOLA API no disponible para ${departamento}, usando datos locales`);
+      return FALLBACK_MUNICIPALITIES[departamento] || [];
+    }
 
     const data: { nom_mpio: string }[] = await response.json();
     const municipalities = data.map((m) => m.nom_mpio);
@@ -157,7 +163,7 @@ const FALLBACK_MUNICIPALITIES: Record<string, string[]> = {
   ATLÁNTICO: ["BARRANQUILLA", "SOLEDAD", "MALAMBO", "SABANALARGA"],
   "BOGOTÁ, D.C.": ["BOGOTÁ, D.C."],
   BOLÍVAR: ["CARTAGENA DE INDIAS", "MAGANGUÉ", "TURBACO"],
-  BOYACÁ: ["TUNJA", "DUITAMA", "SOGAMOSO", "CHIQUINQUIRÁ"],
+  BOYACÁ: ["TUNJA", "DUITAMA", "SOGAMOSO", "CHIQUINQUIRÁ", "PAIPA", "MONIQUIRÁ", "GARAGOA", "GUATEQUE", "VILLA DE LEYVA", "PUERTO BOYACÁ", "SAMACÁ", "NOBSA", "TIBASOSA", "VENTAQUEMADA", "MOTAVITA", "RAMIRIQUÍ", "MIRAFLORES", "SOATÁ", "GUAYATÁ", "TENZA"],
   CALDAS: ["MANIZALES", "LA DORADA", "CHINCHINÁ"],
   CUNDINAMARCA: [
     "SOACHA",
