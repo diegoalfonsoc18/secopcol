@@ -42,7 +42,7 @@ const ESTADOS_VIGENTES = new Set([
   "Aprobado",
 ]);
 
-function buildSecopUrl(filters: AlertFilters, limit = 20): string {
+function buildSecopUrl(filters: AlertFilters, limit = 20, publishedAfter?: string): string {
   const conditions: string[] = [];
 
   // Ubicación: combinar dept + municipio para incluir entidades con "No Definido"
@@ -121,6 +121,23 @@ function buildSecopUrl(filters: AlertFilters, limit = 20): string {
     );
   }
 
+  // Solo procesos con estados vigentes/abiertos (filtrar en la query, no después)
+  const estadosArr = Array.from(ESTADOS_VIGENTES);
+  const estadosCond = estadosArr.map(e => `estado_del_procedimiento='${escapeSoql(e)}'`);
+  conditions.push(`(${estadosCond.join(" OR ")})`);
+
+  // Solo procesos con fecha de publicación reciente
+  conditions.push("fecha_de_ultima_publicaci IS NOT NULL");
+
+  // Solo procesos publicados después de una fecha específica (creación de alerta, máx 15 días)
+  if (publishedAfter) {
+    const afterDate = new Date(publishedAfter);
+    const yyyy = afterDate.getFullYear();
+    const mm = String(afterDate.getMonth() + 1).padStart(2, "0");
+    const dd = String(afterDate.getDate()).padStart(2, "0");
+    conditions.push(`fecha_de_ultima_publicaci >= '${yyyy}-${mm}-${dd}'`);
+  }
+
   let query = `$limit=${limit}&$order=${encodeURIComponent(
     "fecha_de_ultima_publicaci DESC"
   )}`;
@@ -145,10 +162,11 @@ interface SecopResult {
 }
 
 async function querySecop(
-  filters: AlertFilters
+  filters: AlertFilters,
+  publishedAfter?: string
 ): Promise<SecopResult[]> {
   try {
-    const url = buildSecopUrl(filters);
+    const url = buildSecopUrl(filters, 20, publishedAfter);
     const response = await fetch(url, {
       headers: {
         Accept: "application/json",
@@ -275,15 +293,16 @@ serve(async (req: Request) => {
 
         alertsChecked++;
 
-        // 3. Consultar SECOP con los filtros de la alerta
-        const processes = await querySecop(alert.filters);
+        // 3. Consultar SECOP con los filtros de la alerta (ya filtra estados vigentes en la query)
+        // Solo procesos publicados desde la creación de la alerta, máximo 15 días atrás
+        const alertCreated = new Date(alert.created_at);
+        const fifteenDaysAgo = new Date();
+        fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+        const fromDate = alertCreated > fifteenDaysAgo ? alertCreated : fifteenDaysAgo;
 
-        // Solo considerar procesos con estado vigente/abierto
-        const activeProcesses = processes.filter((p) =>
-          ESTADOS_VIGENTES.has(p.estado_del_procedimiento || "")
-        );
+        const processes = await querySecop(alert.filters, fromDate.toISOString());
 
-        const currentIds = activeProcesses
+        const currentIds = processes
           .map((p) => p.id_del_proceso || "")
           .filter(Boolean);
 
@@ -302,7 +321,7 @@ serve(async (req: Request) => {
           }
 
           // Obtener detalles de los procesos nuevos para el body
-          const newProcesses = activeProcesses.filter(
+          const newProcesses = processes.filter(
             (p) => p.id_del_proceso && newIds.includes(p.id_del_proceso)
           );
           const processLines = newProcesses.slice(0, 3).map(

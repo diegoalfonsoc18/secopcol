@@ -178,6 +178,11 @@ const AlertCard: React.FC<AlertCardProps> = ({
               numberOfLines={1}>
               {alert.name}
             </Text>
+            {alert.last_results_count > 0 && alert.is_active && (
+              <View style={[styles.alertBadge, { backgroundColor: colors.accent }]}>
+                <Text style={styles.alertBadgeText}>{alert.last_results_count}</Text>
+              </View>
+            )}
           </View>
           <Switch
             value={alert.is_active}
@@ -1648,6 +1653,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   alertName: { ...typography.callout, fontWeight: "600", flex: 1 },
+  alertBadge: {
+    minWidth: scale(22),
+    height: scale(22),
+    borderRadius: scale(11),
+    paddingHorizontal: scale(6),
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  alertBadgeText: {
+    color: "#FFFFFF",
+    fontSize: scale(12),
+    fontWeight: "700",
+  },
   alertFilters: { ...typography.subhead, marginBottom: spacing.sm },
 
   // Delete action

@@ -5,7 +5,7 @@ import * as TaskManager from "expo-task-manager";
 import * as BackgroundTask from "expo-background-task";
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getAlerts } from "./alertService";
+import { getAlerts, updateAlertResults } from "./alertService";
 import { advancedSearch } from "../api/secop";
 import { getObligations, checkOverdue, OBLIGATION_TYPE_CONFIG } from "./obligationService";
 
@@ -154,8 +154,13 @@ export async function checkAlertsForUser(userId: string): Promise<number> {
         // Guardar fecha del último chequeo local para no traer procesos viejos
         await AsyncStorage.setItem(`${LAST_LOCAL_CHECK_KEY}-${alert.id}`, now.toISOString());
 
-        // NO actualizar last_check ni last_results_ids en Supabase desde el cliente.
-        // Solo el servidor (edge function via cron) debe actualizar estos campos.
+        // Actualizar last_check y last_results_ids en Supabase para evitar
+        // notificaciones duplicadas y re-chequeos innecesarios
+        await updateAlertResults(alert.id, {
+          last_check: now.toISOString(),
+          last_results_count: currentIds.length,
+          last_results_ids: currentIds.slice(0, 100),
+        }).catch(() => {});
       } catch (error) {
         if (__DEV__) { console.error(`Error checking alert ${alert.id}:`, error); }
       }

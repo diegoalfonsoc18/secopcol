@@ -16,6 +16,19 @@ import {
   checkAlertsForUser,
 } from "../services/alertBackgroundService";
 
+// Mínimo 5 minutos entre chequeos para evitar duplicados
+const MIN_CHECK_INTERVAL_MS = 5 * 60 * 1000;
+let lastCheckTimestamp = 0;
+
+function throttledCheck(userId: string) {
+  const now = Date.now();
+  if (now - lastCheckTimestamp < MIN_CHECK_INTERVAL_MS) return;
+  lastCheckTimestamp = now;
+  checkAlertsForUser(userId).catch((error) => {
+    if (__DEV__) { console.error("Alert check failed:", error); }
+  });
+}
+
 export function useNotificationSetup() {
   const { user, savePushToken, preferences } = useAuth();
   const initialized = useRef(false);
@@ -34,8 +47,6 @@ export function useNotificationSetup() {
         }
 
         // 2. Obtener y guardar push token (siempre actualizar para mantener frescura)
-        // IMPORTANTE: await completo antes de registrar background task
-        // para que el cron job encuentre el token en la DB
         let tokenSaved = false;
         try {
           const projectId =
@@ -50,7 +61,6 @@ export function useNotificationSetup() {
             tokenSaved = true;
           }
         } catch (error) {
-          // Push token puede fallar en desarrollo/simulador, no es critico
           if (__DEV__) { console.log("Could not get push token:", error); }
         }
 
@@ -67,10 +77,8 @@ export function useNotificationSetup() {
         // 5. Programar recordatorio diario como fallback (9:00 AM)
         await scheduleBackgroundCheck();
 
-        // 6. Verificacion inmediata al abrir la app
-        checkAlertsForUser(user.id).catch((error) => {
-          if (__DEV__) { console.error("Initial alert check failed:", error); }
-        });
+        // 6. Verificacion inmediata al abrir la app (con throttle)
+        throttledCheck(user.id);
 
         initialized.current = true;
       } catch (error) {
@@ -90,10 +98,7 @@ export function useNotificationSetup() {
         appState.current.match(/inactive|background/) &&
         nextAppState === "active"
       ) {
-        // La app volvio a foreground — verificar alertas inmediatamente
-        checkAlertsForUser(user.id).catch((error) => {
-          if (__DEV__) { console.error("Resume alert check failed:", error); }
-        });
+        throttledCheck(user.id);
       }
       appState.current = nextAppState;
     };
@@ -109,6 +114,7 @@ export function useNotificationSetup() {
   useEffect(() => {
     if (!user) {
       initialized.current = false;
+      lastCheckTimestamp = 0;
     }
   }, [user]);
 }
