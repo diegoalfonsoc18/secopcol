@@ -196,13 +196,16 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
 
       let allResults: SecopProcess[] = [];
 
+      // Si no se selecciona estado, por defecto "Publicado" y máximo 30 días
+      const useDefaultEstado = selectedEstados.length === 0;
       const baseParams = {
         departamento: selectedDepartamento || undefined,
         municipio: selectedMunicipios.length > 0 ? selectedMunicipios : undefined,
         entidad: selectedEntidad || undefined,
         entidadSearch: entidadInput.trim() || undefined,
         modalidad: modalidadValue,
-        estadoProcedimiento: selectedEstados.length > 0 ? selectedEstados : undefined,
+        estadoProcedimiento: useDefaultEstado ? ["Publicado"] : selectedEstados,
+        ...(useDefaultEstado && { recentDays: 30 }),
       };
 
       const results = await advancedSearch({
