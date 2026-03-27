@@ -68,15 +68,12 @@ export async function checkAlertsForUser(userId: string): Promise<number> {
           }
         }
 
-        // Solo procesos publicados desde el último chequeo local o creación de la alerta
+        // Buscar procesos desde la creación de la alerta (máx 15 días atrás)
+        // La deduplicación se hace con last_results_ids + localNotified, no con fechas
         const alertCreated = new Date(alert.created_at);
-        const lastLocalCheckRaw = await AsyncStorage.getItem(`${LAST_LOCAL_CHECK_KEY}-${alert.id}`);
-        // Usar el más reciente entre: último chequeo local, creación de alerta, o máximo 15 días
         const fifteenDaysAgo = new Date();
         fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
-        const lastLocalCheck = lastLocalCheckRaw ? new Date(lastLocalCheckRaw) : null;
-        const candidates = [alertCreated, fifteenDaysAgo, ...(lastLocalCheck ? [lastLocalCheck] : [])];
-        const fromDate = candidates.reduce((latest, d) => d > latest ? d : latest);
+        const fromDate = alertCreated > fifteenDaysAgo ? alertCreated : fifteenDaysAgo;
 
         const processes = await advancedSearch({
           keyword: alert.filters.keyword,
@@ -150,9 +147,6 @@ export async function checkAlertsForUser(userId: string): Promise<number> {
           const trimmed = allNotified.slice(-200);
           await AsyncStorage.setItem(`${NOTIFIED_IDS_KEY}-${alert.id}`, JSON.stringify(trimmed));
         }
-
-        // Guardar fecha del último chequeo local para no traer procesos viejos
-        await AsyncStorage.setItem(`${LAST_LOCAL_CHECK_KEY}-${alert.id}`, now.toISOString());
 
         // Actualizar last_check y last_results_ids en Supabase para evitar
         // notificaciones duplicadas y re-chequeos innecesarios
