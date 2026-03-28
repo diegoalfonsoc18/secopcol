@@ -7,7 +7,7 @@ import { Alert, AlertFilters, AlertHistory } from "../types/database";
 // ============================================
 // CONSTANTES
 // ============================================
-export const ALERT_FREQUENCY_HOURS = 5; // Frecuencia fija de notificaciones
+export const ALERT_FREQUENCY_HOURS = 2; // Frecuencia fija de notificaciones
 
 // ============================================
 // OBTENER ALERTAS
