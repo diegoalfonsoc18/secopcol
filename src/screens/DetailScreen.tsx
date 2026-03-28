@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Linking,
   ScrollView,
@@ -782,7 +782,7 @@ _Enviado desde SECOP Colombia App_`;
               borderBottomColor: colors.separatorLight,
             }}>
             <TouchableOpacity onPress={() => setShowWebView(false)}>
-              <Ionicons name="close" size={28} color={colors.text} />
+              <Ionicons name="close" size={28} color={colors.textPrimary} />
             </TouchableOpacity>
             <Text
               style={{
@@ -790,7 +790,7 @@ _Enviado desde SECOP Colombia App_`;
                 textAlign: "center",
                 fontSize: scale(15),
                 fontWeight: "600",
-                color: colors.text,
+                color: colors.textPrimary,
                 marginHorizontal: spacing.sm,
               }}
               numberOfLines={1}>
