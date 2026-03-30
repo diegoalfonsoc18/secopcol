@@ -14,9 +14,6 @@ import * as Linking from "expo-linking";
 import * as Notifications from "expo-notifications";
 import * as NavigationBar from "expo-navigation-bar";
 
-// Background task: debe importarse a nivel modulo para que
-// TaskManager.defineTask() se ejecute antes del render
-import "./src/services/alertBackgroundService";
 import {
   HomeIcon,
   SearchIcon,
