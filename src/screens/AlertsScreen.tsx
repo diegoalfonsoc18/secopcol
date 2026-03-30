@@ -1611,7 +1611,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
   },
-  title: { ...typography.largeTitle, fontWeight: "800", letterSpacing: -0.5 },
+  title: { fontSize: scale(28), fontWeight: "800", letterSpacing: -0.5 },
   addButton: {
     width: scale(40),
     height: scale(40),
@@ -1624,19 +1624,18 @@ const styles = StyleSheet.create({
 
   // Alert Card
   alertCard: {
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
     padding: spacing.lg,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
     ...Platform.select({
       ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
+        shadowColor: "#4A6741",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
       },
       android: {
-        borderWidth: 1,
-        borderColor: "rgba(0,0,0,0.06)",
+        elevation: 2,
       },
     }),
   },
@@ -1672,14 +1671,14 @@ const styles = StyleSheet.create({
   deleteAction: {
     justifyContent: "center",
     alignItems: "flex-end",
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   deleteButton: {
     justifyContent: "center",
     alignItems: "center",
     width: scale(90),
     height: "100%",
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
   },
   deleteText: {
     ...typography.caption1,
@@ -1716,16 +1715,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
     paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.lg,
+    borderRadius: borderRadius.full,
     marginTop: spacing.xxl,
   },
-  emptyButtonText: { color: "#FFFFFF", ...typography.callout, fontWeight: "600" },
+  emptyButtonText: { color: "#FFFFFF", ...typography.callout, fontWeight: "700" },
 
   // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "flex-end",
   },
   modalContent: {
@@ -1739,7 +1738,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: spacing.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(0,0,0,0.1)",
+    borderBottomColor: "rgba(0,0,0,0.08)",
   },
   modalCancel: { ...typography.callout },
   modalTitle: { ...typography.headline },
@@ -1748,17 +1747,17 @@ const styles = StyleSheet.create({
 
   // Inputs
   inputGroup: { marginBottom: spacing.xl },
-  inputLabel: { ...typography.subhead, fontWeight: "500", marginBottom: spacing.sm },
+  inputLabel: { ...typography.subhead, fontWeight: "600", marginBottom: spacing.sm },
   input: {
-    height: 42,
-    borderRadius: borderRadius.md,
+    height: 44,
+    borderRadius: borderRadius.xl,
     paddingHorizontal: spacing.lg,
     ...typography.callout,
     borderWidth: 1,
   },
   sectionTitle: {
     ...typography.title3,
-    fontWeight: "600",
+    fontWeight: "700",
     marginBottom: spacing.md,
     marginTop: spacing.sm,
   },
@@ -1771,10 +1770,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.xl,
     paddingHorizontal: spacing.md,
     gap: spacing.xs,
-    height: 42,
+    height: 44,
     borderWidth: 1,
   },
   locationText: { fontSize: scale(14), flex: 1 },
@@ -1782,7 +1781,7 @@ const styles = StyleSheet.create({
   // Chips
   chipsScroll: { marginBottom: 0 },
   chip: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     backgroundColor: "transparent",
     borderRadius: borderRadius.full,
@@ -1815,7 +1814,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.md,
     padding: spacing.lg,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
     marginTop: spacing.xxl,
     marginBottom: spacing.xl,
   },
@@ -1833,10 +1832,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginHorizontal: spacing.lg,
-    marginVertical: spacing.md,
+    marginBottom: spacing.md,
     paddingHorizontal: spacing.md,
-    height: 42,
-    borderRadius: borderRadius.md,
+    height: 44,
+    borderRadius: borderRadius.xl,
     gap: spacing.sm,
   },
   searchInputSmall: { ...typography.callout, flex: 1 },
@@ -1844,7 +1843,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
   listItemText: { ...typography.callout },
   listContainer: {
@@ -1856,8 +1856,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  // New Processes Modal
-  // Alert Results Overlay (no usa Modal, se queda en la misma Activity)
+  // Alert Results Overlay
   alertResultsOverlay: {
     position: "absolute",
     bottom: 0,
@@ -1868,6 +1867,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: borderRadius.xl,
   },
 
+  // New Processes Modal
   newProcessesModalContent: {
     borderTopLeftRadius: borderRadius.xl,
     borderTopRightRadius: borderRadius.xl,
@@ -1879,7 +1879,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: spacing.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(0,0,0,0.1)",
+    borderBottomColor: "rgba(0,0,0,0.08)",
   },
   newProcessesTitleRow: {
     flexDirection: "row",
@@ -1913,7 +1913,7 @@ const styles = StyleSheet.create({
   },
   newProcessCard: {
     padding: spacing.lg,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
     marginBottom: spacing.md,
   },
   newProcessCardHeader: {

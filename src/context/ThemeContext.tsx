@@ -26,20 +26,20 @@ interface ThemeContextType {
 // ============================================
 export const lightColors = {
   // Backgrounds
-  background: "#F2F2F7",
+  background: "#F4F5F0",
   backgroundSecondary: "#FFFFFF",
-  backgroundTertiary: "#E5E5EA",
+  backgroundTertiary: "#EAEBE6",
   backgroundFour: "#232323",
-  backgroundFive: "#f8faed",
+  backgroundFive: "#f0f2eb",
 
   // Text
-  textPrimary: "#000000",
-  textSecondary: "#6B6B6B",
-  textTertiary: "#8E8E93",
+  textPrimary: "#1A1C1E",
+  textSecondary: "#5F6368",
+  textTertiary: "#8E9196",
 
   // Accent
   accent: "#06923E",
-  accentLight: "rgba(0, 122, 255, 0.12)",
+  accentLight: "rgba(6, 146, 62, 0.10)",
 
   // Status
   success: "#34C759",
@@ -50,21 +50,21 @@ export const lightColors = {
   dangerLight: "rgba(255, 59, 48, 0.12)",
 
   // Separators
-  separator: "#C6C6C8",
-  separatorLight: "#E5E5EA",
+  separator: "#D1D3CE",
+  separatorLight: "#E8E9E4",
 
   // Tab Bar
   tabBarBackground: "rgba(255, 255, 255, 0.94)",
-  tabBarBorder: "rgba(0, 0, 0, 0.1)",
+  tabBarBorder: "rgba(0, 0, 0, 0.08)",
 
   // Glass
-  glassCardBackground: "rgba(255, 255, 255, 0.65)",
-  glassOverlayBackground: "rgba(255, 255, 255, 0.45)",
-  glassBadgeBackground: "rgba(255, 255, 255, 0.50)",
-  glassHeaderBackground: "rgba(242, 242, 247, 0.75)",
+  glassCardBackground: "rgba(255, 255, 255, 0.70)",
+  glassOverlayBackground: "rgba(255, 255, 255, 0.50)",
+  glassBadgeBackground: "rgba(255, 255, 255, 0.55)",
+  glassHeaderBackground: "rgba(244, 245, 240, 0.80)",
 
   // Button
-  buttonBackground: "#ffff",
+  buttonBackground: "#FFFFFF",
 };
 
 export const darkColors = {
@@ -81,7 +81,7 @@ export const darkColors = {
 
   // Accent
   accent: "#06923E",
-  accentLight: "rgba(10, 132, 255, 0.2)",
+  accentLight: "rgba(6, 146, 62, 0.15)",
 
   // Status
   success: "#30D158",

@@ -2,6 +2,7 @@ import React, { useRef, useCallback, useState } from "react";
 import {
   Animated,
   FlatList,
+  Platform,
   StyleSheet,
   Text,
   View,
@@ -330,7 +331,7 @@ const createStyles = (colors: any) =>
       gap: spacing.md,
     },
     title: {
-      ...typography.largeTitle,
+      fontSize: scale(28),
       fontWeight: "800",
       color: colors.textPrimary,
       letterSpacing: -0.5,
@@ -342,6 +343,15 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.backgroundSecondary,
       justifyContent: "center",
       alignItems: "center",
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.06,
+          shadowRadius: 4,
+        },
+        android: { elevation: 1 },
+      }),
     },
     countBadge: {
       backgroundColor: colors.accent,
@@ -354,7 +364,7 @@ const createStyles = (colors: any) =>
     countBadgeText: {
       ...typography.subhead,
       fontWeight: "600",
-      color: colors.backgroundSecondary,
+      color: "#FFFFFF",
     },
     subtitle: {
       ...typography.subhead,
@@ -377,14 +387,14 @@ const createStyles = (colors: any) =>
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.accentLight,
-      borderRadius: borderRadius.md,
+      borderRadius: borderRadius.xl,
       padding: spacing.lg,
       gap: spacing.md,
     },
     infoIconContainer: {
       width: scale(40),
       height: scale(40),
-      borderRadius: borderRadius.sm,
+      borderRadius: scale(20),
       backgroundColor: colors.backgroundSecondary,
       justifyContent: "center",
       alignItems: "center",
@@ -406,14 +416,14 @@ const createStyles = (colors: any) =>
     // Favorite item
     favoriteItem: {
       backgroundColor: colors.background,
-      marginBottom: spacing.md,
+      marginBottom: spacing.sm,
     },
 
     // Delete action
     deleteAction: {
       justifyContent: "center",
       alignItems: "flex-end",
-      marginBottom: spacing.md,
+      marginBottom: spacing.sm,
     },
     deleteButton: {
       backgroundColor: colors.danger,
@@ -421,11 +431,11 @@ const createStyles = (colors: any) =>
       alignItems: "center",
       width: scale(90),
       height: "100%",
-      borderRadius: borderRadius.md,
+      borderRadius: borderRadius.xl,
     },
     deleteText: {
       ...typography.caption1,
-      color: colors.backgroundSecondary,
+      color: "#FFFFFF",
       fontWeight: "600",
       marginTop: spacing.xs,
     },
@@ -441,10 +451,19 @@ const createStyles = (colors: any) =>
       width: scale(96),
       height: scale(96),
       borderRadius: scale(48),
-      backgroundColor: colors.backgroundTertiary,
+      backgroundColor: colors.backgroundSecondary,
       justifyContent: "center",
       alignItems: "center",
       marginBottom: spacing.lg,
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 8,
+        },
+        android: { elevation: 1 },
+      }),
     },
     emptyTitle: {
       ...typography.title3,
@@ -465,7 +484,7 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.warningLight,
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.md,
-      borderRadius: borderRadius.md,
+      borderRadius: borderRadius.xl,
       gap: spacing.sm,
       marginBottom: spacing.xl,
     },
@@ -479,7 +498,7 @@ const createStyles = (colors: any) =>
       alignItems: "center",
       backgroundColor: colors.accent,
       paddingHorizontal: spacing.xl,
-      paddingVertical: spacing.md,
+      paddingVertical: spacing.lg,
       borderRadius: borderRadius.full,
       gap: spacing.sm,
     },
@@ -489,8 +508,8 @@ const createStyles = (colors: any) =>
     },
     exploreButtonText: {
       ...typography.subhead,
-      fontWeight: "600",
-      color: colors.backgroundSecondary,
+      fontWeight: "700",
+      color: "#FFFFFF",
     },
   });
 

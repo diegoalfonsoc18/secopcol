@@ -236,10 +236,11 @@ const createStyles = (colors: any) =>
       borderRadius: borderRadius.full,
     },
     title: {
-      fontSize: 26,
-      fontWeight: "700",
+      fontSize: 28,
+      fontWeight: "800",
       color: colors.textPrimary,
       marginBottom: spacing.sm,
+      letterSpacing: -0.5,
     },
     subtitle: {
       fontSize: 15,
@@ -258,7 +259,7 @@ const createStyles = (colors: any) =>
     checkbox: {
       width: 22,
       height: 22,
-      borderRadius: 6,
+      borderRadius: 11,
       borderWidth: 2,
       borderColor: colors.separator,
       justifyContent: "center",
@@ -287,9 +288,9 @@ const createStyles = (colors: any) =>
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.backgroundSecondary,
-      borderRadius: borderRadius.md,
+      borderRadius: borderRadius.xl,
       padding: spacing.lg,
-      marginBottom: spacing.md,
+      marginBottom: spacing.sm,
       borderWidth: 2,
       borderColor: "transparent",
       gap: spacing.md,
@@ -300,7 +301,7 @@ const createStyles = (colors: any) =>
     typeIcon: {
       width: 48,
       height: 48,
-      borderRadius: borderRadius.md,
+      borderRadius: 24,
       justifyContent: "center",
       alignItems: "center",
     },
@@ -336,7 +337,7 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.background,
       paddingHorizontal: spacing.xl,
       paddingTop: spacing.md,
-      borderTopWidth: 1,
+      borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: colors.separatorLight,
     },
     selectionInfo: {
@@ -355,17 +356,18 @@ const createStyles = (colors: any) =>
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: colors.accent,
-      borderRadius: borderRadius.md,
-      height: 52,
+      borderRadius: borderRadius.full,
+      height: 56,
       gap: spacing.sm,
     },
     continueButtonDisabled: {
       backgroundColor: colors.textTertiary,
     },
     continueButtonText: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.backgroundSecondary,
+      fontSize: 17,
+      fontWeight: "700",
+      color: "#FFFFFF",
+      letterSpacing: -0.2,
     },
   });
 

@@ -3,6 +3,7 @@ import {
   Animated,
   BackHandler,
   Dimensions,
+  Platform,
   RefreshControl,
   StyleSheet,
   Text,
@@ -514,39 +515,31 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       >
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.title}>Inicio</Text>
+            <Animated.View style={{ opacity: subtitleOpacity }}>
+              <Text style={styles.greeting}>
+                {user?.name
+                  ? `Hola, ${user.name.split(" ")[0]}`
+                  : "Bienvenido"}
+              </Text>
+            </Animated.View>
           </View>
 
-          <GlassWrapper
-            variant="badge"
-            style={styles.headerButton}
-            fallbackColor={colors.accent + "15"}
-          >
-            <TouchableOpacity
-              style={{ width: "100%", height: "100%", justifyContent: "center", alignItems: "center" }}
-              onPress={() => navigation.navigate("AppSettings")}>
-              <Ionicons name="settings-outline" size={22} color={colors.accent} />
-            </TouchableOpacity>
-          </GlassWrapper>
-        </View>
-
-        <Animated.View style={{ opacity: subtitleOpacity }}>
-          <View style={styles.subtitleRow}>
-            <Text style={styles.subtitle}>
-              {user?.name
-                ? `Hola, ${user.name.split(" ")[0]}`
-                : "Contratacion publica"}
-            </Text>
+          <View style={styles.headerRight}>
             {(userMunicipio || userDepartamento) && (
               <View style={styles.locationBadge}>
-                <Ionicons name="location" size={12} color={colors.success} />
+                <Ionicons name="location" size={12} color={colors.accent} />
                 <Text style={styles.locationText}>
                   {userMunicipio || userDepartamento}
                 </Text>
               </View>
             )}
+            <TouchableOpacity
+              style={[styles.headerButton, { backgroundColor: colors.backgroundSecondary }]}
+              onPress={() => navigation.navigate("AppSettings")}>
+              <Ionicons name="settings-outline" size={20} color={colors.textPrimary} />
+            </TouchableOpacity>
           </View>
-        </Animated.View>
+        </View>
       </View>
 
       {/* Contenido */}
@@ -585,27 +578,18 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               .map((card, index) => (
                 <ScaleIn key={card.key} delay={index * 80} style={{ flex: 1 }}>
                   <AnimatedPressable
-                    style={[
-                      styles.statCard,
-                      {
-                        backgroundColor: card.bgColor,
-                      },
-                    ]}
+                    style={styles.statCard}
                     onPress={card.onPress}
                     scaleValue={0.95}>
-                    <Text style={[styles.statCount, { color: card.color }]}>
+                    <View style={[styles.statIconCircle, { backgroundColor: card.bgColor }]}>
+                      <Ionicons name={card.icon} size={18} color={card.color} />
+                    </View>
+                    <Text style={[styles.statCount, { color: colors.textPrimary }]}>
                       {card.count}
                     </Text>
-                    <View style={styles.statCardFooter}>
-                      <Ionicons
-                        name={card.icon}
-                        size={14}
-                        color={colors.textTertiary}
-                      />
-                      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                        {card.label}
-                      </Text>
-                    </View>
+                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                      {card.label}
+                    </Text>
                   </AnimatedPressable>
                 </ScaleIn>
               ))}
@@ -615,14 +599,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           {/* SECCION 2: Categorías            */}
           {/* ================================ */}
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionHeaderLeft}>
-              <Ionicons
-                name="grid-outline"
-                size={18}
-                color={colors.accent}
-              />
-              <Text style={styles.sectionTitle}>Categorías</Text>
-            </View>
+            <Text style={styles.sectionTitle}>Categorías</Text>
             <TouchableOpacity
               onPress={() => setShowCategorySelector(true)}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -639,19 +616,13 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               return (
                 <AnimatedPressable
                   key={type.id}
-                  style={styles.categoryItem}
+                  style={[styles.categoryChip, { backgroundColor: colors.backgroundSecondary }]}
                   onPress={() =>
                     navigateToSearch({ tipoContrato: type.label })
                   }>
-                  <View
-                    style={[
-                      styles.categoryIconCircle,
-                      { backgroundColor: `${typeColor}15` },
-                    ]}>
-                    <type.CustomIcon size={24} color={typeColor} />
-                  </View>
+                  <type.CustomIcon size={16} color={typeColor} />
                   <Text
-                    style={[styles.categoryLabel, { color: colors.textSecondary }]}
+                    style={[styles.categoryChipLabel, { color: colors.textPrimary }]}
                     numberOfLines={1}>
                     {type.label}
                   </Text>
@@ -665,16 +636,8 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           {/* ================================ */}
           {filteredProcesses.length > 0 && (
             <View style={styles.processSection}>
-              <View style={styles.sectionSeparator} />
               <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeaderLeft}>
-                  <Ionicons
-                    name="time-outline"
-                    size={18}
-                    color={colors.accent}
-                  />
-                  <Text style={styles.sectionTitle}>Recientes</Text>
-                </View>
+                <Text style={styles.sectionTitle}>Recientes</Text>
                 <TouchableOpacity
                   onPress={() => navigateToSearch()}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -698,16 +661,8 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           {/* ================================ */}
           {upcomingObligations.length > 0 && (
             <View style={styles.processSection}>
-              <View style={styles.sectionSeparator} />
               <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeaderLeft}>
-                  <Ionicons
-                    name="calendar-outline"
-                    size={18}
-                    color="#5856D6"
-                  />
-                  <Text style={styles.sectionTitle}>Obligaciones</Text>
-                </View>
+                <Text style={styles.sectionTitle}>Obligaciones</Text>
                 <TouchableOpacity
                   onPress={() => navigation.navigate("Obligations")}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -787,53 +742,66 @@ const createStyles = (colors: any) =>
     },
     header: {
       paddingHorizontal: spacing.lg,
-      paddingBottom: spacing.sm,
+      paddingBottom: spacing.md,
     },
     headerRow: {
       flexDirection: "row",
-      alignItems: "center",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+    },
+    headerRight: {
+      alignItems: "flex-end",
+      gap: spacing.sm,
+      paddingTop: spacing.xs,
     },
     headerButton: {
       width: scale(40),
       height: scale(40),
       borderRadius: scale(20),
-      backgroundColor: "transparent",
       justifyContent: "center",
       alignItems: "center",
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.06,
+          shadowRadius: 4,
+        },
+        android: {
+          elevation: 1,
+        },
+      }),
+    },
+    greeting: {
+      fontSize: scale(14),
+      color: colors.textSecondary,
+      fontWeight: "500",
+      marginBottom: scale(2),
     },
     title: {
-      fontSize: scale(34),
+      fontSize: scale(28),
       fontWeight: "800",
       color: colors.textPrimary,
       letterSpacing: -0.5,
-    },
-    subtitle: {
-      fontSize: scale(15),
-      color: colors.textSecondary,
-    },
-    subtitleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginTop: spacing.xs,
-      gap: spacing.md,
+      lineHeight: scale(34),
     },
     locationBadge: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "rgba(48, 209, 88, 0.12)",
+      backgroundColor: colors.accentLight,
       paddingHorizontal: spacing.sm,
       paddingVertical: 4,
       borderRadius: borderRadius.full,
       gap: 4,
     },
     locationText: {
-      fontSize: scale(12),
-      color: colors.success,
+      fontSize: scale(11),
+      color: colors.accent,
       fontWeight: "600",
     },
     scrollContent: {
       paddingHorizontal: spacing.lg,
-      paddingTop: spacing.md,
+      paddingTop: spacing.sm,
     },
 
     // Stats
@@ -844,69 +812,81 @@ const createStyles = (colors: any) =>
     },
     statCard: {
       flex: 1,
+      backgroundColor: colors.backgroundSecondary,
       padding: spacing.md,
-      borderRadius: borderRadius.md,
-    },
-    statCardFooter: {
-      flexDirection: "row",
+      borderRadius: borderRadius.xl,
       alignItems: "center",
-      gap: 4,
-      marginTop: spacing.xs,
+      ...Platform.select({
+        ios: {
+          shadowColor: "#4A6741",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 8,
+        },
+        android: {
+          elevation: 1,
+        },
+      }),
+    },
+    statIconCircle: {
+      width: scale(36),
+      height: scale(36),
+      borderRadius: scale(18),
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: spacing.sm,
     },
     statCount: {
-      fontSize: scale(32),
+      fontSize: scale(24),
       fontWeight: "800",
-      letterSpacing: -1,
+      letterSpacing: -0.5,
       marginBottom: 2,
     },
     statLabel: {
-      fontSize: scale(12),
+      fontSize: scale(11),
       fontWeight: "500",
+      textAlign: "center",
     },
 
     // Categories
     categoriesRow: {
       paddingVertical: spacing.sm,
-      gap: spacing.lg,
+      gap: spacing.sm,
     },
-    categoryItem: {
+    categoryChip: {
+      flexDirection: "row",
       alignItems: "center",
-      width: scale(72),
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.full,
+      gap: spacing.sm,
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.04,
+          shadowRadius: 4,
+        },
+        android: {
+          elevation: 1,
+        },
+      }),
     },
-    categoryIconCircle: {
-      width: scale(56),
-      height: scale(56),
-      borderRadius: scale(28),
-      justifyContent: "center",
-      alignItems: "center",
-      marginBottom: spacing.xs,
-    },
-    categoryLabel: {
-      fontSize: scale(11),
+    categoryChipLabel: {
+      fontSize: scale(13),
       fontWeight: "600",
-      textAlign: "center",
     },
 
-    // Section separators & headers
-    sectionSeparator: {
-      height: 1,
-      backgroundColor: colors.separatorLight,
-      marginTop: spacing.lg,
-    },
+    // Section headers
     sectionHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginTop: spacing.md,
+      marginTop: spacing.xl,
       marginBottom: spacing.md,
     },
-    sectionHeaderLeft: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.sm,
-    },
     sectionTitle: {
-      fontSize: scale(18),
+      fontSize: scale(20),
       fontWeight: "700",
       color: colors.textPrimary,
     },
@@ -953,7 +933,7 @@ const createStyles = (colors: any) =>
       flexDirection: "row",
       alignItems: "center",
       marginTop: spacing.lg,
-      paddingHorizontal: spacing.lg,
+      paddingHorizontal: spacing.xl,
       paddingVertical: spacing.md,
       borderRadius: borderRadius.full,
       gap: spacing.sm,

@@ -477,7 +477,7 @@ export const SearchScreen: React.FC<{ navigation: any; route?: any }> = ({ navig
               style={{ marginRight: spacing.xs }}
             />
             <TextInput
-              style={[styles.entidadInputText, { color: colors.text }]}
+              style={[styles.entidadInputText, { color: colors.textPrimary }]}
               placeholder="Buscar entidad por nombre o NIT"
               placeholderTextColor={colors.textTertiary}
               value={entidadInput}
@@ -926,58 +926,86 @@ const createStyles = (colors: any) =>
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: spacing.md,
+      marginBottom: spacing.sm,
     },
-    title: { fontSize: scale(34), fontWeight: "800", color: colors.textPrimary, letterSpacing: -0.5 },
+    title: {
+      fontSize: scale(28),
+      fontWeight: "800",
+      color: colors.textPrimary,
+      letterSpacing: -0.5,
+    },
     clearButton: {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.xs,
+      backgroundColor: colors.accentLight,
+      borderRadius: borderRadius.full,
     },
     clearButtonText: {
-      fontSize: scale(14),
+      fontSize: scale(13),
       fontWeight: "600",
       color: colors.accent,
     },
     locationRow: {
       flexDirection: "row",
       gap: spacing.sm,
-      marginBottom: spacing.md,
+      marginBottom: spacing.sm,
     },
     locationButton: {
       flex: 1,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: "transparent",
-      borderRadius: borderRadius.md,
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: borderRadius.xl,
       paddingHorizontal: spacing.md,
       gap: spacing.xs,
-      height: 42,
-      borderWidth: 1,
-      borderColor: colors.separatorLight,
+      height: 44,
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.04,
+          shadowRadius: 4,
+        },
+        android: { elevation: 1 },
+      }),
     },
     entidadButton: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "transparent",
-      borderRadius: borderRadius.md,
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: borderRadius.xl,
       paddingHorizontal: spacing.md,
       gap: spacing.xs,
-      height: 42,
-      borderWidth: 1,
-      borderColor: colors.separatorLight,
-      marginBottom: spacing.md,
+      height: 44,
+      marginBottom: spacing.sm,
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.04,
+          shadowRadius: 4,
+        },
+        android: { elevation: 1 },
+      }),
     },
     entidadInputContainer: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "transparent",
-      borderRadius: borderRadius.md,
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: borderRadius.xl,
       paddingHorizontal: spacing.md,
-      height: 42,
-      borderWidth: 1,
-      borderColor: colors.separatorLight,
+      height: 44,
       marginBottom: spacing.md,
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.04,
+          shadowRadius: 4,
+        },
+        android: { elevation: 1 },
+      }),
     },
     entidadInputText: {
       flex: 1,
@@ -986,11 +1014,12 @@ const createStyles = (colors: any) =>
     },
     locationButtonActive: {
       backgroundColor: colors.accentLight,
+      borderWidth: 1.5,
       borderColor: colors.accent,
     },
-    locationButtonDisabled: { opacity: 0.5 },
+    locationButtonDisabled: { opacity: 0.4 },
     locationText: { flex: 1, fontSize: scale(14), color: colors.textSecondary },
-    locationTextActive: { color: colors.accent, fontWeight: "500" },
+    locationTextActive: { color: colors.accent, fontWeight: "600" },
     sectionContainer: {
       marginBottom: spacing.md,
     },
@@ -1002,8 +1031,8 @@ const createStyles = (colors: any) =>
     },
     sectionLabel: {
       fontSize: scale(13),
-      fontWeight: "600",
-      color: colors.textSecondary,
+      fontWeight: "700",
+      color: colors.textPrimary,
       marginBottom: spacing.sm,
     },
     clearSectionText: {
@@ -1013,15 +1042,13 @@ const createStyles = (colors: any) =>
     },
     chipsScroll: { marginBottom: 0 },
     chip: {
-      paddingHorizontal: spacing.md,
+      paddingHorizontal: spacing.lg,
       paddingVertical: spacing.sm,
-      backgroundColor: "transparent",
+      backgroundColor: colors.backgroundSecondary,
       borderRadius: borderRadius.full,
       marginRight: spacing.sm,
-      borderWidth: 1,
-      borderColor: colors.separatorLight,
     },
-    chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+    chipActive: { backgroundColor: colors.accent },
     chipText: { fontSize: scale(13), color: colors.textSecondary, fontWeight: "500" },
     chipTextActive: { color: "#FFFFFF" },
     tiposChipsRow: {
@@ -1043,7 +1070,7 @@ const createStyles = (colors: any) =>
     buttonsRow: {
       flexDirection: "row",
       gap: spacing.sm,
-      marginTop: spacing.sm,
+      marginTop: spacing.md,
     },
     searchButton: {
       flex: 1,
@@ -1051,17 +1078,17 @@ const createStyles = (colors: any) =>
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: colors.accent,
-      borderRadius: borderRadius.lg,
-      paddingVertical: spacing.md,
+      borderRadius: borderRadius.full,
+      height: 44,
       gap: spacing.sm,
     },
-    searchButtonText: { fontSize: scale(16), fontWeight: "600", color: "#FFFFFF" },
+    searchButtonText: { fontSize: scale(16), fontWeight: "700", color: "#FFFFFF" },
     alertButton: {
-      width: scale(48),
+      width: scale(52),
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: colors.accentLight,
-      borderRadius: borderRadius.lg,
+      borderRadius: borderRadius.full,
     },
     results: {
       paddingHorizontal: spacing.lg,
@@ -1099,7 +1126,7 @@ const createStyles = (colors: any) =>
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.dangerLight,
-      borderRadius: borderRadius.md,
+      borderRadius: borderRadius.xl,
       padding: spacing.lg,
       gap: spacing.md,
       marginBottom: spacing.md,
@@ -1114,6 +1141,15 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.backgroundSecondary,
       justifyContent: "center",
       alignItems: "center",
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 8,
+        },
+        android: { elevation: 1 },
+      }),
     },
     emptyTitle: {
       fontSize: scale(18),
@@ -1130,7 +1166,7 @@ const createStyles = (colors: any) =>
     },
     modalOverlay: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.5)",
+      backgroundColor: "rgba(0,0,0,0.4)",
       justifyContent: "flex-end",
     },
     modalContent: {
@@ -1148,20 +1184,21 @@ const createStyles = (colors: any) =>
     modalSearchBar: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.backgroundSecondary,
-      borderRadius: borderRadius.md,
+      backgroundColor: colors.backgroundTertiary,
+      borderRadius: borderRadius.xl,
       marginHorizontal: spacing.lg,
-      marginVertical: spacing.md,
+      marginBottom: spacing.md,
       paddingHorizontal: spacing.md,
-      height: 42,
+      height: 44,
       gap: spacing.sm,
     },
-    modalSearchInput: { flex: 1, fontSize: scale(16), color: colors.textPrimary },
+    modalSearchInput: { flex: 1, fontSize: scale(15), color: colors.textPrimary },
     modalItem: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      padding: spacing.lg,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
     },
     modalItemText: { fontSize: scale(16), color: colors.textPrimary },
   });

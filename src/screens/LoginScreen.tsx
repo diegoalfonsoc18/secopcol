@@ -391,7 +391,7 @@ const createStyles = (colors: any) =>
     header: {
       alignItems: "center",
       marginTop: spacing.xxl * 2,
-      marginBottom: spacing.xl,
+      marginBottom: spacing.xxl,
     },
     logoContainer: {
       width: 100,
@@ -403,13 +403,14 @@ const createStyles = (colors: any) =>
       marginBottom: spacing.lg,
     },
     title: {
-      fontSize: 28,
-      fontWeight: "700",
+      fontSize: 30,
+      fontWeight: "800",
       color: colors.textPrimary,
       marginBottom: spacing.xs,
+      letterSpacing: -0.5,
     },
     subtitle: {
-      fontSize: 16,
+      fontSize: 15,
       color: colors.textSecondary,
     },
 
@@ -419,8 +420,8 @@ const createStyles = (colors: any) =>
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: colors.backgroundSecondary,
-      borderRadius: borderRadius.md,
-      height: 52,
+      borderRadius: borderRadius.xl,
+      height: 56,
       gap: spacing.sm,
       borderWidth: 1,
       borderColor: colors.separatorLight,
@@ -469,7 +470,7 @@ const createStyles = (colors: any) =>
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.backgroundSecondary,
-      borderRadius: borderRadius.md,
+      borderRadius: borderRadius.lg,
       paddingHorizontal: spacing.md,
       height: 52,
       gap: spacing.sm,
@@ -494,19 +495,20 @@ const createStyles = (colors: any) =>
     // Submit button
     submitButton: {
       backgroundColor: colors.accent,
-      borderRadius: borderRadius.md,
-      height: 52,
+      borderRadius: borderRadius.xl,
+      height: 56,
       justifyContent: "center",
       alignItems: "center",
-      marginTop: spacing.md,
+      marginTop: spacing.lg,
     },
     submitButtonDisabled: {
       opacity: 0.7,
     },
     submitButtonText: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.backgroundSecondary,
+      fontSize: 17,
+      fontWeight: "700",
+      color: "#FFFFFF",
+      letterSpacing: -0.2,
     },
 
     // Toggle
