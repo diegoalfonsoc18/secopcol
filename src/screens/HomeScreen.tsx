@@ -3,6 +3,7 @@ import {
   Animated,
   BackHandler,
   Dimensions,
+  Image,
   Platform,
   RefreshControl,
   StyleSheet,
@@ -514,31 +515,37 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         ]}
       >
         <View style={styles.headerRow}>
-          <View style={{ flex: 1 }}>
-            <Animated.View style={{ opacity: subtitleOpacity }}>
-              <Text style={styles.greeting}>
-                {user?.name
-                  ? `Hola, ${user.name.split(" ")[0]}`
-                  : "Bienvenido"}
+          {user?.avatarUrl ? (
+            <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatarFallback, { backgroundColor: colors.accent }]}>
+              <Text style={styles.avatarInitial}>
+                {(user?.name?.[0] || user?.email?.[0] || "U").toUpperCase()}
               </Text>
-            </Animated.View>
-          </View>
+            </View>
+          )}
 
-          <View style={styles.headerRight}>
+          <View style={{ flex: 1 }}>
+            <Animated.Text style={[styles.greeting, { opacity: subtitleOpacity }]}>
+              {user?.name
+                ? `Hola, ${user.name.split(" ")[0]}`
+                : "Bienvenido"}
+            </Animated.Text>
             {(userMunicipio || userDepartamento) && (
-              <View style={styles.locationBadge}>
+              <View style={styles.locationRow}>
                 <Ionicons name="location" size={12} color={colors.accent} />
-                <Text style={styles.locationText}>
+                <Text style={styles.locationText} numberOfLines={1}>
                   {userMunicipio || userDepartamento}
                 </Text>
               </View>
             )}
-            <TouchableOpacity
-              style={[styles.headerButton, { backgroundColor: colors.backgroundSecondary }]}
-              onPress={() => navigation.navigate("AppSettings")}>
-              <Ionicons name="settings-outline" size={20} color={colors.textPrimary} />
-            </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            style={[styles.headerButton, { backgroundColor: colors.backgroundSecondary }]}
+            onPress={() => navigation.navigate("AppSettings")}>
+            <Ionicons name="settings-outline" size={20} color={colors.textPrimary} />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -746,13 +753,25 @@ const createStyles = (colors: any) =>
     },
     headerRow: {
       flexDirection: "row",
-      alignItems: "flex-start",
-      justifyContent: "space-between",
+      alignItems: "center",
+      gap: spacing.md,
     },
-    headerRight: {
-      alignItems: "flex-end",
-      gap: spacing.sm,
-      paddingTop: spacing.xs,
+    avatar: {
+      width: scale(40),
+      height: scale(40),
+      borderRadius: scale(20),
+    },
+    avatarFallback: {
+      width: scale(40),
+      height: scale(40),
+      borderRadius: scale(20),
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    avatarInitial: {
+      fontSize: scale(17),
+      fontWeight: "700",
+      color: "#FFFFFF",
     },
     headerButton: {
       width: scale(40),
@@ -785,19 +804,16 @@ const createStyles = (colors: any) =>
       letterSpacing: -0.5,
       lineHeight: scale(34),
     },
-    locationBadge: {
+    locationRow: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.accentLight,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 4,
-      borderRadius: borderRadius.full,
-      gap: 4,
+      gap: 3,
+      marginTop: 2,
     },
     locationText: {
-      fontSize: scale(11),
+      fontSize: scale(12),
       color: colors.accent,
-      fontWeight: "600",
+      fontWeight: "500",
     },
     scrollContent: {
       paddingHorizontal: spacing.lg,
