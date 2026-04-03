@@ -277,7 +277,25 @@ serve(async (req: Request) => {
 
     const now = new Date();
 
-    // 2. Procesar cada alerta
+    // Acumulador de resultados por usuario para enviar 1 sola notificación agrupada
+    interface UserResults {
+      pushToken: string | null;
+      alertMatches: {
+        alertId: string;
+        alertName: string;
+        newIds: string[];
+        processSummaries: {
+          id: string;
+          nombre: string;
+          entidad: string;
+          precio: string | number | null;
+          fase: string | null;
+        }[];
+      }[];
+    }
+    const userResults = new Map<string, UserResults>();
+
+    // 2. Procesar cada alerta y acumular resultados por usuario
     for (const alert of alerts) {
       try {
         // Verificar si ya paso suficiente tiempo desde la ultima verificacion
@@ -310,9 +328,9 @@ serve(async (req: Request) => {
         const previousIds = new Set(alert.last_results_ids || []);
         const newIds = currentIds.filter((id) => !previousIds.has(id));
 
-        // 5. Enviar push notification si hay procesos nuevos
+        // 5. Acumular resultados si hay procesos nuevos
         if (newIds.length > 0) {
-          const pushToken = alert.profiles?.push_token;
+          const pushToken = alert.profiles?.push_token || null;
 
           if (!pushToken) {
             console.warn(
@@ -320,17 +338,9 @@ serve(async (req: Request) => {
             );
           }
 
-          // Obtener detalles de los procesos nuevos para el body
           const newProcesses = processes.filter(
             (p) => p.id_del_proceso && newIds.includes(p.id_del_proceso)
           );
-          const processLines = newProcesses.slice(0, 3).map(
-            (p) => `• ${(p.nombre_del_procedimiento || p.entidad || "").substring(0, 60)}`
-          );
-          const extra = newIds.length > 3 ? `\n...y ${newIds.length - 3} más` : "";
-          const body = processLines.join("\n") + extra;
-
-          // Resumen compacto para el data payload (max ~4KB para APNs)
           const processSummaries = newProcesses.slice(0, 5).map((p) => ({
             id: p.id_del_proceso,
             nombre: (p.nombre_del_procedimiento || "").substring(0, 100),
@@ -339,35 +349,32 @@ serve(async (req: Request) => {
             fase: p.fase || null,
           }));
 
-          let sent = false;
-          if (pushToken) {
-            sent = await sendExpoPush(pushToken, {
-              title: `${alert.name} — ${newIds.length} nuevo${newIds.length > 1 ? "s" : ""}`,
-              body,
-              data: {
-                type: "alert_match",
-                alertId: alert.id,
-                newProcessIds: newIds.slice(0, 10),
-                processSummaries,
-              },
-            });
-
-            if (sent) {
-              notificationsSent++;
-            }
+          // Acumular en el mapa por usuario
+          if (!userResults.has(alert.user_id)) {
+            userResults.set(alert.user_id, { pushToken, alertMatches: [] });
           }
+          const userData = userResults.get(alert.user_id)!;
+          if (pushToken && !userData.pushToken) {
+            userData.pushToken = pushToken;
+          }
+          userData.alertMatches.push({
+            alertId: alert.id,
+            alertName: alert.name,
+            newIds,
+            processSummaries,
+          });
 
-          // 6. Insertar en alert_history (siempre, haya o no push_token)
+          // Insertar en alert_history (siempre, independiente del push)
           await supabase.from("alert_history").insert({
             alert_id: alert.id,
             user_id: alert.user_id,
             new_processes_count: newIds.length,
             new_processes_ids: newIds,
-            notification_sent: sent,
+            notification_sent: false, // se actualiza después del envío agrupado
           });
         }
 
-        // 7. Actualizar resultados de la alerta
+        // 6. Actualizar resultados de la alerta
         await supabase
           .from("alerts")
           .update({
@@ -379,6 +386,51 @@ serve(async (req: Request) => {
       } catch (error) {
         console.error(`Error processing alert ${alert.id}:`, error);
         errors++;
+      }
+    }
+
+    // 7. Enviar 1 sola notificación agrupada por usuario
+    for (const [userId, userData] of userResults) {
+      if (!userData.pushToken) continue;
+
+      const totalNew = userData.alertMatches.reduce((sum, m) => sum + m.newIds.length, 0);
+      const alertCount = userData.alertMatches.length;
+
+      // Título según cantidad de alertas
+      const title = alertCount === 1
+        ? `${userData.alertMatches[0].alertName} — ${totalNew} nuevo${totalNew > 1 ? "s" : ""}`
+        : `${totalNew} procesos nuevos en ${alertCount} alertas`;
+
+      // Body: listar cada alerta con su conteo
+      const bodyLines = userData.alertMatches.slice(0, 5).map((m) => {
+        const firstProcess = m.processSummaries[0];
+        const preview = firstProcess
+          ? (firstProcess.nombre || firstProcess.entidad).substring(0, 50)
+          : "";
+        return `• ${m.alertName}: ${m.newIds.length} nuevo${m.newIds.length > 1 ? "s" : ""}${preview ? ` — ${preview}` : ""}`;
+      });
+      if (alertCount > 5) {
+        bodyLines.push(`...y ${alertCount - 5} alertas más`);
+      }
+
+      // Data payload con resumen de todas las alertas
+      const allSummaries = userData.alertMatches.flatMap((m) => m.processSummaries).slice(0, 10);
+      const allAlertIds = userData.alertMatches.map((m) => m.alertId);
+
+      const sent = await sendExpoPush(userData.pushToken, {
+        title,
+        body: bodyLines.join("\n"),
+        data: {
+          type: "alert_match",
+          alertIds: allAlertIds,
+          alertId: allAlertIds[0], // compatibilidad con el handler del cliente
+          totalNewProcesses: totalNew,
+          processSummaries: allSummaries,
+        },
+      });
+
+      if (sent) {
+        notificationsSent++;
       }
     }
 
